@@ -28,6 +28,13 @@ public class TelnetServer(IServiceProvider serviceProvider, ILogger<TelnetServer
                     // Resolve the shared world and a new player connection handler
                     var conn = new PlayerConnection(client);
 
+                    logger.BeginScope(new Dictionary<string, object?>()
+                    {
+                        {
+                            "ConnectionId", conn.Id
+                        }
+                    });
+                    
                     logger.LogInformation("Player connected");
                     
                     _connections.Add(conn);
