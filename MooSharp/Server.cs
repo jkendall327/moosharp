@@ -5,8 +5,9 @@ namespace MooSharp;
 
 public class Server
 {
-    private TcpListener _listener;
-
+    private TcpListener? _listener;
+    private readonly List<PlayerConnection>  _connections = new();
+    
     public async Task StartAsync(int port)
     {
         _listener = new(IPAddress.Any, port);
@@ -25,11 +26,22 @@ public class Server
         }
     }
 
+    public async Task SendMessageToAll(string message)
+    {
+        foreach (var playerConnection in _connections)
+        {
+            await playerConnection.SendMessageAsync(message);
+        }
+    }
+
     private async Task HandleClientAsync(TcpClient client)
     {
         Console.WriteLine("New client connected!");
         
         var connection = new PlayerConnection(client);
+        
+        _connections.Add(connection);
+        
         await connection.ProcessCommandsAsync(); 
 
         Console.WriteLine("Client disconnected.");
