@@ -10,4 +10,11 @@
       <ProjectReference Include="..\MooSharp\MooSharp.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+      <PackageReference Include="Microsoft.AspNetCore.SignalR.Client" Version="9.0.7" />
+      <PackageReference Include="Microsoft.AspNetCore.SignalR.Client.Core" Version="9.0.7" />
+      <PackageReference Include="Microsoft.AspNetCore.SignalR.Common" Version="9.0.7" />
+      <PackageReference Include="Microsoft.AspNetCore.SignalR.Protocols.Json" Version="9.0.7" />
+    </ItemGroup>
+
 </Project>

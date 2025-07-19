@@ -1,0 +1,90 @@
+@page "/game"
+@inject NavigationManager Navigation
+@using System.Text
+@using Microsoft.AspNetCore.SignalR.Client
+@implements IAsyncDisposable
+@rendermode InteractiveServer
+
+<h3>MooSharp</h3>
+
+@if (_hubConnection is null || _hubConnection.State != HubConnectionState.Connected)
+{
+    <p><em>Connecting to server...</em></p>
+}
+else
+{
+    <div class="game-output-container">
+        <pre>@_gameOutput</pre>
+    </div>
+
+    <div class="input-container">
+        <input @bind="_commandInput" 
+               @onkeydown="HandleKeyDown" 
+               placeholder="Type a command..." />
+        <button @onclick="SendCommandAsync">Send</button>
+    </div>
+}
+
+@code {
+    private HubConnection? _hubConnection;
+    private StringBuilder _gameOutput = new StringBuilder();
+    private string _commandInput = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Build the connection to the hub endpoint we mapped
+        _hubConnection = new HubConnectionBuilder()
+            .WithUrl(Navigation.ToAbsoluteUri("/moohub"))
+            .Build();
+
+        // This is where we listen for messages FROM the server
+        _hubConnection.On<string>("ReceiveMessage", (message) =>
+        {
+            _gameOutput.AppendLine(message);
+            // Tell Blazor to re-render the component
+            InvokeAsync(StateHasChanged);
+        });
+
+        // Start the connection
+        try
+        {
+            await _hubConnection.StartAsync();
+        }
+        catch (Exception ex)
+        {
+            // Handle connection errors (e.g., auth failed)
+            _gameOutput.AppendLine($"Connection failed: {ex.Message}");
+        }
+    }
+
+    private async Task HandleKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            await SendCommandAsync();
+        }
+    }
+
+    private async Task SendCommandAsync()
+    {
+        if (_hubConnection is null || string.IsNullOrWhiteSpace(_commandInput))
+        {
+            return;
+        }
+
+        // Send the command to the server's "SendCommand" method
+        await _hubConnection.SendAsync(nameof(MooHub.SendCommand), _commandInput);
+        
+        // Clear the input box
+        _commandInput = string.Empty;
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (_hubConnection is not null)
+        {
+            // Clean up the connection when the component is destroyed
+            await _hubConnection.DisposeAsync();
+        }
+    }
+}
