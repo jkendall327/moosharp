@@ -46,6 +46,11 @@ public class CommandParser(World world, PlayerMultiplexer multiplexer, CommandEx
                 Player = player,
                 Target = split.Last()
             },
+            "take" => new TakeCommand
+            {
+                Player = player,
+                Target = split.Last()
+            },
             _ => null
         };
 

@@ -27,12 +27,19 @@ public class World
                 }
             }
         });
-        
+
         room.Exits.Add("side-room", sideroom);
 
         Rooms.Add(atrium);
         Rooms.Add(sideroom);
-        
-        room.Contents.Add("Dresser", "It's a beautiful mahogany dresser.");
+
+        room.Contents.Add("Cup",
+            new(new()
+            {
+                Id = 4,
+                Name = "Cup",
+                Description = "It's a small, finely-wrought coffee cup.",
+                Location = sideroom
+            }));
     }
 }

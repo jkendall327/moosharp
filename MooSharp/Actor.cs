@@ -2,15 +2,15 @@ using System.Threading.Channels;
 
 namespace MooSharp;
 
-public interface IActorMessage
+public interface IActorMessage<T>
 {
     /// The context is the state object that the actor protects.
-    Task Process(object context);
+    Task Process(T context);
 }
 
 public abstract class Actor<TState> where TState : class
 {
-    private readonly Channel<IActorMessage> _mailbox;
+    private readonly Channel<IActorMessage<TState>> _mailbox;
     protected readonly TState State;
 
     protected Actor(TState state)
@@ -18,7 +18,7 @@ public abstract class Actor<TState> where TState : class
         State = state;
 
         // Create an "unbounded" channel, meaning it can hold any number of messages.
-        _mailbox = Channel.CreateUnbounded<IActorMessage>();
+        _mailbox = Channel.CreateUnbounded<IActorMessage<TState>>();
 
         // Start the long-running task that processes messages.
         Task.Run(ProcessMailboxAsync);
@@ -40,12 +40,12 @@ public abstract class Actor<TState> where TState : class
         }
     }
 
-    public void Post(IActorMessage message)
+    public void Post(IActorMessage<TState> message)
     {
         _mailbox.Writer.TryWrite(message);
     }
 
-    public Task<TResult> Ask<TResult>(IRequestMessage<TResult> message)
+    public Task<TResult> Ask<TResult>(IRequestMessage<TState, TResult> message)
     {
         Post(message);
 
@@ -59,32 +59,32 @@ public abstract class Actor<TState> where TState : class
 }
 
 /// A message that just performs an action and doesn't return anything.
-public class ActionMessage : IActorMessage
+public class ActionMessage<T> : IActorMessage<T>
 {
-    private readonly Func<object, Task> _action;
-    public ActionMessage(Func<object, Task> action) => _action = action;
-    public async Task Process(object context) => await _action(context);
+    private readonly Func<T, Task> _action;
+    public ActionMessage(Func<T, Task> action) => _action = action;
+    public async Task Process(T context) => await _action(context);
 }
 
 // An interface for messages that need to return a value.
-public interface IRequestMessage<TResult> : IActorMessage
+public interface IRequestMessage<TState, TResult> : IActorMessage<TState>
 {
     Task<TResult> GetResponseAsync();
 }
 
 // The implementation uses a TaskCompletionSource to bridge the async gap.
-public class RequestMessage<TState, TResult> : IRequestMessage<TResult> where TState : class
+public class RequestMessage<TState, TResult> : IRequestMessage<TState, TResult> where TState : class
 {
     private readonly TaskCompletionSource<TResult> _tcs = new();
     private readonly Func<TState, Task<TResult>> _request;
 
     public RequestMessage(Func<TState, Task<TResult>> request) => _request = request;
 
-    public async Task Process(object context)
+    public async Task Process(TState context)
     {
         try
         {
-            var result = await _request((TState) context);
+            var result = await _request(context);
             _tcs.SetResult(result);
         }
         catch (Exception ex)
