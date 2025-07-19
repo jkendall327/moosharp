@@ -6,8 +6,9 @@ namespace MooSharp.Web;
 
 public class TelnetServer(
     IServiceProvider serviceProvider,
-    CommandParser parser,
+    PlayerGameLoopManager manager,
     PlayerMultiplexer multiplexer,
+    LoginManager loginManager,
     IOptions<AppOptions> options,
     ILogger<TelnetServer> logger) : BackgroundService
 {
@@ -30,8 +31,13 @@ public class TelnetServer(
                     await using var scope = serviceProvider.CreateAsyncScope();
 
                     // Resolve the shared world and a new player connection handler
-                    var conn = new PlayerConnection(client.GetStream(), parser, options);
+                    var conn = await loginManager.AttemptLoginAsync(client.GetStream(), stoppingToken);
 
+                    if (conn is null)
+                    {
+                        return;
+                    }
+                    
                     logger.BeginScope(new Dictionary<string, object?>()
                     {
                         {
@@ -43,7 +49,7 @@ public class TelnetServer(
 
                     multiplexer.AddPlayer(conn);
 
-                    await conn.ProcessCommandsAsync(stoppingToken);
+                    await manager.RunMainLoopAsync(conn, stoppingToken);
 
                     logger.LogInformation("Player disconnected");
                 },

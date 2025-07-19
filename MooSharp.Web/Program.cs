@@ -14,6 +14,8 @@ builder.Services.AddSingleton<PlayerMultiplexer>();
 builder.Services.AddSingleton<CommandParser>();
 builder.Services.AddSingleton<CommandExecutor>();
 builder.Services.AddSingleton<StringProvider>();
+builder.Services.AddSingleton<LoginManager>();
+builder.Services.AddSingleton<PlayerGameLoopManager>();
 
 RegisterCommandHandlers(builder);
 

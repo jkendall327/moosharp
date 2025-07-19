@@ -12,7 +12,7 @@ public class PlayerMultiplexer
 
     public async Task SendMessage(Player player, string message, CancellationToken cancellationToken = default)
     {
-        var conn = _connections.SingleOrDefault(s => s.Value.PlayerObject.Equals(player)).Value;
+        var conn = _connections.SingleOrDefault(s => s.Value.Player.Equals(player)).Value;
 
         if (conn == null)
         {
@@ -24,7 +24,7 @@ public class PlayerMultiplexer
 
     public async Task SendMessage(Player player, StringBuilder message, CancellationToken cancellationToken = default)
     {
-        var conn = _connections.SingleOrDefault(s => s.Value.PlayerObject.Equals(player)).Value;
+        var conn = _connections.SingleOrDefault(s => s.Value.Player.Equals(player)).Value;
 
         if (conn == null)
         {
@@ -45,12 +45,12 @@ public class PlayerMultiplexer
 
         var others = _connections
                      .Select(s => s.Value)
-                     .Where(s => s.PlayerObject.CurrentLocation is not null)
-                     .Where(s => s.PlayerObject.CurrentLocation!.Equals(player.CurrentLocation))
-                     .Where(s => !s.PlayerObject.Equals(player))
+                     .Where(s => s.Player.CurrentLocation is not null)
+                     .Where(s => s.Player.CurrentLocation!.Equals(player.CurrentLocation))
+                     .Where(s => !s.Player.Equals(player))
                      .ToList();
         
-        var tasks = others.Select(s => SendMessage(s.PlayerObject, message, cancellationToken));
+        var tasks = others.Select(s => SendMessage(s.Player, message, cancellationToken));
         
         await Task.WhenAll(tasks);
     }
