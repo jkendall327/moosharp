@@ -7,7 +7,6 @@ namespace MooSharp;
 public class PlayerConnection
 {
     public Guid Id { get; set; } = Guid.CreateVersion7();
-    private readonly TcpClient _client;
     private readonly CommandParser _parser;
     private readonly IOptions<AppOptions> _options;
     private readonly StreamReader _reader;
@@ -22,16 +21,12 @@ public class PlayerConnection
         }
     };
 
-    public PlayerConnection(TcpClient client, CommandParser parser, IOptions<AppOptions> options)
+    public PlayerConnection(Stream stream, CommandParser parser, IOptions<AppOptions> options)
     {
-        _client = client;
         _parser = parser;
         _options = options;
 
-        var stream = _client.GetStream();
-
         _reader = new(stream);
-
         _writer = new(stream)
         {
             AutoFlush = true
@@ -66,7 +61,7 @@ public class PlayerConnection
         };
 
         // This is the main loop for a single player
-        while (_client.Connected)
+        while (!token.IsCancellationRequested)
         {
             try
             {

@@ -30,7 +30,7 @@ public class TelnetServer(
                     await using var scope = serviceProvider.CreateAsyncScope();
 
                     // Resolve the shared world and a new player connection handler
-                    var conn = new PlayerConnection(client, parser, options);
+                    var conn = new PlayerConnection(client.GetStream(), parser, options);
 
                     logger.BeginScope(new Dictionary<string, object?>()
                     {
