@@ -23,7 +23,7 @@ public class TakeHandler : IHandler<TakeCommand>
 
         if (contents.TryGetValue(cmd.Target, out var o))
         {
-            o.Post(new ActionMessage<Object>(obj => TakeOwnership(buffer, obj, player)));
+            o.Post(new ActionMessage<Object>(obj => TakeOwnership(buffer, o, obj, player)));
         }
         else
         {
@@ -31,7 +31,7 @@ public class TakeHandler : IHandler<TakeCommand>
         }
     }
 
-    private static Task TakeOwnership(StringBuilder buffer, Object obj, Player player)
+    private static Task TakeOwnership(StringBuilder buffer, ObjectActor o, Object obj, Player player)
     {
         if (obj.Owner is null)
         {
@@ -43,6 +43,7 @@ public class TakeHandler : IHandler<TakeCommand>
             }));
 
             obj.Owner = player;
+            player.Inventory.Add(obj.Name, o);
 
             buffer.AppendLine($"You picked up the {obj.Name}.");
         }

@@ -18,26 +18,22 @@ public class ExamineHandler(StringProvider provider, World world) : IHandler<Exa
         {
             buffer.AppendLine(provider.ExamineSelf());
 
-            // var items = world.Rooms
-            //                  .SelectMany(s => s.QueryState(q => q.Contents))
-            //                  .Select(s => s.Value)
-            //                  .ToList();
-            //
-            // var mine = items.Where(s => s.QueryState(e => e.Owner?.Equals(player)) is true)
-            //                 .Select(s => s.QueryState(e => e.Description))
-            //                 .ToList();
+            var mine = player.Inventory
+                             .Select(s => s.Value)
+                             .ToList();
 
-            var mine = new List<string?>();
-            
-            throw new NotImplementedException();
-            
-            if (mine.Any())
+            var descriptions = mine.Select(s => s.QueryAsync(e => e.Description))
+                                   .ToList();
+
+            await Task.WhenAll(descriptions);
+
+            if (descriptions.Any())
             {
                 buffer.AppendLine("You have:");
 
-                foreach (var se in mine)
+                foreach (var se in descriptions)
                 {
-                    buffer.AppendLine(se);
+                    buffer.AppendLine(await se);
                 }
             }
         }
@@ -48,7 +44,7 @@ public class ExamineHandler(StringProvider provider, World world) : IHandler<Exa
         }
 
         var contents = await player.CurrentLocation.QueryAsync(s => s.Contents);
-        
+
         if (contents.TryGetValue(cmd.Target, out var content))
         {
             var description = await content.QueryAsync(s => s.Description);
