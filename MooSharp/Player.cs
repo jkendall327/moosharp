@@ -10,14 +10,4 @@ public class Player
     {
         return CurrentLocation == null ? new() : CurrentLocation.QueryState(s => s.Exits);
     }
-
-    public override bool Equals(object? obj)
-    {
-        return obj is Player player && string.Equals(player.Username, Username, StringComparison.Ordinal);
-    }
-    
-    public override int GetHashCode()
-    {
-        return HashCode.Combine(Id, Username);
-    }
 }

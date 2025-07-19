@@ -59,6 +59,11 @@ public class PlayerConnection
                 return;
             }
         }
+        
+        PlayerObject = new()
+        {
+            Username = "foo"
+        };
 
         // This is the main loop for a single player
         while (_client.Connected)
@@ -76,11 +81,6 @@ public class PlayerConnection
                     // Client disconnected
                     break;
                 }
-
-                PlayerObject = new()
-                {
-                    Username = "foo"
-                };
 
                 // Pass the raw text command to the command parser
                 await _parser.ParseAsync(PlayerObject, command, token);
