@@ -12,25 +12,25 @@ public class PlayerGameLoopManager(CommandParser parser, CommandExecutor executo
         {
             try
             {
-                var command = await conn.GetStringAsync(token);
-
-                if (command == null)
-                {
-                    // Client disconnected
-                    break;
-                }
-
-                var player = conn.Player;
-                
-                var cmd = await parser.ParseAsync(player, command, token);
-
-                var sb = new StringBuilder();
-                
-                await executor.Handle(cmd, sb, token);
-
-                await BuildCurrentRoomDescription(player, sb);
-
-                await multiplexer.SendMessage(player, sb, token);
+                // var command = await conn.GetStringAsync(token);
+                //
+                // if (command == null)
+                // {
+                //     // Client disconnected
+                //     break;
+                // }
+                //
+                // var player = conn.Player;
+                //
+                // var cmd = await parser.ParseAsync(player, command, token);
+                //
+                // var sb = new StringBuilder();
+                //
+                // await executor.Handle(cmd, sb, token);
+                //
+                // await BuildCurrentRoomDescription(player, sb);
+                //
+                // await multiplexer.SendMessage(player, sb, token);
             }
             catch (IOException)
             {

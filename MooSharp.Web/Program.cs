@@ -14,12 +14,13 @@ builder.Services.AddSingleton<PlayerMultiplexer>();
 builder.Services.AddSingleton<CommandParser>();
 builder.Services.AddSingleton<CommandExecutor>();
 builder.Services.AddSingleton<StringProvider>();
-builder.Services.AddSingleton<LoginManager>();
+//builder.Services.AddSingleton<LoginManager>();
 builder.Services.AddSingleton<PlayerGameLoopManager>();
 
 RegisterCommandHandlers(builder);
 
 builder.Services.AddHostedService<TelnetServer>();
+builder.Services.AddSignalR();
 
 builder.Services.Configure<AppOptions>(builder.Configuration.GetSection(nameof(AppOptions)));
 
@@ -38,6 +39,8 @@ app.UseAntiforgery();
 
 app.MapStaticAssets();
 app.MapRazorComponents<App>().AddInteractiveServerRenderMode();
+
+app.MapHub<MooHub>("/moohub");
 
 app.Run();
 

@@ -5,7 +5,7 @@ namespace MooSharp;
 
 public class PlayerMultiplexer
 {
-    private readonly ConcurrentDictionary<Guid, IPlayerConnection> _connections = new();
+    public readonly ConcurrentDictionary<Guid, IPlayerConnection> _connections = new();
 
     public void AddPlayer(IPlayerConnection streamBasedPlayer) => _connections.TryAdd(streamBasedPlayer.Id, streamBasedPlayer);
     public bool RemovePlayer(IPlayerConnection streamBasedPlayer) => _connections.Remove(streamBasedPlayer.Id, out _);
