@@ -31,4 +31,24 @@ public class PlayerMultiplexer
 
         await conn.SendMessageAsync(message, cancellationToken);
     }
+
+    public async Task SendToAllInRoomExceptPlayer(Player player,
+        StringBuilder message,
+        CancellationToken cancellationToken = default)
+    {
+        if (player.CurrentLocation is null)
+        {
+            return;
+        }
+
+        var others = _connections
+                     .Where(s => s.PlayerObject.CurrentLocation is not null)
+                     .Where(s => s.PlayerObject.CurrentLocation!.Equals(player.CurrentLocation))
+                     .Where(s => s.PlayerObject != player)
+                     .ToList();
+        
+        var tasks = others.Select(s => SendMessage(s.PlayerObject, message, cancellationToken));
+        
+        await Task.WhenAll(tasks);
+    }
 }

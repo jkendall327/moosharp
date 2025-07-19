@@ -20,6 +20,15 @@ public class CommandParser(World world, PlayerMultiplexer multiplexer)
 
             if (exits.TryGetValue(target, out var exit))
             {
+                var cmd = new MoveCommand
+                {
+                    TargetExit = target
+                };
+
+                var broadcastMessage = cmd.BroadcastMessage(player);
+                
+                await multiplexer.SendToAllInRoomExceptPlayer(player, new(broadcastMessage), token);
+
                 player.CurrentLocation = exit;
             }
             else
@@ -32,9 +41,9 @@ public class CommandParser(World world, PlayerMultiplexer multiplexer)
             sb.AppendLine("That command wasn't recognized. Use 'move' to go between locations.");
         }
 
-        var description = player.CurrentLocation.QueryState(s => s.Description);
+        var room = await player.CurrentLocation.Ask(new RequestMessage<Room, Room>(Task.FromResult));
         
-        sb.AppendLine(description);
+        sb.AppendLine(room.Description);
 
         var availableExits = GetCurrentlyAvailableExits(player).Select(s => s.Key).ToArray();
         var availableExitsMessage = $"Available exits: {string.Join(", ", availableExits)}";
