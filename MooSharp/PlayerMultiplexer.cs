@@ -1,16 +1,18 @@
+using System.Collections.Concurrent;
 using System.Text;
 
 namespace MooSharp;
 
 public class PlayerMultiplexer
 {
-    private readonly List<PlayerConnection> _connections = new();
+    private readonly ConcurrentDictionary<Guid, PlayerConnection> _connections = new();
 
-    public void AddPlayer(PlayerConnection player) => _connections.Add(player);
+    public void AddPlayer(PlayerConnection player) => _connections.TryAdd(player.Id, player);
+    public bool RemovePlayer(PlayerConnection player) => _connections.Remove(player.Id, out _);
 
     public async Task SendMessage(Player player, string message, CancellationToken cancellationToken = default)
     {
-        var conn = _connections.SingleOrDefault(s => s.PlayerObject.Equals(player));
+        var conn = _connections.SingleOrDefault(s => s.Value.PlayerObject.Equals(player)).Value;
 
         if (conn == null)
         {
@@ -22,7 +24,7 @@ public class PlayerMultiplexer
 
     public async Task SendMessage(Player player, StringBuilder message, CancellationToken cancellationToken = default)
     {
-        var conn = _connections.SingleOrDefault(s => s.PlayerObject.Equals(player));
+        var conn = _connections.SingleOrDefault(s => s.Value.PlayerObject.Equals(player)).Value;
 
         if (conn == null)
         {
@@ -42,9 +44,10 @@ public class PlayerMultiplexer
         }
 
         var others = _connections
+                     .Select(s => s.Value)
                      .Where(s => s.PlayerObject.CurrentLocation is not null)
                      .Where(s => s.PlayerObject.CurrentLocation!.Equals(player.CurrentLocation))
-                     .Where(s => s.PlayerObject != player)
+                     .Where(s => !s.PlayerObject.Equals(player))
                      .ToList();
         
         var tasks = others.Select(s => SendMessage(s.PlayerObject, message, cancellationToken));
