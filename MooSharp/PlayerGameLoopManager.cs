@@ -4,7 +4,7 @@ namespace MooSharp;
 
 public class PlayerGameLoopManager(CommandParser parser, CommandExecutor executor, PlayerMultiplexer multiplexer)
 {
-    public async Task RunMainLoopAsync(PlayerConnection conn, CancellationToken token = default)
+    public async Task RunMainLoopAsync(IPlayerConnection conn, CancellationToken token = default)
     {
         await conn.SendMessageAsync("Welcome to the C# MOO!", token);
 

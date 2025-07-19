@@ -2,7 +2,16 @@ using System.Text;
 
 namespace MooSharp;
 
-public class PlayerConnection
+public interface IPlayerConnection
+{
+    Guid Id { get; set; }
+    Player Player { get; }
+    Task SendMessageAsync(string message, CancellationToken cancellationToken = default);
+    Task SendMessageAsync(StringBuilder message, CancellationToken cancellationToken = default);
+    Task<string?> GetStringAsync(CancellationToken cancellationToken = default);
+}
+
+public class StreamBasedPlayerConnection : IPlayerConnection
 {
     private readonly StreamReader _reader;
     private readonly StreamWriter _writer;
@@ -10,7 +19,7 @@ public class PlayerConnection
     public Guid Id { get; set; } = Guid.CreateVersion7();
     public Player Player { get; private set; }
 
-    public PlayerConnection(Stream stream, Player player)
+    public StreamBasedPlayerConnection(Stream stream, Player player)
     {
         Player = player;
 
