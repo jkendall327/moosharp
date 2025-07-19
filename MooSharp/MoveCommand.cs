@@ -23,7 +23,9 @@ public class MoveHandler(PlayerMultiplexer multiplexer) : IHandler<MoveCommand>
         {
             player.CurrentLocation = exit;
 
-            buffer.AppendLine($"You head to {exit}");
+            var name = exit.QueryState(s => s.Description);
+
+            buffer.AppendLine($"You head to {name}");
             
             var broadcastMessage = cmd.BroadcastMessage();
 
