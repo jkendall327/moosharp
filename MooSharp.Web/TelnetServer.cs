@@ -1,15 +1,16 @@
 using System.Net;
 using System.Net.Sockets;
+using Microsoft.Extensions.Options;
 
 namespace MooSharp.Web;
 
-public class TelnetServer(IServiceProvider serviceProvider, ILogger<TelnetServer> logger) : BackgroundService
+public class TelnetServer(IServiceProvider serviceProvider, IOptions<AppOptions> options, ILogger<TelnetServer> logger) : BackgroundService
 {
     private readonly List<PlayerConnection> _connections = new();
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        using var listener = new TcpListener(IPAddress.Any, 8888);
+        using var listener = new TcpListener(IPAddress.Any, options.Value.ServerPort);
 
         listener.Start();
 
@@ -26,7 +27,7 @@ public class TelnetServer(IServiceProvider serviceProvider, ILogger<TelnetServer
                     await using var scope = serviceProvider.CreateAsyncScope();
 
                     // Resolve the shared world and a new player connection handler
-                    var conn = new PlayerConnection(client);
+                    var conn = new PlayerConnection(client, options);
 
                     logger.BeginScope(new Dictionary<string, object?>()
                     {

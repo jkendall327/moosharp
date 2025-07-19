@@ -1,3 +1,4 @@
+using MooSharp;
 using MooSharp.Web;
 using MooSharp.Web.Components;
 
@@ -7,6 +8,9 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddRazorComponents().AddInteractiveServerComponents();
 
 builder.Services.AddHostedService<TelnetServer>();
+
+builder.Services.Configure<AppOptions>(
+    builder.Configuration.GetSection(nameof(AppOptions)));
 
 var app = builder.Build();
 

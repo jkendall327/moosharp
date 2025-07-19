@@ -1,4 +1,5 @@
 using System.Net.Sockets;
+using Microsoft.Extensions.Options;
 
 namespace MooSharp;
 
@@ -6,6 +7,7 @@ public class PlayerConnection
 {
     public Guid Id { get; set; } = Guid.CreateVersion7();
     private readonly TcpClient _client;
+    private readonly IOptions<AppOptions> _options;
     private readonly StreamReader _reader;
     private readonly StreamWriter _writer;
 
@@ -18,10 +20,13 @@ public class PlayerConnection
         }
     };
 
-    public PlayerConnection(TcpClient client)
+    public PlayerConnection(TcpClient client, IOptions<AppOptions> options)
     {
         _client = client;
+        _options = options;
+
         var stream = _client.GetStream();
+
         _reader = new StreamReader(stream);
 
         _writer = new StreamWriter(stream)
@@ -35,41 +40,31 @@ public class PlayerConnection
         await _writer.WriteLineAsync(message);
     }
 
-    public async Task ProcessCommandsAsync()
+    public async Task ProcessCommandsAsync(CancellationToken token = default)
     {
-        // ... Handle login/character creation here ...
-
         await SendMessageAsync("Welcome to the C# MOO!");
         await SendMessageAsync("Please enter your username.");
 
-        var username = await _reader.ReadLineAsync();
-
-        await SendMessageAsync("Please enter your password.");
-
-        var password = await _reader.ReadLineAsync();
-
-        if (string.IsNullOrWhiteSpace(username) || string.IsNullOrWhiteSpace(password))
+        if (_options.Value.RequireLogins)
         {
-            await SendMessageAsync("Login failed.");
-            return;
-        }
-        
-        if (!_logins.TryGetValue(username, out var pass) || !string.Equals(password, pass, StringComparison.Ordinal))
-        {
-            await SendMessageAsync("Login failed.");
-            return;
+            if (await AttemptLoginAsync(token))
+            {
+                return;
+            }
         }
 
-        await SendMessageAsync("You are now logged in.");
-        
         // This is the main loop for a single player
         while (_client.Connected)
         {
             try
             {
-                var command = await _reader.ReadLineAsync();
+                var command = await _reader.ReadLineAsync(token);
 
-                if (command == null) break; // Client disconnected
+                if (command == null)
+                {
+                    // Client disconnected
+                    break; 
+                }
 
                 // Pass the raw text command to the command parser
                 //CommandParser.ParseAndExecute(PlayerObject, command);
@@ -79,5 +74,32 @@ public class PlayerConnection
                 break; // Connection lost
             }
         }
+    }
+
+    private async Task<bool> AttemptLoginAsync(CancellationToken token = default)
+    {
+        var username = await _reader.ReadLineAsync(token);
+
+        await SendMessageAsync("Please enter your password.");
+
+        var password = await _reader.ReadLineAsync(token);
+
+        if (string.IsNullOrWhiteSpace(username) || string.IsNullOrWhiteSpace(password))
+        {
+            await SendMessageAsync("Login failed.");
+
+            return true;
+        }
+
+        if (!_logins.TryGetValue(username, out var pass) || !string.Equals(password, pass, StringComparison.Ordinal))
+        {
+            await SendMessageAsync("Login failed.");
+
+            return true;
+        }
+
+        await SendMessageAsync("You are now logged in.");
+
+        return false;
     }
 }
