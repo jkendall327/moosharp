@@ -40,7 +40,7 @@ public class TelnetServer(IServiceProvider serviceProvider, IOptions<AppOptions>
                     
                     _connections.Add(conn);
 
-                    await conn.ProcessCommandsAsync();
+                    await conn.ProcessCommandsAsync(stoppingToken);
                     
                     logger.LogInformation("Player disconnected");
                 },
