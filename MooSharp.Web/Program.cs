@@ -8,6 +8,8 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddRazorComponents().AddInteractiveServerComponents();
 
 builder.Services.AddSingleton<World>();
+builder.Services.AddSingleton<CommandParser>();
+builder.Services.AddSingleton<PlayerMultiplexer>();
 
 builder.Services.AddHostedService<TelnetServer>();
 

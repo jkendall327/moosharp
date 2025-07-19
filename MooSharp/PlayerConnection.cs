@@ -7,11 +7,12 @@ public class PlayerConnection
 {
     public Guid Id { get; set; } = Guid.CreateVersion7();
     private readonly TcpClient _client;
+    private readonly CommandParser _parser;
     private readonly IOptions<AppOptions> _options;
     private readonly StreamReader _reader;
     private readonly StreamWriter _writer;
 
-    //public Player PlayerObject { get; private set; } // The actual in-game player object
+    public Player PlayerObject { get; private set; }
 
     private static readonly Dictionary<string, string> _logins = new()
     {
@@ -20,30 +21,31 @@ public class PlayerConnection
         }
     };
 
-    public PlayerConnection(TcpClient client, IOptions<AppOptions> options)
+    public PlayerConnection(TcpClient client, CommandParser parser, IOptions<AppOptions> options)
     {
         _client = client;
+        _parser = parser;
         _options = options;
 
         var stream = _client.GetStream();
 
-        _reader = new StreamReader(stream);
+        _reader = new(stream);
 
-        _writer = new StreamWriter(stream)
+        _writer = new(stream)
         {
             AutoFlush = true
         };
     }
 
-    public async Task SendMessageAsync(string message)
+    public async Task SendMessageAsync(string message, CancellationToken cancellationToken = default)
     {
         await _writer.WriteLineAsync(message);
     }
 
     public async Task ProcessCommandsAsync(CancellationToken token = default)
     {
-        await SendMessageAsync("Welcome to the C# MOO!");
-        await SendMessageAsync("Please enter your username.");
+        await SendMessageAsync("Welcome to the C# MOO!", token);
+        await SendMessageAsync("Please enter your username.", token);
 
         if (_options.Value.RequireLogins)
         {
@@ -61,21 +63,26 @@ public class PlayerConnection
                 var timeout = new CancellationTokenSource(TimeSpan.FromMinutes(5));
 
                 var linked = CancellationTokenSource.CreateLinkedTokenSource(token, timeout.Token);
-                
+
                 var command = await _reader.ReadLineAsync(linked.Token);
 
                 if (command == null)
                 {
                     // Client disconnected
-                    break; 
+                    break;
                 }
 
+                PlayerObject = new()
+                {
+                    Username = "foo"
+                };
+
                 // Pass the raw text command to the command parser
-                //CommandParser.ParseAndExecute(PlayerObject, command);
+                await _parser.ParseAndExecuteAsync(PlayerObject, command, token);
             }
             catch (IOException)
             {
-                break; // Connection lost
+                break;
             }
         }
     }
@@ -84,25 +91,25 @@ public class PlayerConnection
     {
         var username = await _reader.ReadLineAsync(token);
 
-        await SendMessageAsync("Please enter your password.");
+        await SendMessageAsync("Please enter your password.", token);
 
         var password = await _reader.ReadLineAsync(token);
 
         if (string.IsNullOrWhiteSpace(username) || string.IsNullOrWhiteSpace(password))
         {
-            await SendMessageAsync("Login failed.");
+            await SendMessageAsync("Login failed.", token);
 
             return true;
         }
 
         if (!_logins.TryGetValue(username, out var pass) || !string.Equals(password, pass, StringComparison.Ordinal))
         {
-            await SendMessageAsync("Login failed.");
+            await SendMessageAsync("Login failed.", token);
 
             return true;
         }
 
-        await SendMessageAsync("You are now logged in.");
+        await SendMessageAsync("You are now logged in.", token);
 
         return false;
     }
