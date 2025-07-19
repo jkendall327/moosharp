@@ -1,9 +1,10 @@
 using System.Text;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 namespace MooSharp;
 
-public class CommandExecutor(IServiceProvider serviceProvider)
+public class CommandExecutor(IServiceProvider serviceProvider, ILogger<CommandExecutor> logger)
 {
     public async Task Handle<TCommand>(TCommand command, StringBuilder buffer, CancellationToken token = default)
         where TCommand : ICommand
@@ -12,6 +13,7 @@ public class CommandExecutor(IServiceProvider serviceProvider)
 
         if (handler is null)
         {
+            logger.LogError("Handler not found: {HandlerType}",  command.GetType().Name);
             throw new InvalidOperationException("Handler not found");
         }
 
@@ -19,14 +21,16 @@ public class CommandExecutor(IServiceProvider serviceProvider)
     }
 }
 
-public class CommandParser(World world, PlayerMultiplexer multiplexer, CommandExecutor executor)
+public class CommandParser(World world, PlayerMultiplexer multiplexer, CommandExecutor executor, ILogger<CommandParser> logger)
 {
     public async Task ParseAsync(Player player, string command, CancellationToken token = default)
     {
         var sb = new StringBuilder();
 
         player.CurrentLocation ??= world.Rooms.First();
-
+        
+        logger.LogDebug("Parsing player input: {Input}", command);
+        
         var split = command.Split(' ');
 
         var verb = split.FirstOrDefault();
@@ -56,10 +60,12 @@ public class CommandParser(World world, PlayerMultiplexer multiplexer, CommandEx
 
         if (cmd is not null)
         {
+            logger.LogDebug("Parsed input to command {CommandType}",  cmd.GetType().Name);
             await executor.Handle(cmd, sb, token);
         }
         else
         {
+            logger.LogDebug("Failed to parse player input as command");
             sb.AppendLine("That command wasn't recognized. Use 'move' to go between locations.");
         }
 
