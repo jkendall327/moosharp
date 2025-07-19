@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.SignalR;
 public class MooHub(
     PlayerMultiplexer connectionManager,
     PlayerGameLoopManager manager,
+    World world,
     IHubContext<MooHub> hubContext) : Hub
 {
     public async Task SendCommand(string command)
@@ -25,7 +26,8 @@ public class MooHub(
         
         var player = new Player
         {
-            Username = Random.Shared.Next().ToString()
+            Username = Random.Shared.Next().ToString(),
+            CurrentLocation = world.Rooms.First()
         };
 
         var connection = new SignalRPlayerConnection(player, hubContext, Context.ConnectionId);
