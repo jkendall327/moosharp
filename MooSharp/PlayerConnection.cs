@@ -1,4 +1,5 @@
 using System.Net.Sockets;
+using System.Text;
 using Microsoft.Extensions.Options;
 
 namespace MooSharp;
@@ -40,6 +41,11 @@ public class PlayerConnection
     public async Task SendMessageAsync(string message, CancellationToken cancellationToken = default)
     {
         await _writer.WriteLineAsync(message);
+    }
+    
+    public async Task SendMessageAsync(StringBuilder message, CancellationToken cancellationToken = default)
+    {
+        await _writer.WriteLineAsync(message, cancellationToken);
     }
 
     public async Task ProcessCommandsAsync(CancellationToken token = default)
