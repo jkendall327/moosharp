@@ -51,6 +51,11 @@ public abstract class Actor<TState> where TState : class
 
         return message.GetResponseAsync();
     }
+    
+    public TResult QueryState<TResult>(Func<TState, TResult> query)
+    {
+        return query(State);
+    }
 }
 
 /// A message that just performs an action and doesn't return anything.

@@ -45,7 +45,6 @@ public class PlayerConnection
     public async Task ProcessCommandsAsync(CancellationToken token = default)
     {
         await SendMessageAsync("Welcome to the C# MOO!", token);
-        await SendMessageAsync("Please enter your username.", token);
 
         if (_options.Value.RequireLogins)
         {
@@ -89,6 +88,8 @@ public class PlayerConnection
 
     private async Task<bool> AttemptLoginAsync(CancellationToken token = default)
     {
+        await SendMessageAsync("Please enter your username.", token);
+        
         var username = await _reader.ReadLineAsync(token);
 
         await SendMessageAsync("Please enter your password.", token);
