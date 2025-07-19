@@ -58,7 +58,11 @@ public class PlayerConnection
         {
             try
             {
-                var command = await _reader.ReadLineAsync(token);
+                var timeout = new CancellationTokenSource(TimeSpan.FromMinutes(5));
+
+                var linked = CancellationTokenSource.CreateLinkedTokenSource(token, timeout.Token);
+                
+                var command = await _reader.ReadLineAsync(linked.Token);
 
                 if (command == null)
                 {
