@@ -4,39 +4,21 @@ namespace MooSharp;
 
 public class PlayerGameLoopManager(CommandParser parser, CommandExecutor executor, PlayerMultiplexer multiplexer)
 {
-    public async Task RunMainLoopAsync(IPlayerConnection conn, CancellationToken token = default)
+    public async Task OnPlayerInput(InputReceivedEvent e)
     {
-        await conn.SendMessageAsync("Welcome to the C# MOO!", token);
-
-        while (!token.IsCancellationRequested)
-        {
-            try
-            {
-                // var command = await conn.GetStringAsync(token);
-                //
-                // if (command == null)
-                // {
-                //     // Client disconnected
-                //     break;
-                // }
-                //
-                // var player = conn.Player;
-                //
-                // var cmd = await parser.ParseAsync(player, command, token);
-                //
-                // var sb = new StringBuilder();
-                //
-                // await executor.Handle(cmd, sb, token);
-                //
-                // await BuildCurrentRoomDescription(player, sb);
-                //
-                // await multiplexer.SendMessage(player, sb, token);
-            }
-            catch (IOException)
-            {
-                break;
-            }
-        }
+        var player = e.Player;
+        var command = e.Input;
+        var token = e.Token;
+        
+        var cmd = await parser.ParseAsync(player, command, token);
+                
+        var sb = new StringBuilder();
+                
+        await executor.Handle(cmd, sb, token);
+                
+        await BuildCurrentRoomDescription(player, sb);
+                
+        await multiplexer.SendMessage(player, sb, token);
     }
     
     private static async Task BuildCurrentRoomDescription(Player player, StringBuilder sb)

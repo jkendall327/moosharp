@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.SignalR;
 
 public class MooHub(
     PlayerMultiplexer connectionManager,
+    PlayerGameLoopManager manager,
     IHubContext<MooHub> hubContext,
     IPlayerRepository playerRepository) : Hub
 {
@@ -26,6 +27,8 @@ public class MooHub(
 
         // Create our new connection type
         var connection = new SignalRPlayerConnection(player, hubContext, Context.ConnectionId);
+
+        connection.InputReceived += manager.OnPlayerInput;
         
         // --- HOOK UP YOUR GAME ENGINE HERE ---
         // For example, get your command parser and subscribe it to the event
