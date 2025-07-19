@@ -61,7 +61,19 @@ public class CommandParser(World world, PlayerMultiplexer multiplexer, CommandEx
         if (cmd is not null)
         {
             logger.LogDebug("Parsed input to command {CommandType}",  cmd.GetType().Name);
-            await executor.Handle(cmd, sb, token);
+            
+            // This switch expression is just here so the compiler determines the type of the cmd,
+            // and by extension, the generic argument to executor.Handle<T>().
+            // This lets the executor get the correct handler implementation from DI.
+            var task = cmd switch
+            {
+                ExamineCommand e => executor.Handle(e, sb, token),
+                MoveCommand m => executor.Handle(m, sb, token),
+                TakeCommand t => executor.Handle(t, sb, token),
+                _ => throw new ArgumentOutOfRangeException(nameof(cmd), "Unrecognised command type")
+            };
+
+            await task;
         }
         else
         {
