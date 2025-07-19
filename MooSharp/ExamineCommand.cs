@@ -8,7 +8,7 @@ public class ExamineCommand : ICommand
     public required string Target { get; init; }
 }
 
-public class ExamineHandler(StringProvider provider) : IHandler<ExamineCommand>
+public class ExamineHandler(StringProvider provider, World world) : IHandler<ExamineCommand>
 {
     public Task Handle(ExamineCommand cmd, StringBuilder buffer, CancellationToken cancellationToken = default)
     {
@@ -17,6 +17,25 @@ public class ExamineHandler(StringProvider provider) : IHandler<ExamineCommand>
         if (cmd.Target is "me")
         {
             buffer.AppendLine(provider.ExamineSelf());
+
+            var items = world.Rooms
+                             .SelectMany(s => s.QueryState(q => q.Contents))
+                             .Select(s => s.Value)
+                             .ToList();
+
+            var mine = items.Where(s => s.QueryState(e => e.Owner == player))
+                            .Select(s => s.QueryState(e => e.Description))
+                            .ToList();
+
+            if (mine.Any())
+            {
+                buffer.AppendLine("You have:");
+
+                foreach (var se in mine)
+                {
+                    buffer.AppendLine(se);
+                }
+            }
 
             return Task.CompletedTask;
         }

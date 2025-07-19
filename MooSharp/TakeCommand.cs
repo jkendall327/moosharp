@@ -24,6 +24,7 @@ public class TakeHandler : IHandler<TakeCommand>
         if (contents.TryGetValue(cmd.Target, out var o))
         {
             o.Post(new ActionMessage<Object>(obj => TakeOwnership(buffer, obj, player)));
+            
         }
         else
         {
