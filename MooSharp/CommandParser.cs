@@ -5,7 +5,8 @@ namespace MooSharp;
 
 public class CommandExecutor(IServiceProvider serviceProvider)
 {
-    public async Task Handle<TCommand>(TCommand command, StringBuilder buffer, CancellationToken token = default) where TCommand : ICommand
+    public async Task Handle<TCommand>(TCommand command, StringBuilder buffer, CancellationToken token = default)
+        where TCommand : ICommand
     {
         var handler = serviceProvider.GetService<IHandler<TCommand>>();
 
@@ -13,7 +14,7 @@ public class CommandExecutor(IServiceProvider serviceProvider)
         {
             throw new InvalidOperationException("Handler not found");
         }
-        
+
         await handler.Handle(command, buffer, token);
     }
 }
@@ -28,15 +29,28 @@ public class CommandParser(World world, PlayerMultiplexer multiplexer, CommandEx
 
         var split = command.Split(' ');
 
-        if (split.First() == "move")
+        var verb = split.FirstOrDefault();
+
+        // TODO: handle split.count > 2.
+        
+        ICommand? cmd = verb switch
         {
-            var cmd = new MoveCommand
+            "move" => new MoveCommand
             {
                 Player = player,
                 Origin = player.CurrentLocation,
                 TargetExit = split.Last()
-            };
-            
+            },
+            "examine" => new ExamineCommand
+            {
+                Player = player,
+                Target = split.Last()
+            },
+            _ => null
+        };
+
+        if (cmd is not null)
+        {
             await executor.Handle(cmd, sb, token);
         }
         else
@@ -55,15 +69,13 @@ public class CommandParser(World world, PlayerMultiplexer multiplexer, CommandEx
         {
             throw new InvalidOperationException("Current location not set");
         }
-        
+
         var room = await player.CurrentLocation.Ask(new RequestMessage<Room, Room>(Task.FromResult));
-        
+
         sb.AppendLine(room.Description);
 
-        var availableExits = player.GetCurrentlyAvailableExits()
-                                   .Select(s => s.Key)
-                                   .ToArray();
-        
+        var availableExits = player.GetCurrentlyAvailableExits().Select(s => s.Key).ToArray();
+
         var availableExitsMessage = $"Available exits: {string.Join(", ", availableExits)}";
 
         sb.AppendLine(availableExitsMessage);

@@ -2,8 +2,6 @@ using System.Text;
 
 namespace MooSharp;
 
-public interface ICommand;
-
 public class MoveCommand : ICommand
 {
     public required Player Player { get; set; }
@@ -13,12 +11,7 @@ public class MoveCommand : ICommand
     public string BroadcastMessage() => $"{Player.Username} went to {TargetExit}";
 }
 
-public interface IHandler<in T> where T : ICommand
-{
-    Task Handle(T command, StringBuilder buffer, CancellationToken cancellationToken = default);
-}
-
-public class MoveHandler(World world, PlayerMultiplexer multiplexer) : IHandler<MoveCommand>
+public class MoveHandler(PlayerMultiplexer multiplexer) : IHandler<MoveCommand>
 {
     public async Task Handle(MoveCommand cmd, StringBuilder buffer, CancellationToken cancellationToken = default)
     {
