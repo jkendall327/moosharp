@@ -12,29 +12,16 @@ public class CommandParser(World world, PlayerMultiplexer multiplexer)
 
         var split = command.Split(' ');
 
-        var exits = GetCurrentlyAvailableExits(player);
-
         if (split.First() == "move")
         {
-            var target = split.Last();
-
-            if (exits.TryGetValue(target, out var exit))
+            var cmd = new MoveCommand
             {
-                var cmd = new MoveCommand
-                {
-                    TargetExit = target
-                };
-
-                var broadcastMessage = cmd.BroadcastMessage(player);
-                
-                await multiplexer.SendToAllInRoomExceptPlayer(player, new(broadcastMessage), token);
-
-                player.CurrentLocation = exit;
-            }
-            else
-            {
-                sb.AppendLine("That exit doesn't exist.");
-            }
+                Player = player,
+                Origin = player.CurrentLocation,
+                TargetExit = split.Last()
+            };
+            
+            // post the command, get the stringbuilder from the response...
         }
         else
         {
@@ -45,21 +32,14 @@ public class CommandParser(World world, PlayerMultiplexer multiplexer)
         
         sb.AppendLine(room.Description);
 
-        var availableExits = GetCurrentlyAvailableExits(player).Select(s => s.Key).ToArray();
+        var availableExits = player.GetCurrentlyAvailableExits()
+                                   .Select(s => s.Key)
+                                   .ToArray();
+        
         var availableExitsMessage = $"Available exits: {string.Join(", ", availableExits)}";
 
         sb.AppendLine(availableExitsMessage);
 
         await multiplexer.SendMessage(player, sb, token);
-    }
-
-    private Dictionary<string, RoomActor> GetCurrentlyAvailableExits(Player player)
-    {
-        if (player.CurrentLocation == null)
-        {
-            return new();
-        }
-
-        return player.CurrentLocation.QueryState(s => s.Exits);
     }
 }
