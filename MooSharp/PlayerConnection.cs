@@ -83,7 +83,7 @@ public class PlayerConnection
                 };
 
                 // Pass the raw text command to the command parser
-                await _parser.ParseAndExecuteAsync(PlayerObject, command, token);
+                await _parser.ParseAsync(PlayerObject, command, token);
             }
             catch (IOException)
             {

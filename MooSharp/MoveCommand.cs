@@ -30,6 +30,8 @@ public class MoveHandler(World world, PlayerMultiplexer multiplexer) : IHandler<
         {
             player.CurrentLocation = exit;
 
+            buffer.AppendLine($"You head to {exit}");
+            
             var broadcastMessage = cmd.BroadcastMessage();
 
             await multiplexer.SendToAllInRoomExceptPlayer(player, new(broadcastMessage), cancellationToken);

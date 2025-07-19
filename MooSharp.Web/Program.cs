@@ -1,3 +1,4 @@
+using System.Reflection;
 using MooSharp;
 using MooSharp.Web;
 using MooSharp.Web.Components;
@@ -10,11 +11,14 @@ builder.Services.AddRazorComponents().AddInteractiveServerComponents();
 builder.Services.AddSingleton<World>();
 builder.Services.AddSingleton<CommandParser>();
 builder.Services.AddSingleton<PlayerMultiplexer>();
+builder.Services.AddSingleton<CommandParser>();
+builder.Services.AddSingleton<CommandExecutor>();
+
+RegisterCommandHandlers(builder);
 
 builder.Services.AddHostedService<TelnetServer>();
 
-builder.Services.Configure<AppOptions>(
-    builder.Configuration.GetSection(nameof(AppOptions)));
+builder.Services.Configure<AppOptions>(builder.Configuration.GetSection(nameof(AppOptions)));
 
 var app = builder.Build();
 
@@ -33,3 +37,29 @@ app.MapStaticAssets();
 app.MapRazorComponents<App>().AddInteractiveServerRenderMode();
 
 app.Run();
+
+void RegisterCommandHandlers(WebApplicationBuilder webApplicationBuilder)
+{
+    var assemblies = new List<Assembly>([Assembly.GetExecutingAssembly(), typeof(CommandExecutor).Assembly]);
+
+    var handlerInterfaceType = typeof(IHandler<>);
+
+    foreach (var assembly in assemblies)
+    {
+        var handlerTypes = assembly.GetTypes()
+                                   .Where(t => t is {IsAbstract: false, IsInterface: false})
+                                   .SelectMany(t => t.GetInterfaces()
+                                                     .Where(i => i.IsGenericType && i.GetGenericTypeDefinition() ==
+                                                         handlerInterfaceType)
+                                                     .Select(i => new
+                                                     {
+                                                         Implementation = t,
+                                                         Service = i
+                                                     }));
+
+        foreach (var typePair in handlerTypes)
+        {
+            webApplicationBuilder.Services.AddTransient(typePair.Service, typePair.Implementation);
+        }
+    }
+}
