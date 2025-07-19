@@ -10,7 +10,7 @@ public class TakeCommand : ICommand
 
 public class TakeHandler : IHandler<TakeCommand>
 {
-    public Task Handle(TakeCommand cmd, StringBuilder buffer, CancellationToken cancellationToken = default)
+    public async Task Handle(TakeCommand cmd, StringBuilder buffer, CancellationToken cancellationToken = default)
     {
         if (cmd.Player.CurrentLocation == null)
         {
@@ -19,7 +19,7 @@ public class TakeHandler : IHandler<TakeCommand>
 
         var player = cmd.Player;
 
-        var contents = player.CurrentLocation.QueryState(s => s.Contents);
+        var contents = await player.CurrentLocation.QueryAsync(s => s.Contents);
 
         if (contents.TryGetValue(cmd.Target, out var o))
         {
@@ -29,8 +29,6 @@ public class TakeHandler : IHandler<TakeCommand>
         {
             buffer.AppendLine($"There is no {cmd.Target} here.");
         }
-
-        return Task.CompletedTask;
     }
 
     private static Task TakeOwnership(StringBuilder buffer, Object obj, Player player)

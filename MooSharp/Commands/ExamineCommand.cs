@@ -10,7 +10,7 @@ public class ExamineCommand : ICommand
 
 public class ExamineHandler(StringProvider provider, World world) : IHandler<ExamineCommand>
 {
-    public Task Handle(ExamineCommand cmd, StringBuilder buffer, CancellationToken cancellationToken = default)
+    public async Task Handle(ExamineCommand cmd, StringBuilder buffer, CancellationToken cancellationToken = default)
     {
         var player = cmd.Player;
 
@@ -18,15 +18,19 @@ public class ExamineHandler(StringProvider provider, World world) : IHandler<Exa
         {
             buffer.AppendLine(provider.ExamineSelf());
 
-            var items = world.Rooms
-                             .SelectMany(s => s.QueryState(q => q.Contents))
-                             .Select(s => s.Value)
-                             .ToList();
+            // var items = world.Rooms
+            //                  .SelectMany(s => s.QueryState(q => q.Contents))
+            //                  .Select(s => s.Value)
+            //                  .ToList();
+            //
+            // var mine = items.Where(s => s.QueryState(e => e.Owner?.Equals(player)) is true)
+            //                 .Select(s => s.QueryState(e => e.Description))
+            //                 .ToList();
 
-            var mine = items.Where(s => s.QueryState(e => e.Owner?.Equals(player)) is true)
-                            .Select(s => s.QueryState(e => e.Description))
-                            .ToList();
-
+            var mine = new List<string?>();
+            
+            throw new NotImplementedException();
+            
             if (mine.Any())
             {
                 buffer.AppendLine("You have:");
@@ -36,8 +40,6 @@ public class ExamineHandler(StringProvider provider, World world) : IHandler<Exa
                     buffer.AppendLine(se);
                 }
             }
-
-            return Task.CompletedTask;
         }
 
         if (player.CurrentLocation is null)
@@ -45,15 +47,13 @@ public class ExamineHandler(StringProvider provider, World world) : IHandler<Exa
             throw new InvalidOperationException("Player location was null during examine command.");
         }
 
-        var contents = player.CurrentLocation.QueryState(s => s.Contents);
-
+        var contents = await player.CurrentLocation.QueryAsync(s => s.Contents);
+        
         if (contents.TryGetValue(cmd.Target, out var content))
         {
-            var description = content.QueryState(s => s.Description);
+            var description = await content.QueryAsync(s => s.Description);
 
             buffer.AppendLine(description);
         }
-
-        return Task.CompletedTask;
     }
 }

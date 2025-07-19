@@ -32,9 +32,9 @@ public class PlayerGameLoopManager(CommandParser parser, CommandExecutor executo
 
         sb.AppendLine(room.Description);
 
-        var availableExits = player.GetCurrentlyAvailableExits().Select(s => s.Key).ToArray();
+        var availableExits = await player.GetCurrentlyAvailableExitsAsync();
 
-        var availableExitsMessage = $"Available exits: {string.Join(", ", availableExits)}";
+        var availableExitsMessage = $"Available exits: {string.Join(", ", availableExits.Select(s => s.Key))}";
 
         sb.AppendLine(availableExitsMessage);
     }

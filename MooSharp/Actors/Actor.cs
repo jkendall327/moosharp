@@ -51,10 +51,12 @@ public abstract class Actor<TState> where TState : class
 
         return message.GetResponseAsync();
     }
-    
-    public TResult QueryState<TResult>(Func<TState, TResult> query)
+
+    public async Task<TResult> QueryAsync<TResult>(Func<TState, TResult> func)
     {
-        return query(State);
+        var message = new RequestMessage<TState, TResult>(state => Task.FromResult(func(state)));
+
+        return await Ask(message);
     }
 }
 

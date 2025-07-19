@@ -17,13 +17,13 @@ public class MoveHandler(PlayerMultiplexer multiplexer) : IHandler<MoveCommand>
     {
         var player = cmd.Player;
 
-        var exits = player.GetCurrentlyAvailableExits();
+        var exits = await player.GetCurrentlyAvailableExitsAsync();
 
         if (exits.TryGetValue(cmd.TargetExit, out var exit))
         {
             player.CurrentLocation = exit;
 
-            var name = exit.QueryState(s => s.Description);
+            var name = await exit.QueryAsync(s => s.Description);
 
             buffer.AppendLine($"You head to {name}");
             

@@ -6,8 +6,8 @@ public class Player
     public RoomActor? CurrentLocation { get; set; }
     public required string Username { get; init; }
 
-    public Dictionary<string, RoomActor> GetCurrentlyAvailableExits()
+    public async Task<Dictionary<string, RoomActor>> GetCurrentlyAvailableExitsAsync()
     {
-        return CurrentLocation == null ? new() : CurrentLocation.QueryState(s => s.Exits);
+        return CurrentLocation == null ? new() : await CurrentLocation.QueryAsync(s => s.Exits);
     }
 }
