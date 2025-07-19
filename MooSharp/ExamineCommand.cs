@@ -4,23 +4,35 @@ namespace MooSharp;
 
 public class ExamineCommand : ICommand
 {
-    public required Player Player { get; set; }
-    public required string Target { get; set; }
+    public required Player Player { get; init; }
+    public required string Target { get; init; }
 }
 
-public class ExamineHandler(PlayerMultiplexer multiplexer) : IHandler<ExamineCommand>
+public class ExamineHandler(StringProvider provider) : IHandler<ExamineCommand>
 {
-    public async Task Handle(ExamineCommand cmd, StringBuilder buffer, CancellationToken cancellationToken = default)
+    public Task Handle(ExamineCommand cmd, StringBuilder buffer, CancellationToken cancellationToken = default)
     {
         var player = cmd.Player;
 
         if (cmd.Target is "me")
         {
-            throw new NotImplementedException();
+            buffer.AppendLine(provider.ExamineSelf());
         }
         else
         {
-            throw new NotImplementedException();
+            if (player.CurrentLocation is null)
+            {
+                throw new InvalidOperationException("Player location was null during examine command.");
+            }
+            
+            var contents = player.CurrentLocation.QueryState(s => s.Contents);
+
+            if (contents.TryGetValue(cmd.Target, out var content))
+            {
+                buffer.AppendLine(content);
+            }
         }
+
+        return Task.CompletedTask;
     }
 }

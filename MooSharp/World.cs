@@ -32,5 +32,7 @@ public class World
 
         Rooms.Add(atrium);
         Rooms.Add(sideroom);
+        
+        room.Contents.Add("Dresser", "It's a beautiful mahogany dresser.");
     }
 }

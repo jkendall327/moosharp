@@ -13,6 +13,7 @@ builder.Services.AddSingleton<CommandParser>();
 builder.Services.AddSingleton<PlayerMultiplexer>();
 builder.Services.AddSingleton<CommandParser>();
 builder.Services.AddSingleton<CommandExecutor>();
+builder.Services.AddSingleton<StringProvider>();
 
 RegisterCommandHandlers(builder);
 
