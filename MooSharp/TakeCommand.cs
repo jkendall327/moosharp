@@ -16,7 +16,7 @@ public class TakeHandler : IHandler<TakeCommand>
         {
             throw new InvalidOperationException("Player must have a location.");
         }
-        
+
         var player = cmd.Player;
 
         var contents = player.CurrentLocation.QueryState(s => s.Contents);
@@ -24,7 +24,6 @@ public class TakeHandler : IHandler<TakeCommand>
         if (contents.TryGetValue(cmd.Target, out var o))
         {
             o.Post(new ActionMessage<Object>(obj => TakeOwnership(buffer, obj, player)));
-            
         }
         else
         {
@@ -38,12 +37,24 @@ public class TakeHandler : IHandler<TakeCommand>
     {
         if (obj.Owner is null)
         {
+            obj.Location?.Post(new ActionMessage<Room>(s =>
+            {
+                s.Contents.Remove(obj.Name);
+
+                return Task.CompletedTask;
+            }));
+
             obj.Owner = player;
-            buffer.AppendLine($"You picked up the {obj.Description}.");
+
+            buffer.AppendLine($"You picked up the {obj.Name}.");
+        }
+        else if (obj.Owner.Equals(player))
+        {
+            buffer.AppendLine($"You already have the {obj.Name}.");
         }
         else
         {
-            buffer.AppendLine($"Someone else picked up the {obj.Description} first.");
+            buffer.AppendLine($"There is no {obj.Name} here.");
         }
 
         return Task.CompletedTask;

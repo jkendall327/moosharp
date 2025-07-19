@@ -23,7 +23,7 @@ public class ExamineHandler(StringProvider provider, World world) : IHandler<Exa
                              .Select(s => s.Value)
                              .ToList();
 
-            var mine = items.Where(s => s.QueryState(e => e.Owner == player))
+            var mine = items.Where(s => s.QueryState(e => e.Owner?.Equals(player)) is true)
                             .Select(s => s.QueryState(e => e.Description))
                             .ToList();
 
