@@ -28,14 +28,8 @@ public abstract class Actor<TState> where TState : class
     {
         await foreach (var message in _mailbox.Reader.ReadAllAsync())
         {
-            try
-            {
-                await message.Process(State);
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Actor for {State.GetType().Name} encountered an error: {ex.Message}");
-            }
+            // Just allow any exceptions to bubble up and let callers handle them.
+            await message.Process(State);
         }
     }
 
