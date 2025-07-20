@@ -1,3 +1,5 @@
+using Microsoft.Extensions.Logging;
+
 namespace MooSharp;
 
 public class Object
@@ -41,7 +43,7 @@ public class Object
     public override string ToString() => Name;
 }
 
-public class ObjectActor(Object state) : Actor<Object>(state)
+public class ObjectActor(Object state, ILoggerFactory factory) : Actor<Object>(state, factory)
 {
     public int Id => State.Id;
     public string Name => State.Name; 

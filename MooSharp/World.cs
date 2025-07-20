@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 namespace MooSharp;
@@ -24,7 +25,7 @@ public class ObjectDto
     public string? RoomSlug { get; set; }
 }
 
-public class World(IOptions<AppOptions> appOptions)
+public class World(IOptions<AppOptions> appOptions, ILoggerFactory loggerFactory)
 {
     public Dictionary<string, RoomActor> Rooms { get; private set; } = [];
     public Dictionary<string, List<ObjectActor>> Objects { get; set; } = [];
@@ -75,7 +76,7 @@ public class World(IOptions<AppOptions> appOptions)
         return dto;
     }
 
-    private static async Task<Dictionary<string, RoomActor>> CreateRooms(WorldDto dto)
+    private async Task<Dictionary<string, RoomActor>> CreateRooms(WorldDto dto)
     {
         var roomActorsBySlug = dto.Rooms.ToDictionary(r => r.Slug,
             r => new RoomActor(new()
@@ -84,7 +85,7 @@ public class World(IOptions<AppOptions> appOptions)
                 Slug = r.Slug,
                 Name = r.Name,
                 Description = r.Description,
-            }));
+            }, loggerFactory));
 
         // Connect exits.
         foreach (var roomDto in dto.Rooms)
@@ -123,7 +124,7 @@ public class World(IOptions<AppOptions> appOptions)
                             });
         
         var dictionary = bySlug.ToDictionary(s => s.Key,
-            grouping => grouping.Select(o => new ObjectActor(o)).ToList());
+            grouping => grouping.Select(o => new ObjectActor(o, loggerFactory)).ToList());
 
         foreach (var grouping in bySlug)
         {

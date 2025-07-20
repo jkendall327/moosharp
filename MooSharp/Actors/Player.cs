@@ -1,3 +1,5 @@
+using Microsoft.Extensions.Logging;
+
 namespace MooSharp;
 
 public class Player
@@ -9,7 +11,7 @@ public class Player
     public override string ToString() => Username;
 }
 
-public class PlayerActor(Player state) : Actor<Player>(state)
+public class PlayerActor(Player state, ILoggerFactory factory) : Actor<Player>(state, factory)
 {
     public string Username => State.Username;
     

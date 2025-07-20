@@ -1,4 +1,5 @@
 using System.Threading.Channels;
+using Microsoft.Extensions.Logging;
 
 namespace MooSharp;
 
@@ -12,10 +13,12 @@ public abstract class Actor<TState> where TState : class
 {
     private readonly Channel<IActorMessage<TState>> _mailbox;
     protected readonly TState State;
+    private readonly ILoggerFactory _loggerFactory;
 
-    protected Actor(TState state)
+    protected Actor(TState state, ILoggerFactory loggerFactory)
     {
         State = state;
+        _loggerFactory = loggerFactory;
 
         _mailbox = Channel.CreateBounded<IActorMessage<TState>>(100);
 

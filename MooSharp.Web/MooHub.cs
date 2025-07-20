@@ -6,6 +6,7 @@ public class MooHub(
     PlayerMultiplexer connectionManager,
     PlayerGameLoopManager manager,
     World world,
+    ILoggerFactory factory,
     IHubContext<MooHub> hubContext) : Hub
 {
     public async Task SendCommand(string command)
@@ -36,7 +37,7 @@ public class MooHub(
             CurrentLocation = atrium
         };
 
-        var playerActor = new PlayerActor(player);
+        var playerActor = new PlayerActor(player, factory);
 
         var connection = new SignalRPlayerConnection(playerActor, hubContext, Context.ConnectionId);
 
