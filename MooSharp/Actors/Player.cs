@@ -6,6 +6,7 @@ public class Player
     public required RoomActor CurrentLocation { get; set; }
     public Dictionary<string, ObjectActor> Inventory { get; } = new();
     public required string Username { get; init; }
+    public override string ToString() => Username;
 }
 
 public class PlayerActor(Player state) : Actor<Player>(state)

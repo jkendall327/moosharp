@@ -57,6 +57,8 @@ public abstract class Actor<TState> where TState : class
 
         return await Ask(message);
     }
+
+    public override string? ToString() => State.ToString();
 }
 
 /// A message that just performs an action and doesn't return anything.

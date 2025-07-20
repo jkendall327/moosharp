@@ -5,8 +5,8 @@ namespace MooSharp;
 
 public class WorldDto
 {
-    public List<RoomDto> Rooms { get; set; } = [];
-    public List<ObjectDto> Objects { get; set; } = [];
+    public List<RoomDto> Rooms { get; init; } = [];
+    public List<ObjectDto> Objects { get; init; } = [];
 }
 
 public class RoomDto
@@ -26,9 +26,18 @@ public class ObjectDto
 
 public class World(IOptions<AppOptions> appOptions)
 {
-    public List<RoomActor> Rooms { get; } = new();
+    public Dictionary<string, RoomActor> Rooms { get; private set; } = [];
+    public Dictionary<string, ObjectActor> Objects { get; set; } = [];
 
     public async Task InitializeAsync(CancellationToken cancellationToken = default)
+    {
+        var dto = await GetWorldDto(cancellationToken);
+
+        Rooms = await CreateRooms(dto);
+        Objects = await CreateObjects(dto);
+    }
+
+    private async Task<WorldDto> GetWorldDto(CancellationToken cancellationToken)
     {
         var path = appOptions.Value.WorldDataFilepath;
 
@@ -46,64 +55,93 @@ public class World(IOptions<AppOptions> appOptions)
             throw new InvalidOperationException("World data failed to deserialize.");
         }
 
-        var rooms = dto.Rooms
-                       .Select((r, i) => new Room
-                       {
-                           Id = i,
-                           Name = r.Name,
-                           Description = r.Description,
-                           Contents =
-                           {
-                           },
-                           Exits =
-                           {
-                           }
-                       })
+        if (!dto.Rooms.Any())
+        {
+            throw new InvalidOperationException("Room data failed to deserialize.");
+        }
+
+        var slugs = dto.Rooms
+                       .Select(s => s.Slug)
                        .ToList();
 
-        var objects = dto.Objects.Select((o, i) => new Object
-        {
-            Id = i,
-            Description = o.Description,
-            Name = o.Name,
-            Location = null,
-            Owner = null
-        });
+        var filtered = slugs.Distinct()
+                            .ToList();
 
-        var room = new Room
+        if (slugs.Count != filtered.Count)
         {
-            Id = 1,
-            Name = "Atrium",
-            Description = "A beautiful antechamber",
-        };
+            throw new InvalidOperationException("At least one slug was duplicated across rooms.");
+        }
 
-        var atrium = new RoomActor(room);
+        return dto;
+    }
 
-        var sideroom = new RoomActor(new()
-        {
-            Id = 2,
-            Name = "Side-room",
-            Description = "A small but clean break-room for drinking coffee",
-            Exits =
+    private static async Task<Dictionary<string, RoomActor>> CreateRooms(WorldDto dto)
+    {
+        var roomActorsBySlug = dto.Rooms.ToDictionary(r => r.Slug,
+            r => new RoomActor(new()
             {
-                {
-                    "atrium", atrium
-                }
-            }
-        });
-
-        room.Exits.Add("side-room", sideroom);
-
-        Rooms.Add(atrium);
-        Rooms.Add(sideroom);
-
-        room.Contents.Add("Cup",
-            new(new()
-            {
-                Id = 4,
-                Name = "Cup",
-                Description = "It's a small, finely-wrought coffee cup.",
-                Location = sideroom
+                Id = Random.Shared.Next(),
+                Slug = r.Slug,
+                Name = r.Name,
+                Description = r.Description,
             }));
+
+        // Connect exits.
+        foreach (var roomDto in dto.Rooms)
+        {
+            var currentRoomActor = roomActorsBySlug[roomDto.Slug];
+
+            var exits = roomDto.ConnectedRooms.ToDictionary(exitSlug => exitSlug,
+                exitSlug => roomActorsBySlug[exitSlug]);
+
+            await currentRoomActor.Ask(new RequestMessage<Room, bool>(roomState =>
+            {
+                foreach (var exit in exits)
+                {
+                    roomState.Exits.Add(exit.Key, exit.Value);
+                }
+
+                return Task.FromResult(true);
+            }));
+        }
+
+        return roomActorsBySlug;
+    }
+
+    private async Task<Dictionary<string, ObjectActor>> CreateObjects(WorldDto dto)
+    {
+        var bySlug = dto.Objects
+                        .Where(s => s.RoomSlug is not null)
+                        .ToDictionary(r => r.RoomSlug!,
+                            o => new ObjectActor(new()
+                            {
+                                Id = Random.Shared.Next(),
+                                Description = o.Description,
+                                Name = o.Name,
+                                Location = null,
+                                Owner = null
+                            }));
+
+        foreach (var objectDto in dto.Objects)
+        {
+            var currentObjectActor = bySlug[objectDto.RoomSlug!];
+
+            var room = Rooms.GetValueOrDefault(objectDto.RoomSlug!);
+
+            if (room is null)
+            {
+                throw new InvalidOperationException(
+                    $"Even though object {objectDto.Name} has room slug {objectDto.RoomSlug!}, no room actor was found with that slug.");
+            }
+
+            await currentObjectActor.Ask(new RequestMessage<Object, bool>(state =>
+            {
+                state.Location = room;
+
+                return Task.FromResult(true);
+            }));
+        }
+
+        return bySlug;
     }
 }

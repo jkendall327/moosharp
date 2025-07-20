@@ -1,0 +1,29 @@
+{
+  "Rooms": [
+    {
+      "Name": "atrium",
+      "Description": "A beautiful atrium.",
+      "Slug": "atrium",
+      "ConnectedRooms": ["side-room"]
+    },
+    {
+      "Name": "side-room",
+      "Description": "A small side-room for drinking coffee.",
+      "Slug": "side-room",
+      "ConnectedRooms": ["atrium"]
+    },
+    {
+      "Name": "closet",
+      "Description": "A cramped and dark closet.",
+      "Slug": "closet",
+      "ConnectedRooms": ["side-room"]
+    }
+  ],
+  "Objects": [
+    {
+      "Name": "Mop",
+      "Description": "A standard janitor's mop.",
+      "RoomSlug": "closet"
+    }
+  ]
+}

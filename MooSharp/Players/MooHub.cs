@@ -21,13 +21,20 @@ public class MooHub(
 
     public override async Task OnConnectedAsync()
     {
+        var atrium = world.Rooms.GetValueOrDefault("atrium");
+
+        if (atrium is null)
+        {
+            throw new InvalidOperationException("Couldn't find atrium room to set as default location.");
+        }
+
         var player = new Player
         {
             Username = Random.Shared
                              .Next()
                              .ToString(),
             
-            CurrentLocation = world.Rooms.First()
+            CurrentLocation = atrium
         };
 
         var playerActor = new PlayerActor(player);

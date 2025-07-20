@@ -37,6 +37,8 @@ public class Object
             }
         }
     }
+    
+    public override string ToString() => Name;
 }
 
 public class ObjectActor(Object state) : Actor<Object>(state);
