@@ -19,4 +19,5 @@ public class RoomActor(Room state) : Actor<Room>(state)
     public string Name => State.Name; 
     public string Slug => State.Slug;
     public string Description =>  State.Description; 
+    public IReadOnlyDictionary<string, RoomActor> Exits => State.Exits;
 }
