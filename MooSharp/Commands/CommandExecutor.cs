@@ -35,13 +35,7 @@ public class CommandExecutor(IServiceProvider serviceProvider, ILogger<CommandEx
     private async Task Handle<TCommand>(TCommand command, StringBuilder buffer, CancellationToken token = default)
         where TCommand : ICommand
     {
-        var handler = serviceProvider.GetService<IHandler<TCommand>>();
-
-        if (handler is null)
-        {
-            logger.LogError("Handler not found: {HandlerType}",  command.GetType().Name);
-            throw new InvalidOperationException("Handler not found");
-        }
+        var handler = serviceProvider.GetRequiredService<IHandler<TCommand>>();
 
         await handler.Handle(command, buffer, token);
     }
