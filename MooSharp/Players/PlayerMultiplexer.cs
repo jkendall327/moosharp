@@ -5,12 +5,17 @@ namespace MooSharp;
 
 public class PlayerMultiplexer
 {
-    public readonly ConcurrentDictionary<Guid, IPlayerConnection> _connections = new();
+    public readonly ConcurrentDictionary<string, IPlayerConnection> _connections = new();
 
     public void AddPlayer(IPlayerConnection streamBasedPlayer) =>
         _connections.TryAdd(streamBasedPlayer.Id, streamBasedPlayer);
 
-    public bool RemovePlayer(IPlayerConnection streamBasedPlayer) => _connections.Remove(streamBasedPlayer.Id, out _);
+    public void RemovePlayer(IPlayerConnection streamBasedPlayer)
+    {
+        _connections.Remove(streamBasedPlayer.Id, out var _);
+    }
+    
+    public IPlayerConnection? TryGetPlayer(string id) => _connections.GetValueOrDefault(id);
 
     public async Task SendMessage(PlayerActor player, string message, CancellationToken cancellationToken = default)
     {
