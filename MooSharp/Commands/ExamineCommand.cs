@@ -14,6 +14,12 @@ public class ExamineHandler(StringProvider provider, World world) : IHandler<Exa
     {
         var player = cmd.Player;
 
+        if (string.IsNullOrWhiteSpace(cmd.Target))
+        {
+            throw new NotImplementedException(
+                "When no target is specified for 'examine', just print the room's description");
+        }
+        
         if (cmd.Target is "me")
         {
             buffer.AppendLine(provider.ExamineSelf());
