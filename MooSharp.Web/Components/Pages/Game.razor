@@ -33,17 +33,14 @@ else
 
     protected override async Task OnInitializedAsync()
     {
-        // Build the connection to the hub endpoint we mapped
         _hubConnection = new HubConnectionBuilder().WithUrl(Navigation.ToAbsoluteUri("/moohub"))
                                                    .Build();
 
-        // This is where we listen for messages FROM the server
         _hubConnection.On<string>("ReceiveMessage",
             (message) =>
             {
                 _gameOutput.AppendLine(message);
 
-                // Tell Blazor to re-render the component
                 InvokeAsync(StateHasChanged);
             });
 
@@ -54,7 +51,6 @@ else
         }
         catch (Exception ex)
         {
-            // Handle connection errors (e.g., auth failed)
             _gameOutput.AppendLine($"Connection failed: {ex.Message}");
         }
     }
@@ -74,10 +70,8 @@ else
             return;
         }
 
-        // Send the command to the server's "SendCommand" method
         await _hubConnection.SendAsync(nameof(MooHub.SendCommand), _commandInput);
 
-        // Clear the input box
         _commandInput = string.Empty;
     }
 

@@ -14,7 +14,6 @@ public class MooHub(
 
         if (connection != null)
         {
-            // This triggers the InputReceived event that the game engine is listening to
             await connection.OnInputReceivedAsync(command);
         }
     }
@@ -56,7 +55,6 @@ public class MooHub(
 
         if (connection != null)
         {
-            // Notify the game engine that the player is gone
             await connection.OnConnectionLostAsync();
             connectionManager.RemovePlayer(connection);
         }

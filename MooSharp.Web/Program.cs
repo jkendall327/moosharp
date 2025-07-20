@@ -5,7 +5,6 @@ using MooSharp.Web.Components;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
 builder.Services.AddRazorComponents().AddInteractiveServerComponents();
 
 builder.Services.AddSingleton<World>();
@@ -14,12 +13,10 @@ builder.Services.AddSingleton<PlayerMultiplexer>();
 builder.Services.AddSingleton<CommandParser>();
 builder.Services.AddSingleton<CommandExecutor>();
 builder.Services.AddSingleton<StringProvider>();
-//builder.Services.AddSingleton<LoginManager>();
 builder.Services.AddSingleton<PlayerGameLoopManager>();
 
 RegisterCommandHandlers(builder);
 
-builder.Services.AddHostedService<TelnetServer>();
 builder.Services.AddSignalR();
 
 builder.Services.Configure<AppOptions>(builder.Configuration.GetSection(nameof(AppOptions)));

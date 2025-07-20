@@ -20,16 +20,13 @@ public class SignalRPlayerConnection : IPlayerConnection
         _hubContext = hubContext;
     }
 
-    // Send a message to the specific client this connection represents
     public Task SendMessageAsync(string message, CancellationToken cancellationToken = default)
     {
-        // "ReceiveMessage" is the name of the method the Blazor client will be listening for.
         return _hubContext.Clients.Client(Id).SendAsync("ReceiveMessage", message, cancellationToken);
     }
 
     public Task SendMessageAsync(StringBuilder message, CancellationToken cancellationToken = default)
     {
-        // StringBuilder doesn't have a direct SendAsync overload, so we convert it.
         return SendMessageAsync(message.ToString(), cancellationToken);
     }
     
@@ -41,7 +38,6 @@ public class SignalRPlayerConnection : IPlayerConnection
         }
     }
 
-    // Called by the SignalR Hub when the client disconnects
     public async Task OnConnectionLostAsync()
     {
         if (ConnectionLost != null)
