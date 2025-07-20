@@ -16,16 +16,12 @@ public class MoveHandler(PlayerMultiplexer multiplexer) : IHandler<MoveCommand>
     {
         var player = cmd.Player;
 
+        var current = await player.QueryAsync(s => s.CurrentLocation);
+
         var exits = await player.GetCurrentlyAvailableExitsAsync();
 
         if (exits.TryGetValue(cmd.TargetExit, out var exit))
         {
-            player.Post(new ActionMessage<Player>(s =>
-            {
-                s.CurrentLocation = exit;
-                return Task.CompletedTask;
-            }));
-
             var name = await exit.QueryAsync(s => s.Description);
 
             buffer.AppendLine($"You head to {name}");
@@ -35,6 +31,24 @@ public class MoveHandler(PlayerMultiplexer multiplexer) : IHandler<MoveCommand>
             var broadcastMessage = cmd.BroadcastMessage(username);
 
             await multiplexer.SendToAllInRoomExceptPlayer(player, new(broadcastMessage), cancellationToken);
+
+            player.Post(new ActionMessage<Player>(s =>
+            {
+                s.CurrentLocation = exit;
+                return Task.CompletedTask;
+            }));
+            
+            current.Post(new ActionMessage<Room>(r =>
+            {
+                r.PlayersInRoom.Remove(player);
+                return Task.CompletedTask;
+            }));
+            
+            exit.Post(new ActionMessage<Room>(r =>
+            {
+                r.PlayersInRoom.Add(player);
+                return Task.CompletedTask;
+            }));
         }
         else
         {

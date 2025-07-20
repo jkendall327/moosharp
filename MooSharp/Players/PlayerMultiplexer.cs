@@ -51,24 +51,12 @@ public class PlayerMultiplexer
     {
         var playerLocation = await player.QueryAsync(s => s.CurrentLocation);
 
-        var others = _connections
-                     .Select(s => s.Value)
-                              .Where(s => !s.Player.Equals(player));
+        var all = await playerLocation.QueryAsync(s => s.PlayersInRoom);
 
-        var tasks = others.Select(SendIfInSameRoom);
+        var others = all.Where(s => s != player);
+        
+        var tasks = others.Select(p => SendMessage(p, message, cancellationToken));
         
         await Task.WhenAll(tasks);
-
-        return;
-        
-        async Task SendIfInSameRoom(IPlayerConnection playerConnection)
-        {
-            var theirLocation = await playerConnection.Player.QueryAsync(s => s.CurrentLocation);
-
-            if (playerLocation == theirLocation)
-            {
-                await SendMessage(playerConnection.Player, message, cancellationToken);
-            }
-        }
     }
 }

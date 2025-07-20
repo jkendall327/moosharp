@@ -8,6 +8,7 @@ public class Room
     public required string Description { get; init; } 
     public Dictionary<string, ObjectActor> Contents { get; } = new();
     public Dictionary<string, RoomActor> Exits { get; } = new();
+    public List<PlayerActor> PlayersInRoom { get; } = new();
 
     public override string ToString() => Slug;
 }
