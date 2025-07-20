@@ -122,23 +122,37 @@ public class World(IOptions<AppOptions> appOptions)
                                 Owner = null
                             });
         
+        var dictionary = bySlug.ToDictionary(s => s.Key,
+            grouping => grouping.Select(o => new ObjectActor(o)).ToList());
+
         foreach (var grouping in bySlug)
         {
             var room = Rooms.GetValueOrDefault(grouping.Key);
-
-            foreach (var o in grouping)
+            if (room is null)
             {
-                o.Location = room;
+                continue;
+            }
+
+            var objectStates = grouping.ToList();
+            var objectActors = dictionary[grouping.Key];
+            
+            var contents = new Dictionary<string, ObjectActor>();
+            for (var i = 0; i < objectStates.Count; i++)
+            {
+                objectStates[i].Location = room;
+                contents.Add(objectStates[i].Name, objectActors[i]);
             }
             
-            // TODO: update room's contents with the object actors   
-        }
-
-        var dictionary = bySlug.ToDictionary(s => s.Key,
-            o =>
+            await room.Ask(new RequestMessage<Room, bool>(roomState =>
             {
-                return o.Select(t => new ObjectActor(t)).ToList();
-            });
+                foreach (var (name, actor) in contents)
+                {
+                    roomState.Contents.Add(name, actor);
+                }
+
+                return Task.FromResult(true);
+            }));
+        }
 
         return dictionary;
     }

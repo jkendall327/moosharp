@@ -10,7 +10,7 @@
       "Name": "side-room",
       "Description": "A small side-room for drinking coffee.",
       "Slug": "side-room",
-      "ConnectedRooms": ["atrium"]
+      "ConnectedRooms": ["atrium", "closet"]
     },
     {
       "Name": "closet",
