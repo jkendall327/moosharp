@@ -6,9 +6,9 @@ public class Object
     public string Name { get; set; } = "An empty space";
     public string Description { get; set; } = "It's a featureless, empty room.";
 
-    private Player? _owner;
+    private PlayerActor? _owner;
 
-    public Player? Owner
+    public PlayerActor? Owner
     {
         get => _owner;
         set

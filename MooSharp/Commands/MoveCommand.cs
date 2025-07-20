@@ -5,10 +5,9 @@ namespace MooSharp;
 public class MoveCommand : ICommand
 {
     public required PlayerActor Player { get; set; }
-    public required RoomActor Origin { get; set; }
     public required string TargetExit { get; set; }
 
-    public string BroadcastMessage() => $"{Player.Username} went to {TargetExit}";
+    public string BroadcastMessage(string username) => $"{username} went to {TargetExit}";
 }
 
 public class MoveHandler(PlayerMultiplexer multiplexer) : IHandler<MoveCommand>
@@ -21,13 +20,19 @@ public class MoveHandler(PlayerMultiplexer multiplexer) : IHandler<MoveCommand>
 
         if (exits.TryGetValue(cmd.TargetExit, out var exit))
         {
-            player.CurrentLocation = exit;
+            player.Post(new ActionMessage<Player>(s =>
+            {
+                s.CurrentLocation = exit;
+                return Task.CompletedTask;
+            }));
 
             var name = await exit.QueryAsync(s => s.Description);
 
             buffer.AppendLine($"You head to {name}");
             
-            var broadcastMessage = cmd.BroadcastMessage();
+            var username = await player.QueryAsync(s => s.Username);
+            
+            var broadcastMessage = cmd.BroadcastMessage(username);
 
             await multiplexer.SendToAllInRoomExceptPlayer(player, new(broadcastMessage), cancellationToken);
         }

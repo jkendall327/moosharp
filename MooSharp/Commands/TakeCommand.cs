@@ -14,7 +14,9 @@ public class TakeHandler : IHandler<TakeCommand>
     {
         var player = cmd.Player;
 
-        var contents = await player.CurrentLocation.QueryAsync(s => s.Contents);
+        var location = await player.QueryAsync(s => s.CurrentLocation);
+        
+        var contents = await location.QueryAsync(s => s.Contents);
 
         if (contents.TryGetValue(cmd.Target, out var o))
         {
@@ -26,7 +28,7 @@ public class TakeHandler : IHandler<TakeCommand>
         }
     }
 
-    private static Task TakeOwnership(StringBuilder buffer, ObjectActor o, Object obj, Player player)
+    private static Task TakeOwnership(StringBuilder buffer, ObjectActor o, Object obj, PlayerActor player)
     {
         if (obj.Owner is null)
         {
@@ -38,7 +40,12 @@ public class TakeHandler : IHandler<TakeCommand>
             }));
 
             obj.Owner = player;
-            player.Inventory.Add(obj.Name, o);
+            
+            player.Post(new ActionMessage<Player>(s =>
+            {
+                s.Inventory.Add(obj.Name, o);
+                return Task.CompletedTask;
+            }));
 
             buffer.AppendLine($"You picked up the {obj.Name}.");
         }

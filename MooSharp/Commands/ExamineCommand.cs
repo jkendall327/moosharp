@@ -18,9 +18,11 @@ public class ExamineHandler(StringProvider provider, World world) : IHandler<Exa
         {
             buffer.AppendLine(provider.ExamineSelf());
 
-            var mine = player.Inventory
-                             .Select(s => s.Value)
-                             .ToList();
+            var inventory = await player.QueryAsync(s => s.Inventory);
+            
+            var mine = inventory
+                       .Select(s => s.Value)
+                       .ToList();
 
             var descriptions = mine.Select(s => s.QueryAsync(e => e.Description))
                                    .ToList();
@@ -37,13 +39,10 @@ public class ExamineHandler(StringProvider provider, World world) : IHandler<Exa
                 }
             }
         }
+        
+        var current = await player.QueryAsync(s => s.CurrentLocation);
 
-        if (player.CurrentLocation is null)
-        {
-            throw new InvalidOperationException("Player location was null during examine command.");
-        }
-
-        var contents = await player.CurrentLocation.QueryAsync(s => s.Contents);
+        var contents = await current.QueryAsync(s => s.Contents);
 
         if (contents.TryGetValue(cmd.Target, out var content))
         {

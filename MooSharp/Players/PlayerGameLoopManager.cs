@@ -23,9 +23,11 @@ public class PlayerGameLoopManager(CommandParser parser, CommandExecutor executo
     
     private static async Task BuildCurrentRoomDescription(PlayerActor player, StringBuilder sb)
     {
-        var room = await player.CurrentLocation.Ask(new RequestMessage<Room, Room>(Task.FromResult));
+        var room = await player.QueryAsync(s => s.CurrentLocation);
 
-        sb.AppendLine(room.Description);
+        var roomDescription = await room.QueryAsync(s => s.Description);
+        
+        sb.AppendLine(roomDescription);
 
         var availableExits = await player.GetCurrentlyAvailableExitsAsync();
 

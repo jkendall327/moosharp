@@ -20,7 +20,6 @@ public class CommandParser(World world, PlayerMultiplexer multiplexer, CommandEx
             "move" => new MoveCommand
             {
                 Player = player,
-                Origin = player.CurrentLocation,
                 TargetExit = split.Last()
             },
             "examine" => new ExamineCommand
