@@ -16,17 +16,17 @@ public class CommandParser(ILogger<CommandParser> logger)
 
         ICommand? cmd = verb switch
         {
-            "move" => new MoveCommand
+            "move" or "go" or "walk" => new MoveCommand
             {
                 Player = player,
                 TargetExit = target
             },
-            "examine" => new ExamineCommand
+            "examine" or "view" or "look" => new ExamineCommand
             {
                 Player = player,
                 Target = target
             },
-            "take" => new TakeCommand
+            "take" or "grab" or "get" => new TakeCommand
             {
                 Player = player,
                 Target = target
