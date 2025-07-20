@@ -1,4 +1,5 @@
 using System.Text;
+using Microsoft.Extensions.Logging;
 
 namespace MooSharp;
 
@@ -10,7 +11,7 @@ public class MoveCommand : ICommand
     public string BroadcastMessage(string username) => $"{username} went to {TargetExit}";
 }
 
-public class MoveHandler(PlayerMultiplexer multiplexer) : IHandler<MoveCommand>
+public class MoveHandler(PlayerMultiplexer multiplexer, ILogger<MoveHandler> logger) : IHandler<MoveCommand>
 {
     public async Task Handle(MoveCommand cmd, StringBuilder buffer, CancellationToken cancellationToken = default)
     {
@@ -30,23 +31,30 @@ public class MoveHandler(PlayerMultiplexer multiplexer) : IHandler<MoveCommand>
 
             var playerMove = player.QueryAsync(s =>
             {
+                logger.LogInformation("Move player lambda");
                 s.CurrentLocation = exit;
                 return true;
             });
 
             var roomLeave = current.QueryAsync(r =>
             {
+                logger.LogInformation("Remove from origin lambda");
+                
                 r.PlayersInRoom.Remove(player);
                 return true;
             });
 
             var roomEnter = exit.QueryAsync(r =>
             {
+                logger.LogInformation("Add to destination lambda");
+                
                 r.PlayersInRoom.Add(player);
                 return true;
             });
 
             await Task.WhenAll(playerMove, roomLeave, roomEnter);
+            
+            logger.LogInformation("All tasks awaited");
         }
         else
         {

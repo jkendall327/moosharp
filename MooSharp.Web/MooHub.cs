@@ -38,6 +38,12 @@ public class MooHub(
         };
 
         var playerActor = new PlayerActor(player, factory);
+        
+        atrium.Post(new ActionMessage<Room>(s =>
+        {
+            s.PlayersInRoom.Add(playerActor);
+            return Task.CompletedTask;
+        }));
 
         var connection = new SignalRPlayerConnection(playerActor, hubContext, Context.ConnectionId);
 

@@ -13,12 +13,12 @@ public abstract class Actor<TState> where TState : class
 {
     private readonly Channel<IActorMessage<TState>> _mailbox;
     protected readonly TState State;
-    private readonly ILoggerFactory _loggerFactory;
+    private readonly ILogger _logger;
 
     protected Actor(TState state, ILoggerFactory loggerFactory)
     {
         State = state;
-        _loggerFactory = loggerFactory;
+        _logger = loggerFactory.CreateLogger(GetType());
 
         _mailbox = Channel.CreateBounded<IActorMessage<TState>>(100);
 
@@ -31,14 +31,22 @@ public abstract class Actor<TState> where TState : class
     {
         await foreach (var message in _mailbox.Reader.ReadAllAsync())
         {
+            _logger.LogInformation("Processing message (mailbox count: {Count}", _mailbox.Reader.Count);
             // Just allow any exceptions to bubble up and let callers handle them.
             await message.Process(State);
+            
+            _logger.LogInformation("Processed message");
         }
     }
 
     public void Post(IActorMessage<TState> message)
     {
-        _mailbox.Writer.TryWrite(message);
+        var posted = _mailbox.Writer.TryWrite(message);
+
+        if (!posted)
+        {
+            _logger.LogWarning("Failed to post message to mailbox");
+        }
     }
 
     public Task<TResult> Ask<TResult>(IRequestMessage<TState, TResult> message)
