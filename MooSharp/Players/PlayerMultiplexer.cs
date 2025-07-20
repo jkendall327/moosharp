@@ -10,7 +10,7 @@ public class PlayerMultiplexer
     public void AddPlayer(IPlayerConnection streamBasedPlayer) => _connections.TryAdd(streamBasedPlayer.Id, streamBasedPlayer);
     public bool RemovePlayer(IPlayerConnection streamBasedPlayer) => _connections.Remove(streamBasedPlayer.Id, out _);
 
-    public async Task SendMessage(Player player, string message, CancellationToken cancellationToken = default)
+    public async Task SendMessage(PlayerActor player, string message, CancellationToken cancellationToken = default)
     {
         var conn = _connections.SingleOrDefault(s => s.Value.Player.Equals(player)).Value;
 
@@ -22,7 +22,7 @@ public class PlayerMultiplexer
         await conn.SendMessageAsync(message, cancellationToken);
     }
 
-    public async Task SendMessage(Player player, StringBuilder message, CancellationToken cancellationToken = default)
+    public async Task SendMessage(PlayerActor player, StringBuilder message, CancellationToken cancellationToken = default)
     {
         var conn = _connections.SingleOrDefault(s => s.Value.Player.Equals(player)).Value;
 
@@ -38,14 +38,8 @@ public class PlayerMultiplexer
         StringBuilder message,
         CancellationToken cancellationToken = default)
     {
-        if (player.CurrentLocation is null)
-        {
-            return;
-        }
-
         var others = _connections
                      .Select(s => s.Value)
-                     .Where(s => s.Player.CurrentLocation is not null)
                      .Where(s => s.Player.CurrentLocation!.Equals(player.CurrentLocation))
                      .Where(s => !s.Player.Equals(player))
                      .ToList();

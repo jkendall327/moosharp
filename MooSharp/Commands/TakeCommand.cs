@@ -4,7 +4,7 @@ namespace MooSharp;
 
 public class TakeCommand : ICommand
 {
-    public required Player Player { get; init; }
+    public required PlayerActor Player { get; init; }
     public required string Target { get; init; }
 }
 
@@ -12,11 +12,6 @@ public class TakeHandler : IHandler<TakeCommand>
 {
     public async Task Handle(TakeCommand cmd, StringBuilder buffer, CancellationToken cancellationToken = default)
     {
-        if (cmd.Player.CurrentLocation == null)
-        {
-            throw new InvalidOperationException("Player must have a location.");
-        }
-
         var player = cmd.Player;
 
         var contents = await player.CurrentLocation.QueryAsync(s => s.Contents);

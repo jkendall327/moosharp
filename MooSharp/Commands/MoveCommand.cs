@@ -4,7 +4,7 @@ namespace MooSharp;
 
 public class MoveCommand : ICommand
 {
-    public required Player Player { get; set; }
+    public required PlayerActor Player { get; set; }
     public required RoomActor Origin { get; set; }
     public required string TargetExit { get; set; }
 

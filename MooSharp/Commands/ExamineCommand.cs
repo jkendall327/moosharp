@@ -4,7 +4,7 @@ namespace MooSharp;
 
 public class ExamineCommand : ICommand
 {
-    public required Player Player { get; init; }
+    public required PlayerActor Player { get; init; }
     public required string Target { get; init; }
 }
 

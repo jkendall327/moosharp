@@ -30,7 +30,9 @@ public class MooHub(
             CurrentLocation = world.Rooms.First()
         };
 
-        var connection = new SignalRPlayerConnection(player, hubContext, Context.ConnectionId);
+        var playerActor = new PlayerActor(player);
+
+        var connection = new SignalRPlayerConnection(playerActor, hubContext, Context.ConnectionId);
 
         connection.InputReceived += manager.OnPlayerInput;
         

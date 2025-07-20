@@ -21,13 +21,8 @@ public class PlayerGameLoopManager(CommandParser parser, CommandExecutor executo
         await multiplexer.SendMessage(player, sb, token);
     }
     
-    private static async Task BuildCurrentRoomDescription(Player player, StringBuilder sb)
+    private static async Task BuildCurrentRoomDescription(PlayerActor player, StringBuilder sb)
     {
-        if (player.CurrentLocation == null)
-        {
-            throw new InvalidOperationException("Current location not set");
-        }
-
         var room = await player.CurrentLocation.Ask(new RequestMessage<Room, Room>(Task.FromResult));
 
         sb.AppendLine(room.Description);

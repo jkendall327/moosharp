@@ -6,7 +6,7 @@ namespace MooSharp;
 public interface IPlayerConnection
 {
     Guid Id { get; }
-    Player Player { get; }
+    PlayerActor Player { get; }
 
     Task SendMessageAsync(string message, CancellationToken cancellationToken = default);
     Task SendMessageAsync(StringBuilder message, CancellationToken cancellationToken = default);
@@ -20,7 +20,7 @@ public interface IPlayerConnection
     Task OnConnectionLostAsync();
 }
 
-public record InputReceivedEvent(Player Player, string Input, CancellationToken Token);
+public record InputReceivedEvent(PlayerActor Player, string Input, CancellationToken Token);
 
 public class SignalRPlayerConnection : IPlayerConnection
 {
@@ -28,12 +28,12 @@ public class SignalRPlayerConnection : IPlayerConnection
     private readonly string _connectionId;
 
     public Guid Id { get; } = Guid.CreateVersion7();
-    public Player Player { get; }
+    public PlayerActor Player { get; }
 
     public event Func<InputReceivedEvent, Task>? InputReceived;
     public event Func<Task>? ConnectionLost;
 
-    public SignalRPlayerConnection(Player player, IHubContext<MooHub> hubContext, string connectionId)
+    public SignalRPlayerConnection(PlayerActor player, IHubContext<MooHub> hubContext, string connectionId)
     {
         Player = player;
         _hubContext = hubContext;

@@ -5,12 +5,8 @@ namespace MooSharp;
 
 public class CommandParser(World world, PlayerMultiplexer multiplexer, CommandExecutor executor, ILogger<CommandParser> logger)
 {
-    public async Task<ICommand?> ParseAsync(Player player, string command, CancellationToken token = default)
+    public async Task<ICommand?> ParseAsync(PlayerActor player, string command, CancellationToken token = default)
     {
-        var sb = new StringBuilder();
-
-        player.CurrentLocation ??= world.Rooms.First();
-        
         logger.LogDebug("Parsing player input: {Input}", command);
         
         var split = command.Split(' ');
