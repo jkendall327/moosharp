@@ -9,6 +9,4 @@ public class Room
     public Dictionary<string, RoomActor> Exits { get; } = new();
 }
 
-public class RoomActor(Room state) : Actor<Room>(state)
-{
-}
+public class RoomActor(Room state) : Actor<Room>(state);

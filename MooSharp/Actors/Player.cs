@@ -13,3 +13,5 @@ public class Player
         return await CurrentLocation.QueryAsync(s => s.Exits);
     }
 }
+
+public class PlayerActor(Player state) : Actor<Player>(state);
