@@ -54,6 +54,8 @@ public class MoveHandler(PlayerMultiplexer multiplexer, ILogger<MoveHandler> log
 
             await Task.WhenAll(playerMove, roomLeave, roomEnter);
             
+            await multiplexer.SendToAllInRoomExceptPlayer(player, new($"{player.Username} arrived"), cancellationToken);
+            
             logger.LogInformation("All tasks awaited");
         }
         else
