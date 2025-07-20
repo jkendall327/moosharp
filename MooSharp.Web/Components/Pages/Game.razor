@@ -18,9 +18,10 @@ else
     </div>
 
     <div class="input-container">
-        <input @bind="_commandInput" 
-               @onkeydown="HandleKeyDown" 
-               placeholder="Type a command..." />
+        <input @bind="_commandInput"
+               @bind:event="oninput"
+               @onkeydown="HandleKeyDown"
+               placeholder="Type a command..."/>
         <button @onclick="SendCommandAsync">Send</button>
     </div>
 }
@@ -33,17 +34,18 @@ else
     protected override async Task OnInitializedAsync()
     {
         // Build the connection to the hub endpoint we mapped
-        _hubConnection = new HubConnectionBuilder()
-            .WithUrl(Navigation.ToAbsoluteUri("/moohub"))
-            .Build();
+        _hubConnection = new HubConnectionBuilder().WithUrl(Navigation.ToAbsoluteUri("/moohub"))
+                                                   .Build();
 
         // This is where we listen for messages FROM the server
-        _hubConnection.On<string>("ReceiveMessage", (message) =>
-        {
-            _gameOutput.AppendLine(message);
-            // Tell Blazor to re-render the component
-            InvokeAsync(StateHasChanged);
-        });
+        _hubConnection.On<string>("ReceiveMessage",
+            (message) =>
+            {
+                _gameOutput.AppendLine(message);
+
+                // Tell Blazor to re-render the component
+                InvokeAsync(StateHasChanged);
+            });
 
         // Start the connection
         try
@@ -74,7 +76,7 @@ else
 
         // Send the command to the server's "SendCommand" method
         await _hubConnection.SendAsync(nameof(MooHub.SendCommand), _commandInput);
-        
+
         // Clear the input box
         _commandInput = string.Empty;
     }
@@ -87,4 +89,5 @@ else
             await _hubConnection.DisposeAsync();
         }
     }
+
 }
