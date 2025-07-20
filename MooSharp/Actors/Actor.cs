@@ -2,7 +2,7 @@ using System.Threading.Channels;
 
 namespace MooSharp;
 
-public interface IActorMessage<T>
+public interface IActorMessage<in T>
 {
     /// The context is the state object that the actor protects.
     Task Process(T context);
@@ -17,8 +17,7 @@ public abstract class Actor<TState> where TState : class
     {
         State = state;
 
-        // Create an "unbounded" channel, meaning it can hold any number of messages.
-        _mailbox = Channel.CreateUnbounded<IActorMessage<TState>>();
+        _mailbox = Channel.CreateBounded<IActorMessage<TState>>(100);
 
         // Start the long-running task that processes messages.
         Task.Run(ProcessMailboxAsync);
