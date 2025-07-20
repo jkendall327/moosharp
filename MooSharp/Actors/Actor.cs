@@ -32,10 +32,17 @@ public abstract class Actor<TState> where TState : class
         await foreach (var message in _mailbox.Reader.ReadAllAsync())
         {
             _logger.LogInformation("Processing message (mailbox count: {Count}", _mailbox.Reader.Count);
-            // Just allow any exceptions to bubble up and let callers handle them.
-            await message.Process(State);
+
+            try
+            {
+                await message.Process(State);
+            }
+            catch (Exception e)
+            {
+                _logger.LogError(e, "Error while processing message");
+            }
             
-            _logger.LogInformation("Processed message");
+            _logger.LogInformation("Processed message for {TypeName})", typeof(TState).Name);
         }
     }
 
