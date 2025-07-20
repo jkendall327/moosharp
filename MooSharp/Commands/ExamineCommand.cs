@@ -8,7 +8,7 @@ public class ExamineCommand : ICommand
     public required string Target { get; init; }
 }
 
-public class ExamineHandler(StringProvider provider, World world) : IHandler<ExamineCommand>
+public class ExamineHandler(StringProvider provider) : IHandler<ExamineCommand>
 {
     public async Task Handle(ExamineCommand cmd, StringBuilder buffer, CancellationToken cancellationToken = default)
     {
@@ -26,14 +26,9 @@ public class ExamineHandler(StringProvider provider, World world) : IHandler<Exa
 
             var inventory = await player.QueryAsync(s => s.Inventory);
             
-            var mine = inventory
-                       .Select(s => s.Value)
-                       .ToList();
-
-            var descriptions = mine.Select(s => s.QueryAsync(e => e.Description))
-                                   .ToList();
-
-            await Task.WhenAll(descriptions);
+            var descriptions = inventory
+                               .Select(s => s.Value.Description)
+                               .ToList();
 
             if (descriptions.Any())
             {
@@ -41,7 +36,7 @@ public class ExamineHandler(StringProvider provider, World world) : IHandler<Exa
 
                 foreach (var se in descriptions)
                 {
-                    buffer.AppendLine(await se);
+                    buffer.AppendLine(se);
                 }
             }
         }
@@ -52,9 +47,7 @@ public class ExamineHandler(StringProvider provider, World world) : IHandler<Exa
 
         if (contents.TryGetValue(cmd.Target, out var content))
         {
-            var description = await content.QueryAsync(s => s.Description);
-
-            buffer.AppendLine(description);
+            buffer.AppendLine(content.Description);
         }
     }
 }

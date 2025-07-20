@@ -22,13 +22,9 @@ public class MoveHandler(PlayerMultiplexer multiplexer) : IHandler<MoveCommand>
 
         if (exits.TryGetValue(cmd.TargetExit, out var exit))
         {
-            var name = await exit.QueryAsync(s => s.Description);
-
-            buffer.AppendLine($"You head to {name}");
+            buffer.AppendLine($"You head to {exit.Description}");
             
-            var username = await player.QueryAsync(s => s.Username);
-            
-            var broadcastMessage = cmd.BroadcastMessage(username);
+            var broadcastMessage = cmd.BroadcastMessage(player.Username);
 
             await multiplexer.SendToAllInRoomExceptPlayer(player, new(broadcastMessage), cancellationToken);
 

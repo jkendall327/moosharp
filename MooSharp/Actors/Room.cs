@@ -13,4 +13,10 @@ public class Room
     public override string ToString() => Slug;
 }
 
-public class RoomActor(Room state) : Actor<Room>(state);
+public class RoomActor(Room state) : Actor<Room>(state)
+{
+    public int Id => State.Id;
+    public string Name => State.Name; 
+    public string Slug => State.Slug;
+    public string Description =>  State.Description; 
+}

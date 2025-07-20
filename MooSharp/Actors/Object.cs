@@ -3,8 +3,8 @@ namespace MooSharp;
 public class Object
 {
     public int Id { get; init; }
-    public string Name { get; set; } = "An empty space";
-    public string Description { get; set; } = "It's a featureless, empty room.";
+    public required string Name { get; init; }
+    public required string Description { get; init; }
 
     private PlayerActor? _owner;
 
@@ -41,4 +41,9 @@ public class Object
     public override string ToString() => Name;
 }
 
-public class ObjectActor(Object state) : Actor<Object>(state);
+public class ObjectActor(Object state) : Actor<Object>(state)
+{
+    public int Id => State.Id;
+    public string Name => State.Name; 
+    public string Description =>  State.Description; 
+}

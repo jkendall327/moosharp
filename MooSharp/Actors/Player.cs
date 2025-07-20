@@ -11,6 +11,8 @@ public class Player
 
 public class PlayerActor(Player state) : Actor<Player>(state)
 {
+    public string Username => State.Username;
+    
     public async Task<Dictionary<string, RoomActor>> GetCurrentlyAvailableExitsAsync()
     {
         var current = await QueryAsync(s => s.CurrentLocation);

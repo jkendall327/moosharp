@@ -25,9 +25,7 @@ public class PlayerGameLoopManager(CommandParser parser, CommandExecutor executo
     {
         var room = await player.QueryAsync(s => s.CurrentLocation);
 
-        var roomDescription = await room.QueryAsync(s => s.Description);
-        
-        sb.AppendLine(roomDescription);
+        sb.AppendLine(room.Description);
 
         var availableExits = await player.GetCurrentlyAvailableExitsAsync();
 
