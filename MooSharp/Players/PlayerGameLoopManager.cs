@@ -21,11 +21,18 @@ public class PlayerGameLoopManager(CommandParser parser, CommandExecutor executo
         await multiplexer.SendMessage(player, sb, token);
     }
     
-    private static async Task BuildCurrentRoomDescription(PlayerActor player, StringBuilder sb)
+    public async Task BuildCurrentRoomDescription(PlayerActor player, StringBuilder sb)
     {
         var room = await player.QueryAsync(s => s.CurrentLocation);
 
         sb.AppendLine(room.Description);
+
+        var players = await room.QueryAsync(s => s.PlayersInRoom);
+        
+        foreach (var playerActor in players.Except([player]))
+        {
+            sb.AppendLine($"{playerActor.Username} is here.");
+        }
 
         var availableExits = await player.GetCurrentlyAvailableExitsAsync();
 

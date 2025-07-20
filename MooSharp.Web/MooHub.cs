@@ -1,3 +1,5 @@
+using System.Text;
+
 namespace MooSharp;
 
 using Microsoft.AspNetCore.SignalR;
@@ -51,8 +53,13 @@ public class MooHub(
 
         connectionManager.AddPlayer(connection);
 
-        await connection.SendMessageAsync($"Welcome to the MOO, {player.Username}!");
 
+        var sb = new StringBuilder();
+        sb.AppendLine($"Welcome to the MOO, {player.Username}!");
+        await manager.BuildCurrentRoomDescription(playerActor, sb);
+
+        await connection.SendMessageAsync(sb);
+        
         await base.OnConnectedAsync();
     }
 
