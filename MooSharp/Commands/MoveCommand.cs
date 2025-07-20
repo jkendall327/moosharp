@@ -32,23 +32,28 @@ public class MoveHandler(PlayerMultiplexer multiplexer) : IHandler<MoveCommand>
 
             await multiplexer.SendToAllInRoomExceptPlayer(player, new(broadcastMessage), cancellationToken);
 
-            player.Post(new ActionMessage<Player>(s =>
+            // AI: The Post method is fire-and-forget, which can lead to race conditions
+            // AI: where the game state is queried before the move operation has fully completed.
+            // AI: Awaiting all updates ensures atomicity from the caller's perspective.
+            var playerMove = player.QueryAsync(s =>
             {
                 s.CurrentLocation = exit;
-                return Task.CompletedTask;
-            }));
-            
-            current.Post(new ActionMessage<Room>(r =>
+                return true;
+            });
+
+            var roomLeave = current.QueryAsync(r =>
             {
                 r.PlayersInRoom.Remove(player);
-                return Task.CompletedTask;
-            }));
-            
-            exit.Post(new ActionMessage<Room>(r =>
+                return true;
+            });
+
+            var roomEnter = exit.QueryAsync(r =>
             {
                 r.PlayersInRoom.Add(player);
-                return Task.CompletedTask;
-            }));
+                return true;
+            });
+
+            await Task.WhenAll(playerMove, roomLeave, roomEnter);
         }
         else
         {
