@@ -27,7 +27,7 @@ public class ObjectDto
 public class World(IOptions<AppOptions> appOptions)
 {
     public Dictionary<string, RoomActor> Rooms { get; private set; } = [];
-    public Dictionary<string, ObjectActor> Objects { get; set; } = [];
+    public Dictionary<string, List<ObjectActor>> Objects { get; set; } = [];
 
     public async Task InitializeAsync(CancellationToken cancellationToken = default)
     {
@@ -108,40 +108,38 @@ public class World(IOptions<AppOptions> appOptions)
         return roomActorsBySlug;
     }
 
-    private async Task<Dictionary<string, ObjectActor>> CreateObjects(WorldDto dto)
+    private async Task<Dictionary<string, List<ObjectActor>>> CreateObjects(WorldDto dto)
     {
         var bySlug = dto.Objects
                         .Where(s => s.RoomSlug is not null)
-                        .ToDictionary(r => r.RoomSlug!,
-                            o => new ObjectActor(new()
+                        .ToLookup(r => r.RoomSlug!,
+                            o => new Object()
                             {
                                 Id = Random.Shared.Next(),
                                 Description = o.Description,
                                 Name = o.Name,
                                 Location = null,
                                 Owner = null
-                            }));
-
-        foreach (var objectDto in dto.Objects)
+                            });
+        
+        foreach (var grouping in bySlug)
         {
-            var currentObjectActor = bySlug[objectDto.RoomSlug!];
+            var room = Rooms.GetValueOrDefault(grouping.Key);
 
-            var room = Rooms.GetValueOrDefault(objectDto.RoomSlug!);
-
-            if (room is null)
+            foreach (var o in grouping)
             {
-                throw new InvalidOperationException(
-                    $"Even though object {objectDto.Name} has room slug {objectDto.RoomSlug!}, no room actor was found with that slug.");
+                o.Location = room;
             }
-
-            await currentObjectActor.Ask(new RequestMessage<Object, bool>(state =>
-            {
-                state.Location = room;
-
-                return Task.FromResult(true);
-            }));
+            
+            // TODO: update room's contents with the object actors   
         }
 
-        return bySlug;
+        var dictionary = bySlug.ToDictionary(s => s.Key,
+            o =>
+            {
+                return o.Select(t => new ObjectActor(t)).ToList();
+            });
+
+        return dictionary;
     }
 }
