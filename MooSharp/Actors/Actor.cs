@@ -14,6 +14,7 @@ public abstract class Actor<TState> where TState : class
     private readonly Channel<IActorMessage<TState>> _mailbox;
     protected readonly TState State;
     private readonly ILogger _logger;
+    private string _typeName;
 
     protected Actor(TState state, ILoggerFactory loggerFactory)
     {
@@ -22,6 +23,8 @@ public abstract class Actor<TState> where TState : class
 
         _mailbox = Channel.CreateBounded<IActorMessage<TState>>(100);
 
+        _typeName = state.GetType().Name;
+        
         // Start the long-running task that processes messages.
         Task.Run(ProcessMailboxAsync);
     }
@@ -31,7 +34,7 @@ public abstract class Actor<TState> where TState : class
     {
         await foreach (var message in _mailbox.Reader.ReadAllAsync())
         {
-            _logger.LogInformation("Processing message (mailbox count: {Count}", _mailbox.Reader.Count);
+            _logger.LogDebug("Processing message for {State} (mailbox count: {Count})", _typeName, _mailbox.Reader.Count);
 
             try
             {
@@ -42,7 +45,7 @@ public abstract class Actor<TState> where TState : class
                 _logger.LogError(e, "Error while processing message");
             }
             
-            _logger.LogInformation("Processed message for {TypeName})", typeof(TState).Name);
+            _logger.LogDebug("Processed message for {State})", _typeName);
         }
     }
 

@@ -1,11 +1,14 @@
 using System.Text;
+using Microsoft.Extensions.Logging;
 
 namespace MooSharp;
 
-public class PlayerGameLoopManager(CommandParser parser, CommandExecutor executor, PlayerMultiplexer multiplexer)
+public class PlayerGameLoopManager(CommandParser parser, CommandExecutor executor, PlayerMultiplexer multiplexer, ILogger<PlayerGameLoopManager> logger)
 {
     public async Task OnPlayerInput(InputReceivedEvent e)
     {
+        logger.LogInformation("Received player input command: {Command} from {Player}", e.Input, e.Player.Username);
+        
         var player = e.Player;
         var command = e.Input;
         var token = e.Token;

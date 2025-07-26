@@ -9,10 +9,13 @@ public class MooHub(
     PlayerGameLoopManager manager,
     World world,
     ILoggerFactory factory,
+    ILogger<MooHub>  logger,
     IHubContext<MooHub> hubContext) : Hub
 {
     public async Task SendCommand(string command)
     {
+        logger.LogInformation("Got command {Command}", command);
+        
         var connection = connectionManager.TryGetPlayer(Context.ConnectionId);
 
         if (connection != null)
@@ -23,6 +26,8 @@ public class MooHub(
 
     public override async Task OnConnectedAsync()
     {
+        logger.LogInformation("Connection made with ID {Id}", Context.ConnectionId);
+        
         var atrium = world.Rooms.GetValueOrDefault("atrium");
 
         if (atrium is null)
@@ -53,7 +58,6 @@ public class MooHub(
 
         connectionManager.AddPlayer(connection);
 
-
         var sb = new StringBuilder();
         sb.AppendLine($"Welcome to the MOO, {player.Username}!");
         await manager.BuildCurrentRoomDescription(playerActor, sb);
@@ -65,6 +69,13 @@ public class MooHub(
 
     public override async Task OnDisconnectedAsync(Exception? exception)
     {
+        logger.LogInformation("Connection lost for {Id}",  Context.ConnectionId);
+
+        if (exception is not null)
+        {
+            logger.LogError(exception, "Exception was present on connection loss");
+        }
+        
         var connection = connectionManager.TryGetPlayer(Context.ConnectionId);
 
         if (connection != null)

@@ -1,5 +1,6 @@
 @page "/game"
 @inject NavigationManager Navigation
+@inject ILogger<Game> Logger
 @using System.Text
 @using Microsoft.AspNetCore.SignalR.Client
 @implements IAsyncDisposable
@@ -28,13 +29,14 @@ else
 
 @code {
     private HubConnection? _hubConnection;
-    private StringBuilder _gameOutput = new StringBuilder();
+    private readonly StringBuilder _gameOutput = new();
     private string _commandInput = string.Empty;
 
     protected override async Task OnInitializedAsync()
     {
-        _hubConnection = new HubConnectionBuilder().WithUrl(Navigation.ToAbsoluteUri("/moohub"))
-                                                   .Build();
+        _hubConnection = new HubConnectionBuilder()
+            .WithUrl(Navigation.ToAbsoluteUri("/moohub"))
+            .Build();
 
         _hubConnection.On<string>("ReceiveMessage",
             (message) =>
@@ -44,6 +46,27 @@ else
                 InvokeAsync(StateHasChanged);
             });
 
+        _hubConnection.Reconnecting += error =>
+        {
+            Logger.LogWarning(error, "SignalR reconnecting...");
+
+            return Task.CompletedTask;
+        };
+
+        _hubConnection.Reconnected += connectionId =>
+        {
+            Logger.LogInformation("SignalR reconnected. New ConnectionId={ConnectionId}", connectionId);
+
+            return Task.CompletedTask;
+        };
+
+        _hubConnection.Closed += error =>
+        {
+            Logger.LogWarning(error, "SignalR closed");
+
+            return Task.CompletedTask;
+        };
+
         // Start the connection
         try
         {
@@ -51,7 +74,7 @@ else
         }
         catch (Exception ex)
         {
-            _gameOutput.AppendLine($"Connection failed: {ex.Message}");
+            _gameOutput.AppendLine($"Starting hub failed: {ex.Message}");
         }
     }
 
@@ -70,7 +93,16 @@ else
             return;
         }
 
-        await _hubConnection.SendAsync(nameof(MooHub.SendCommand), _commandInput);
+        try
+        {
+            await _hubConnection.SendAsync(nameof(MooHub.SendCommand), _commandInput);
+        }
+        catch (Exception e)
+        {
+            Logger.LogError(e, "Error on SignalR send");
+
+            throw;
+        }
 
         _commandInput = string.Empty;
     }
