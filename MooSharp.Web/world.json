@@ -16,14 +16,15 @@
       "Name": "closet",
       "Description": "A cramped and dark closet.",
       "Slug": "closet",
-      "ConnectedRooms": ["side-room"]
+      "ConnectedRooms": ["side-room", "dark-world"]
+    },
+    {
+      "Name": "dark world",
+      "Description": "A secret place.",
+      "Slug": "dark-world",
+      "ConnectedRooms": ["closet"]
     }
   ],
   "Objects": [
-    {
-      "Name": "Mop",
-      "Description": "A standard janitor's mop.",
-      "RoomSlug": "closet"
-    }
   ]
 }
