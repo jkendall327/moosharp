@@ -22,4 +22,12 @@ public class RoomActor(Room state, ILoggerFactory factory) : Actor<Room>(state, 
     public string Slug => State.Slug;
     public string Description =>  State.Description; 
     public IReadOnlyDictionary<string, RoomActor> Exits => State.Exits;
+    
+    public async Task<List<PlayerActor>> GetPeopleInRoom()
+    {
+        var message = new RequestMessage<Room, List<PlayerActor>>(r => 
+            Task.FromResult(r.PlayersInRoom.ToList()));
+
+        return await Ask(message);
+    }
 }

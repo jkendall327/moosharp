@@ -30,7 +30,7 @@ public class PlayerGameLoopManager(CommandParser parser, CommandExecutor executo
 
         sb.AppendLine(room.Description);
 
-        var players = await room.QueryAsync(s => s.PlayersInRoom);
+        var players = await room.GetPeopleInRoom();
         
         foreach (var playerActor in players.Except([player]))
         {
