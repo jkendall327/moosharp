@@ -43,7 +43,7 @@ var world = app.Services.GetRequiredService<World>();
 
 await world.InitializeAsync();
 
-app.Run();
+await app.RunAsync();
 
 void RegisterCommandHandlers(WebApplicationBuilder webApplicationBuilder)
 {

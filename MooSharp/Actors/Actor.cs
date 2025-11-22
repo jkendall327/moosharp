@@ -106,7 +106,16 @@ public interface IRequestMessage<TState, TResult> : IActorMessage<TState>
 // The implementation uses a TaskCompletionSource to bridge the async gap.
 public class RequestMessage<TState, TResult> : IRequestMessage<TState, TResult> where TState : class
 {
-    private readonly TaskCompletionSource<TResult> _tcs = new();
+    /// <summary>
+    /// We must run continuations asynchronously here to avoid potentially very unintuitive bugs.
+    /// When this flag isn't set, continuations will be run synchronously, which means the thread which was
+    /// meant to manage an actor's mailbox processing may instead be hijacked to handle long-running synchronous work.
+    /// For example, since we use .Ask when setting up the World, the synchronous continuation there flowed out to
+    /// Program.cs and app.Run() -- hijacking an actor's mailbox thread to run the entire Kestrel web server!
+    /// Forcing asynchronous continuations saves us from that.
+    /// An actor should not run a caller's code. It's too dangerous.
+    /// </summary>
+    private readonly TaskCompletionSource<TResult> _tcs = new(TaskCreationOptions.RunContinuationsAsynchronously);
     private readonly Func<TState, Task<TResult>> _request;
 
     public RequestMessage(Func<TState, Task<TResult>> request) => _request = request;
