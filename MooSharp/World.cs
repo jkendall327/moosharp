@@ -90,20 +90,33 @@ public class World(IOptions<AppOptions> appOptions, ILoggerFactory loggerFactory
         // Connect exits.
         foreach (var roomDto in dto.Rooms)
         {
-            var currentRoomActor = roomActorsBySlug[roomDto.Slug];
-
-            var exits = roomDto.ConnectedRooms.ToDictionary(exitSlug => exitSlug,
-                exitSlug => roomActorsBySlug[exitSlug]);
-
-            await currentRoomActor.Ask(new RequestMessage<Room, bool>(roomState =>
+            try // Wrap this loop in try-catch
             {
-                foreach (var exit in exits)
-                {
-                    roomState.Exits.Add(exit.Key, exit.Value);
-                }
+                loggerFactory.CreateLogger<World>().LogInformation("Initializing exits for {Room}", roomDto.Slug);
+            
+                var currentRoomActor = roomActorsBySlug[roomDto.Slug];
 
-                return Task.FromResult(true);
-            }));
+                var exits = roomDto.ConnectedRooms.ToDictionary(exitSlug => exitSlug,
+                    exitSlug => {
+                        if(!roomActorsBySlug.ContainsKey(exitSlug)) 
+                            loggerFactory.CreateLogger<World>().LogError("Missing slug {Slug} for room {Room}", exitSlug, roomDto.Slug);
+                        return roomActorsBySlug[exitSlug];
+                    });
+
+                await currentRoomActor.Ask(new RequestMessage<Room, bool>(roomState =>
+                {
+                    foreach (var exit in exits)
+                    {
+                        roomState.Exits.Add(exit.Key, exit.Value);
+                    }
+                    return Task.FromResult(true);
+                }));
+            }
+            catch (Exception ex)
+            {
+                loggerFactory.CreateLogger<World>().LogError(ex, "Failed to initialize exits for {Room}", roomDto.Slug);
+                throw; 
+            }
         }
 
         return roomActorsBySlug;

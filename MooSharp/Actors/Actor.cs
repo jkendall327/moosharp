@@ -32,20 +32,33 @@ public abstract class Actor<TState> where TState : class
     // The main loop for the actor. It runs forever, processing one message at a time.
     private async Task ProcessMailboxAsync()
     {
-        await foreach (var message in _mailbox.Reader.ReadAllAsync())
-        {
-            _logger.LogDebug("Processing message for {State} (mailbox count: {Count})", _typeName, _mailbox.Reader.Count);
+        using var scope = _logger.BeginScope("Actor {ActorType}-{ActorId}", _typeName, State.GetHashCode());
+        _logger.LogInformation("Actor Loop STARTED {ActorType}-{ActorId}", _typeName, State.GetHashCode()); // <--- ADD THIS
 
-            try
+        try 
+        {
+            await foreach (var message in _mailbox.Reader.ReadAllAsync())
             {
-                await message.Process(State);
+                _logger.LogDebug("Processing message...");
+                try
+                {
+                    await message.Process(State);
+                }
+                catch (Exception e)
+                {
+                    _logger.LogError(e, "Error while processing message");
+                }
+                _logger.LogDebug("Processed message");
             }
-            catch (Exception e)
-            {
-                _logger.LogError(e, "Error while processing message");
-            }
-            
-            _logger.LogDebug("Processed message for {State})", _typeName);
+        }
+        catch (Exception ex)
+        {
+            // This captures if the Channel reader itself crashes or the loop exits unexpectedly
+            _logger.LogCritical(ex, "Actor Loop CRASHED"); // <--- ADD THIS
+        }
+        finally
+        {
+            _logger.LogWarning("Actor Loop STOPPED"); // <--- ADD THIS
         }
     }
 
