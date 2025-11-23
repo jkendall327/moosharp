@@ -148,4 +148,30 @@ public class World(IOptions<AppOptions> options, ILogger<World> logger)
             }
         }
     }
+
+    public Room? GetPlayerLocation(Player player)
+    {
+        return Rooms
+            .Values
+            .FirstOrDefault(room => room.PlayersInRoom.Contains(player));
+    }
+
+    public void MovePlayer(Player player, Room destination)
+    {
+        ArgumentNullException.ThrowIfNull(destination);
+
+        var origin = GetPlayerLocation(player);
+
+        if (origin == destination)
+        {
+            return;
+        }
+
+        origin?.PlayersInRoom.Remove(player);
+
+        if (!destination.PlayersInRoom.Contains(player))
+        {
+            destination.PlayersInRoom.Add(player);
+        }
+    }
 }

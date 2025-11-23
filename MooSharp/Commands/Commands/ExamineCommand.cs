@@ -20,7 +20,7 @@ public class ExamineCommandDefinition : ICommandDefinition
         };
 }
 
-public class ExamineHandler : IHandler<ExamineCommand>
+public class ExamineHandler(World world) : IHandler<ExamineCommand>
 {
     public Task<CommandResult> Handle(ExamineCommand cmd, CancellationToken cancellationToken = default)
     {
@@ -43,9 +43,10 @@ public class ExamineHandler : IHandler<ExamineCommand>
             result.Add(player, new SelfExaminedEvent(player, inventory));
         }
 
-        var current = player.CurrentLocation;
+        var current = world.GetPlayerLocation(player)
+            ?? throw new InvalidOperationException("Player has no known current location.");
 
-        var obj = player.CurrentLocation.FindObject(cmd.Target);
+        var obj = current.FindObject(cmd.Target);
 
         if (obj is not null)
         {
