@@ -1,8 +1,11 @@
+using System.ComponentModel.DataAnnotations;
+
 namespace MooSharp;
 
 public class AppOptions
 {
-    public int ServerPort { get; set; }
-    public bool RequireLogins { get; set; }
-    public string? WorldDataFilepath { get; set; }
+    public bool EnableAgents { get; init; }
+    
+    [Required]
+    public required string WorldDataFilepath { get; init; }
 }

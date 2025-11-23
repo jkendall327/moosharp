@@ -35,7 +35,11 @@ builder.RegisterCommandHandlers();
 
 builder.Services.AddSignalR();
 
-builder.Services.Configure<AppOptions>(builder.Configuration.GetSection(nameof(AppOptions)));
+builder
+    .Services
+    .AddOptionsWithValidateOnStart<AppOptions>()
+    .BindConfiguration(nameof(AppOptions))
+    .ValidateDataAnnotations();
 
 var app = builder.Build();
 
