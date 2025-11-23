@@ -31,7 +31,7 @@ public class GameEngine(
             case RegisterCommand rc: await CreateNewPlayer(input.ConnectionId, rc); break;
             case LoginCommand lc: await Login(input.ConnectionId, lc); break;
             case WorldCommand wc:
-                var player = world.Players[input.ConnectionId];
+                var player = world.Players[input.ConnectionId.Value];
                 await ProcessWorldCommand(wc, ct, player);
 
                 break;
@@ -81,7 +81,7 @@ public class GameEngine(
 
         await playerStore.SaveNewPlayer(player, rc.Password);
 
-        world.Players.Add(connectionId, player);
+        world.Players.Add(connectionId.Value, player);
 
         var description = BuildCurrentRoomDescription(player);
 
@@ -119,7 +119,7 @@ public class GameEngine(
             CurrentLocation = startingRoom,
         };
         
-        world.Players.Add(connectionId, player);
+        world.Players.Add(connectionId.Value, player);
 
         var description = BuildCurrentRoomDescription(player);
 

@@ -79,8 +79,7 @@ public class AgentBrain
         _history.AddUserMessage(message);
 
         // Only sometimes actually act, based on cooldown
-        if (!await ShouldActAsync()
-                .ConfigureAwait(false))
+        if (!await ShouldActAsync())
         {
             return;
         }
