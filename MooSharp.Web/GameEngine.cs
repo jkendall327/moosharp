@@ -90,11 +90,6 @@ public class GameEngine(
         {
             var result = await executor.Handle(parsed, ct);
 
-            var description = BuildCurrentRoomDescription(player)
-                .ToString();
-
-            result.Messages.Add(new(player, new RoomDescriptionEvent(description)));
-
             _ = SendMessagesAsync(result.Messages);
         }
         catch (Exception ex)
@@ -203,17 +198,7 @@ public class GameEngine(
             return sb;
         }
 
-        sb.AppendLine(room.Description);
-
-        var otherPlayers = room.PlayersInRoom.Select(s => s.Username).Except([player.Username]);
-
-        sb.AppendLine($"{string.Join(", ", otherPlayers)} are here.");
-
-        var availableExits = room.Exits.Select(s => s.Key);
-
-        var availableExitsMessage = $"Available exits: {string.Join(", ", availableExits)}";
-
-        sb.AppendLine(availableExitsMessage);
+        sb.Append(room.DescribeFor(player));
 
         return sb;
     }

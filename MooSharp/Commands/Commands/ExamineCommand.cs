@@ -30,8 +30,12 @@ public class ExamineHandler(World world) : IHandler<ExamineCommand>
 
         if (string.IsNullOrWhiteSpace(cmd.Target))
         {
-            throw new NotImplementedException(
-                "When no target is specified for 'examine', just print the room's description");
+            var currentLocation = world.GetPlayerLocation(player)
+                ?? throw new InvalidOperationException("Player has no known current location.");
+
+            result.Add(player, new RoomDescriptionEvent(currentLocation.DescribeFor(player)));
+
+            return Task.FromResult(result);
         }
 
         if (cmd.Target is "me")

@@ -1,5 +1,6 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Text;
 
 namespace MooSharp;
 
@@ -36,6 +37,24 @@ public class Room
         // Simple fuzzy match
         return Contents.FirstOrDefault(o =>
             o.Name.Contains(keyword, StringComparison.OrdinalIgnoreCase) || o.Keywords.Contains(keyword));
+    }
+
+    public string DescribeFor(Player player)
+    {
+        var sb = new StringBuilder();
+
+        sb.AppendLine(Description);
+
+        var otherPlayers = PlayersInRoom.Select(s => s.Username).Except([player.Username]);
+
+        sb.AppendLine($"{string.Join(", ", otherPlayers)} are here.");
+
+        var availableExits = Exits.Select(s => s.Key);
+        var availableExitsMessage = $"Available exits: {string.Join(", ", availableExits)}";
+
+        sb.AppendLine(availableExitsMessage);
+
+        return sb.ToString();
     }
 
     public override string ToString() => Id.ToString();
