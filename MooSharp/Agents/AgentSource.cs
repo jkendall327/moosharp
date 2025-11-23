@@ -4,5 +4,6 @@ public enum AgentSource
 {
     OpenAI,
     Gemini,
-    OpenRouter
+    OpenRouter,
+    Anthropic
 }

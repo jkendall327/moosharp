@@ -1,25 +1,46 @@
 namespace MooSharp.Agents;
 
-public class AgentSpawner(World world, AgentFactory factory)
+using System.Text.Json;
+using Microsoft.Extensions.Options;
+
+public class AgentSpawner(World world, AgentFactory factory, IOptions<AgentOptions> options)
 {
     public async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        await SpawnAgent("Gandalf",
-            "You are a wise wizard. You speak in riddles. You enjoy examining things.");
+        var identities = await LoadIdentitiesAsync(stoppingToken);
 
-        await SpawnAgent("Gollum",
-            "You are obsessed with finding your precious. You are sneaky and rude.");
+        foreach (var identity in identities)
+        {
+            stoppingToken.ThrowIfCancellationRequested();
+
+            await SpawnAgent(identity);
+        }
     }
 
-    private Task SpawnAgent(string name, string persona)
+    private async Task<IReadOnlyCollection<AgentIdentity>> LoadIdentitiesAsync(CancellationToken cancellationToken)
     {
-        var identity = new AgentIdentity
+        var path = options.Value.AgentIdentitiesPath;
+
+        if (!Path.IsPathRooted(path))
         {
-            Name = name,
-            Persona = persona,
-            Source = AgentSource.OpenAI
-        };
-        
+            path = Path.Combine(AppContext.BaseDirectory, path);
+        }
+
+        if (!File.Exists(path))
+        {
+            throw new FileNotFoundException($"Agent identity file not found at {path}", path);
+        }
+
+        await using var stream = File.OpenRead(path);
+
+        var identities = await JsonSerializer.DeserializeAsync<List<AgentIdentity>>(stream, cancellationToken: cancellationToken)
+            ?? [];
+
+        return identities;
+    }
+
+    private Task SpawnAgent(AgentIdentity identity)
+    {
         var brain = factory.Build(identity);
 
         var currentLocation = world.Rooms.First()
@@ -27,7 +48,7 @@ public class AgentSpawner(World world, AgentFactory factory)
 
         var player = new Player
         {
-            Username = name,
+            Username = identity.Name,
             Connection = brain.Connection,
             CurrentLocation = currentLocation
         };
