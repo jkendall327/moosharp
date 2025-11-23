@@ -33,7 +33,21 @@ public class GameEngine(
             case LoginCommand lc: await Login(input.ConnectionId, lc); break;
             case RegisterAgentCommand ra: await RegisterAgent(input.ConnectionId, ra); break;
             case WorldCommand wc:
-                var player = world.Players[input.ConnectionId.Value];
+                if (!world.Players.TryGetValue(input.ConnectionId.Value, out var player))
+                {
+                    await hubContext
+                        .Clients
+                        .Client(input.ConnectionId.Value)
+                        .SendAsync("ReceiveMessage", "Please log in before sending commands.");
+
+                    await hubContext
+                        .Clients
+                        .Client(input.ConnectionId.Value)
+                        .SendAsync("LoginResult", false, "You must log in to play.");
+
+                    break;
+                }
+
                 await ProcessWorldCommand(wc, ct, player);
 
                 break;
@@ -124,6 +138,7 @@ public class GameEngine(
             new(player, new RoomDescriptionEvent(description.ToString()))
         };
 
+        await SendLoginResultAsync(connectionId, true, $"Registered and logged in as {player.Username}.");
         _ = SendMessagesAsync(messages);
     }
 
@@ -137,6 +152,8 @@ public class GameEngine(
                 .Clients
                 .Client(connectionId.Value)
                 .SendAsync("ReceiveMessage", "Login failed, please try again.");
+
+            await SendLoginResultAsync(connectionId, false, "Login failed, please try again.");
 
             return;
         }
@@ -163,7 +180,16 @@ public class GameEngine(
             new(player, new RoomDescriptionEvent(description.ToString()))
         };
 
+        await SendLoginResultAsync(connectionId, true, $"Logged in as {player.Username}.");
         _ = SendMessagesAsync(messages);
+    }
+
+    private Task SendLoginResultAsync(ConnectionId connectionId, bool success, string message)
+    {
+        return hubContext
+            .Clients
+            .Client(connectionId.Value)
+            .SendAsync("LoginResult", success, message);
     }
 
     private async Task SendMessagesAsync(List<GameMessage> messages)
