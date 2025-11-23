@@ -13,7 +13,14 @@ public class AgentSpawner(World world, AgentFactory factory)
 
     private Task SpawnAgent(string name, string persona)
     {
-        var brain = factory.Build(name, persona, AgentSource.OpenAI);
+        var identity = new AgentIdentity
+        {
+            Name = name,
+            Persona = persona,
+            Source = AgentSource.OpenAI
+        };
+        
+        var brain = factory.Build(identity);
 
         var currentLocation = world.Rooms.First()
             .Value;
