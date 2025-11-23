@@ -1,4 +1,5 @@
 using System.Reflection;
+using System.Threading.Channels;
 using MooSharp;
 using MooSharp.Web;
 using MooSharp.Web.Components;
@@ -12,8 +13,12 @@ builder.Services.AddSingleton<CommandParser>();
 builder.Services.AddSingleton<CommandParser>();
 builder.Services.AddSingleton<CommandExecutor>();
 builder.Services.AddSingleton<StringProvider>();
-builder.Services.AddSingleton<GameEngine>();
 builder.Services.AddHostedService<GameEngine>();
+
+var channel = Channel.CreateUnbounded<GameInput>();
+
+builder.Services.AddSingleton(channel.Writer);
+builder.Services.AddSingleton(channel.Reader);
 
 RegisterCommandHandlers(builder);
 

@@ -11,19 +11,13 @@ public class GameEngine(
     World world,
     CommandParser parser,
     CommandExecutor executor,
+    ChannelReader<GameInput> reader,
     IHubContext<MooHub> hubContext,
     ILogger<GameEngine> logger) : BackgroundService
 {
-    private readonly Channel<GameInput> _inputQueue = Channel.CreateUnbounded<GameInput>();
-
-    public void EnqueueInput(string connectionId, string command)
-    {
-        _inputQueue.Writer.TryWrite(new GameInput(connectionId, command));
-    }
-
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        await foreach (var input in _inputQueue.Reader.ReadAllAsync(stoppingToken))
+        await foreach (var input in reader.ReadAllAsync(stoppingToken))
         {
             await ProcessInput(input, stoppingToken);
         }
@@ -35,7 +29,7 @@ public class GameEngine(
 
         if (player is null || input.Command is "LOGIN")
         {
-            CreateNewPlayer();
+            CreateNewPlayer(input.ConnectionId);
             return;
         }
 
@@ -58,7 +52,7 @@ public class GameEngine(
         }
     }
 
-    private void CreateNewPlayer()
+    private void CreateNewPlayer(string connectionId)
     {
         var player = new Player
         {
@@ -67,17 +61,26 @@ public class GameEngine(
                 .Next()
                 .ToString(),
             
+            ConnectionId = connectionId,
+            
             CurrentLocation = world.Rooms.First().Value
         };
 
         world.Players.Add(player);
-            
-        _ = SendMessagesAsync([new(player, $"Welcome, {player.Username}.")]);
+
+        var description = BuildCurrentRoomDescription(player);
+
+        var messages = new List<GameMessage>
+        {
+            new(player, $"Welcome, {player.Username}."),
+            new(player, description.ToString())
+        };
+        
+        _ = SendMessagesAsync(messages);
     }
 
     private async Task SendMessagesAsync(List<GameMessage> messages)
     {
-        // map between players and connections here...
         var tasks = messages.Select(msg => hubContext
             .Clients
             .Client(msg.Player.ConnectionId)
@@ -93,8 +96,10 @@ public class GameEngine(
         }
     }
 
-    private void BuildCurrentRoomDescription(Player player, StringBuilder sb)
+    private StringBuilder BuildCurrentRoomDescription(Player player)
     {
+        var sb = new StringBuilder();
+        
         var room = player.CurrentLocation;
 
         sb.AppendLine(room.Description);
@@ -116,5 +121,7 @@ public class GameEngine(
         var availableExitsMessage = $"Available exits: {string.Join(", ", availableExits.Select(s => s.Key))}";
 
         sb.AppendLine(availableExitsMessage);
+
+        return sb;
     }
 }

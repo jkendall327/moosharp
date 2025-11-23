@@ -1,14 +1,16 @@
+using System.Threading.Channels;
+
 namespace MooSharp;
 
 using Microsoft.AspNetCore.SignalR;
 
-public class MooHub(GameEngine engine, World world, ILogger<MooHub> logger) : Hub
+public class MooHub(ChannelWriter<GameInput> writer, World world, ILogger<MooHub> logger) : Hub
 {
     public override async Task OnConnectedAsync()
     {
         logger.LogInformation("Connection made with ID {Id}", Context.ConnectionId);
 
-        engine.EnqueueInput(Context.ConnectionId, "LOGIN");
+        writer.TryWrite(new(Context.ConnectionId, "LOGIN"));
 
         await base.OnConnectedAsync();
     }
@@ -16,8 +18,8 @@ public class MooHub(GameEngine engine, World world, ILogger<MooHub> logger) : Hu
     public Task SendCommand(string command)
     {
         logger.LogInformation("Got command {Command}", command);
-
-        engine.EnqueueInput(Context.ConnectionId, command);
+        
+        writer.TryWrite(new(Context.ConnectionId, command));
 
         return Task.CompletedTask;
     }
