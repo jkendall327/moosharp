@@ -16,16 +16,24 @@ public class AgentBrain
     private readonly ChatHistory _history;
     private readonly string _persona;
 
+    // Rate limiting fields
+    private readonly TimeSpan _actionCooldown;
+    private DateTimeOffset _nextAllowedActionTime = DateTimeOffset.MinValue;
+    private readonly SemaphoreSlim _cooldownLock = new(1, 1);
+
     public AgentBrain(string name,
         string persona,
         ChannelWriter<GameInput> gameInputWriter,
         IChatCompletionService chatService,
-        Kernel kernel)
+        Kernel kernel,
+        TimeSpan? actionCooldown = null)
     {
         _persona = persona;
         _gameInputWriter = gameInputWriter;
         _chatService = chatService;
         _kernel = kernel;
+
+        _actionCooldown = actionCooldown ?? TimeSpan.FromSeconds(10);
 
         _connection = new()
         {
@@ -38,9 +46,44 @@ public class AgentBrain
 
     public IPlayerConnection Connection => _connection;
 
+    private async Task<bool> ShouldActAsync()
+    {
+        var now = DateTimeOffset.UtcNow;
+
+        await _cooldownLock
+            .WaitAsync()
+            .ConfigureAwait(false);
+
+        try
+        {
+            if (now < _nextAllowedActionTime)
+            {
+                // Still on cooldown – no action
+                return false;
+            }
+
+            // We’re allowed to act now; set the next allowed time
+            _nextAllowedActionTime = now + _actionCooldown;
+
+            return true;
+        }
+        finally
+        {
+            _cooldownLock.Release();
+        }
+    }
+
     private async Task HandleIncomingGameMessage(string message)
     {
+        // Always record history.
         _history.AddUserMessage(message);
+
+        // Only sometimes actually act, based on cooldown
+        if (!await ShouldActAsync()
+                .ConfigureAwait(false))
+        {
+            return;
+        }
 
         // We limit tokens to prevent it from writing a novel, we just want a command.
         var result = await _chatService.GetChatMessageContentAsync(_history,

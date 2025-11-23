@@ -2,6 +2,7 @@ using System.Threading.Channels;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.ChatCompletion;
+using MooSharp.Messaging;
 using MooSharp.Persistence;
 
 namespace MooSharp.Agents;
@@ -29,6 +30,16 @@ public class AgentService(World world, ChannelWriter<GameInput> writer, IPlayerS
 
         // Create the Brain
         var brain = new AgentBrain(name, persona, writer, chat, kernel);
+
+        var player = new Player
+        {
+            Username = name,
+            Connection = brain.Connection,
+            CurrentLocation = world.Rooms.First()
+                .Value
+        };
+        
+        world.Players.Add(null, player);
         
         // Register in the World (Same logic as CreateNewPlayer in GameEngine)
         // Note: You might need to refactor CreateNewPlayer logic to be reusable 
