@@ -17,7 +17,7 @@ public class Room
 
 public class RoomActor(Room state, ILoggerFactory factory) : Actor<Room>(state, factory)
 {
-    private ILogger<RoomActor> _logger = factory.CreateLogger<RoomActor>();
+    private readonly ILogger<RoomActor> _logger = factory.CreateLogger<RoomActor>();
     
     public int Id => _state.Id;
     public string Name => _state.Name; 
