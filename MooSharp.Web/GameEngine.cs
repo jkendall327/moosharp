@@ -75,7 +75,7 @@ public class GameEngine(
         var player = new Player
         {
             Username = rc.Username,
-            ConnectionId = connectionId,
+            Connection = new SignalRPlayerConnection(connectionId, hubContext),
             CurrentLocation = defaultRoom
         };
 
@@ -115,7 +115,7 @@ public class GameEngine(
         var player = new Player
         {
             Username = dto.Username,
-            ConnectionId = connectionId,
+            Connection = new SignalRPlayerConnection(connectionId, hubContext),
             CurrentLocation = startingRoom,
         };
         
@@ -134,10 +134,7 @@ public class GameEngine(
 
     private async Task SendMessagesAsync(List<GameMessage> messages)
     {
-        var tasks = messages.Select(msg => hubContext
-            .Clients
-            .Client(msg.Player.ConnectionId.Value)
-            .SendAsync("ReceiveMessage", msg.Content));
+        var tasks = messages.Select(msg => msg.Player.Connection.SendMessageAsync(msg.Content));
 
         try
         {
