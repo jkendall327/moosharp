@@ -1,6 +1,7 @@
 using System.Text;
 using Microsoft.AspNetCore.SignalR;
 using MooSharp.Messaging;
+using MooSharp.Persistence;
 
 namespace MooSharp;
 
@@ -11,6 +12,7 @@ public class GameEngine(
     CommandParser parser,
     CommandExecutor executor,
     ChannelReader<GameInput> reader,
+    IPlayerStore playerStore,
     IHubContext<MooHub> hubContext,
     ILogger<GameEngine> logger) : BackgroundService
 {
@@ -27,7 +29,7 @@ public class GameEngine(
         switch (input.Command)
         {
             case RegisterCommand rc: CreateNewPlayer(input.ConnectionId, rc); break;
-            case LoginCommand lc: break;
+            case LoginCommand lc: Login(input.ConnectionId, lc); break;
             case WorldCommand wc:
                 var player = world.Players.Single(p => p.ConnectionId == input.ConnectionId);
                 await ProcessWorldCommand(wc, ct, player);
@@ -65,7 +67,7 @@ public class GameEngine(
         }
     }
 
-    private void CreateNewPlayer(string connectionId, RegisterCommand rc)
+    private async Task CreateNewPlayer(string connectionId, RegisterCommand rc)
     {
         var defaultRoom = world.Rooms.First()
             .Value;
@@ -76,8 +78,8 @@ public class GameEngine(
             ConnectionId = connectionId,
             CurrentLocation = defaultRoom
         };
-        
-        // TODO: persist player username/login or whatever.
+
+        await playerStore.SaveNewPlayer(player, rc.Password);
 
         world.Players.Add(player);
 
@@ -92,18 +94,29 @@ public class GameEngine(
         _ = SendMessagesAsync(messages);
     }
 
-    private void Login(string connectionId, LoginCommand lc)
+    private async Task Login(string connectionId, LoginCommand lc)
     {
-        // TODO: load player from persistence.
-        // TODO: store player's last room.
+        var dto = await playerStore.LoadPlayer(lc);
 
-        throw new NotImplementedException();
+        if (dto is null)
+        {
+            await hubContext
+                .Clients
+                .Client(connectionId)
+                .SendAsync("ReceiveMessage", "Login failed, please try again.");
+
+            return;
+        }
+        
+        var room = world.Rooms[dto.CurrentLocation];
+        
+        // TODO: inventory?
         
         var player = new Player
         {
-            Username = string.Empty,
+            Username = dto.Username,
             ConnectionId = connectionId,
-            CurrentLocation = null
+            CurrentLocation = room,
         };
         
         world.Players.Add(player);

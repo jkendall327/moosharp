@@ -1,6 +1,7 @@
 using System.Reflection;
 using System.Threading.Channels;
 using MooSharp;
+using MooSharp.Persistence;
 using MooSharp.Web.Components;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -11,6 +12,7 @@ builder.Services.AddSingleton<World>();
 builder.Services.AddSingleton<CommandParser>();
 builder.Services.AddSingleton<CommandParser>();
 builder.Services.AddSingleton<CommandExecutor>();
+builder.Services.AddSingleton<IPlayerStore, JsonPlayerStore>();
 builder.Services.AddHostedService<GameEngine>();
 
 var channel = Channel.CreateUnbounded<GameInput>();

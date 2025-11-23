@@ -10,9 +10,10 @@ public class MooHub(ChannelWriter<GameInput> writer, World world, ILogger<MooHub
     {
         logger.LogInformation("Connection made with ID {Id}", Context.ConnectionId);
 
-        writer.TryWrite(new(Context.ConnectionId, new WorldCommand()
+        writer.TryWrite(new(Context.ConnectionId, new LoginCommand
         {
-            Command = "LOGIN"
+            Username = "Jane Doe",
+            Password = "hunter123"
         }));
 
         await base.OnConnectedAsync();
@@ -22,7 +23,7 @@ public class MooHub(ChannelWriter<GameInput> writer, World world, ILogger<MooHub
     {
         logger.LogInformation("Got command {Command}", command);
         
-        writer.TryWrite(new(Context.ConnectionId, new WorldCommand()
+        writer.TryWrite(new(Context.ConnectionId, new WorldCommand
         {
             Command = command
         }));

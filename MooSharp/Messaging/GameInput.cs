@@ -6,17 +6,17 @@ public abstract class InputCommand;
 
 public class RegisterCommand : InputCommand
 {
-    public required string Username { get; set; }
-    public required string Password { get; set; }
+    public required string Username { get; init; }
+    public required string Password { get; init; }
 }
 
 public class LoginCommand : InputCommand
 {
-    public required string Username { get; set; }
-    public required string Password { get; set; }
+    public required string Username { get; init; }
+    public required string Password { get; init; }
 }
 
 public class WorldCommand : InputCommand
 {
-    public required string Command { get; set; }
+    public required string Command { get; init; }
 }
