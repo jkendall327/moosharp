@@ -28,8 +28,8 @@ public class GameEngine(
     {
         switch (input.Command)
         {
-            case RegisterCommand rc: CreateNewPlayer(input.ConnectionId, rc); break;
-            case LoginCommand lc: Login(input.ConnectionId, lc); break;
+            case RegisterCommand rc: await CreateNewPlayer(input.ConnectionId, rc); break;
+            case LoginCommand lc: await Login(input.ConnectionId, lc); break;
             case WorldCommand wc:
                 var player = world.Players.Single(p => p.ConnectionId == input.ConnectionId);
                 await ProcessWorldCommand(wc, ct, player);
@@ -108,7 +108,7 @@ public class GameEngine(
             return;
         }
         
-        var room = world.Rooms[dto.CurrentLocation];
+        var startingRoom = world.Rooms.TryGetValue(dto.CurrentLocation, out var r) ? r : world.Rooms.First().Value;
         
         // TODO: inventory?
         
@@ -116,7 +116,7 @@ public class GameEngine(
         {
             Username = dto.Username,
             ConnectionId = connectionId,
-            CurrentLocation = room,
+            CurrentLocation = startingRoom,
         };
         
         world.Players.Add(player);
