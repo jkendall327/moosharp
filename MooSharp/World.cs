@@ -27,6 +27,7 @@ public class ObjectDto
 
 public class World(IOptions<AppOptions> appOptions, ILoggerFactory loggerFactory)
 {
+    public List<Player> Players { get; set; } = [];
     public Dictionary<string, Room> Rooms { get; private set; } = [];
     public Dictionary<string, List<Object>> Objects { get; set; } = [];
 

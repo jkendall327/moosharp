@@ -9,11 +9,11 @@ builder.Services.AddRazorComponents().AddInteractiveServerComponents();
 
 builder.Services.AddSingleton<World>();
 builder.Services.AddSingleton<CommandParser>();
-builder.Services.AddSingleton<PlayerMultiplexer>();
 builder.Services.AddSingleton<CommandParser>();
 builder.Services.AddSingleton<CommandExecutor>();
 builder.Services.AddSingleton<StringProvider>();
-builder.Services.AddSingleton<PlayerGameLoopManager>();
+builder.Services.AddSingleton<GameEngine>();
+builder.Services.AddHostedService<GameEngine>();
 
 RegisterCommandHandlers(builder);
 

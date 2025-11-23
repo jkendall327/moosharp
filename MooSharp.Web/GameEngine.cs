@@ -7,13 +7,13 @@ namespace MooSharp;
 
 using System.Threading.Channels;
 
-public record GameInput(string ConnectionId, string Command);
-
-public class GameEngine(World world, CommandParser parser, CommandExecutor executor, IHubContext<MooHub> hubContext)
-    : BackgroundService
+public class GameEngine(
+    World world,
+    CommandParser parser,
+    CommandExecutor executor,
+    IHubContext<MooHub> hubContext,
+    ILogger<GameEngine> logger) : BackgroundService
 {
-    private readonly Dictionary<string, Player> _playerConnections = new();
-    
     private readonly Channel<GameInput> _inputQueue = Channel.CreateUnbounded<GameInput>();
 
     public void EnqueueInput(string connectionId, string command)
@@ -31,25 +31,22 @@ public class GameEngine(World world, CommandParser parser, CommandExecutor execu
 
     private async Task ProcessInput(GameInput input, CancellationToken ct = default)
     {
-        // var player = _world.Players.Values
-        //     .FirstOrDefault(p => p.ConnectionId == input.ConnectionId);
+        var player = world.Players.FirstOrDefault(p => p.ConnectionId == input.ConnectionId);
 
-        var player = new Player()
+        if (player is null || input.Command is "LOGIN")
         {
-            Username = "fake",
-            CurrentLocation = null!
-        };
-
-        if (player == null) return; // Or handle login logic
+            CreateNewPlayer();
+            return;
+        }
 
         var command = await parser.ParseAsync(player, input.Command, ct);
 
         if (command is null)
         {
-            _ = SendMessagesAsync([new GameMessage(player, "That command wasn't recognised.")]);
+            _ = SendMessagesAsync([new(player, "That command wasn't recognised.")]);
             return;
         }
-        
+
         try
         {
             var result = await executor.Handle(command, ct);
@@ -61,12 +58,29 @@ public class GameEngine(World world, CommandParser parser, CommandExecutor execu
         }
     }
 
+    private void CreateNewPlayer()
+    {
+        var player = new Player
+        {
+            Username = Random
+                .Shared
+                .Next()
+                .ToString(),
+            
+            CurrentLocation = world.Rooms.First().Value
+        };
+
+        world.Players.Add(player);
+            
+        _ = SendMessagesAsync([new(player, $"Welcome, {player.Username}.")]);
+    }
+
     private async Task SendMessagesAsync(List<GameMessage> messages)
     {
         // map between players and connections here...
         var tasks = messages.Select(msg => hubContext
             .Clients
-            .Client(msg.TargetConnectionId)
+            .Client(msg.Player.ConnectionId)
             .SendAsync("ReceiveMessage", msg.Content));
 
         try
@@ -75,10 +89,10 @@ public class GameEngine(World world, CommandParser parser, CommandExecutor execu
         }
         catch (Exception ex)
         {
-            // Log error, but don't crash the game
+            logger.LogError(ex, "Error sending messages");
         }
     }
-    
+
     private void BuildCurrentRoomDescription(Player player, StringBuilder sb)
     {
         var room = player.CurrentLocation;
@@ -86,14 +100,14 @@ public class GameEngine(World world, CommandParser parser, CommandExecutor execu
         sb.AppendLine(room.Description);
 
         var players = room.PlayersInRoom;
-        
+
         foreach (var playerActor in players)
         {
             if (playerActor == player)
             {
                 continue;
             }
-            
+
             sb.AppendLine($"{playerActor.Username} is here.");
         }
 
