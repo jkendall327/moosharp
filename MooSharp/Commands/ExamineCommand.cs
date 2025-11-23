@@ -8,7 +8,7 @@ public class ExamineCommand : ICommand
     public required string Target { get; init; }
 }
 
-public class ExamineHandler(StringProvider provider) : IHandler<ExamineCommand>
+public class ExamineHandler : IHandler<ExamineCommand>
 {
     public Task<CommandResult> Handle(ExamineCommand cmd, CancellationToken cancellationToken = default)
     {
@@ -24,7 +24,7 @@ public class ExamineHandler(StringProvider provider) : IHandler<ExamineCommand>
 
         if (cmd.Target is "me")
         {
-            result.Add(player, provider.ExamineSelf());
+            result.Add(player, "You took a look at yourself. You're looking pretty good.");
 
             var descriptions = player.Inventory
                 .Select(s => s.Value.Description)

@@ -12,7 +12,6 @@ builder.Services.AddSingleton<World>();
 builder.Services.AddSingleton<CommandParser>();
 builder.Services.AddSingleton<CommandParser>();
 builder.Services.AddSingleton<CommandExecutor>();
-builder.Services.AddSingleton<StringProvider>();
 builder.Services.AddHostedService<GameEngine>();
 
 var channel = Channel.CreateUnbounded<GameInput>();
