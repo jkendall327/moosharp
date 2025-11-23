@@ -1,6 +1,7 @@
 using System.Text;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging.Abstractions;
+using MooSharp.Messaging;
 
 namespace MooSharp;
 
@@ -37,20 +38,44 @@ public class GameEngine(World world, CommandParser parser, CommandExecutor execu
 
         var command = await parser.ParseAsync(player, input.Command);
 
+        if (command is null)
+        {
+            throw new NotImplementedException("Tell player command was invalid");
+        }
+        
         var outputBuffer = new StringBuilder();
 
         try
         {
-            await executor.Handle(command, outputBuffer);
+            var result = await executor.Handle(command, outputBuffer);
+            _ = SendMessagesAsync(result.Messages);
         }
         catch (Exception ex)
         {
-            outputBuffer.AppendLine("Something went wrong.");
+            throw new NotImplementedException("Tell player something went wrong");
         }
 
-        await hubContext
+        // await hubContext
+        //     .Clients
+        //     .Client(input.ConnectionId)
+        //     .SendAsync("ReceiveMessage", outputBuffer.ToString());
+    }
+
+    private async Task SendMessagesAsync(List<GameMessage> messages)
+    {
+        // map between players and connections here...
+        var tasks = messages.Select(msg => hubContext
             .Clients
-            .Client(input.ConnectionId)
-            .SendAsync("ReceiveMessage", outputBuffer.ToString());
+            .Client(msg.TargetConnectionId)
+            .SendAsync("ReceiveMessage", msg.Content));
+
+        try
+        {
+            await Task.WhenAll(tasks);
+        }
+        catch (Exception ex)
+        {
+            // Log error, but don't crash the game
+        }
     }
 }

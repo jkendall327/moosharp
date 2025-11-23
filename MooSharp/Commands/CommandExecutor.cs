@@ -1,21 +1,14 @@
 using System.Text;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using MooSharp.Messaging;
 
 namespace MooSharp;
 
 public class CommandExecutor(IServiceProvider serviceProvider, ILogger<CommandExecutor> logger)
 {
-    public async Task Handle(ICommand? cmd, StringBuilder sb, CancellationToken token = default)
+    public async Task<CommandResult> Handle(ICommand cmd, StringBuilder sb, CancellationToken token = default)
     {
-        if (cmd is null)
-        {
-            logger.LogDebug("Failed to parse player input as command");
-            sb.AppendLine("That command wasn't recognized. Use 'move' to go between locations.");
-
-            return;
-        }
-
         logger.LogDebug("Parsed input to command {CommandType}", cmd.GetType().Name);
 
         // This switch expression is just here so the compiler determines the type of the cmd,
@@ -29,14 +22,14 @@ public class CommandExecutor(IServiceProvider serviceProvider, ILogger<CommandEx
             _ => throw new ArgumentOutOfRangeException(nameof(cmd), "Unrecognised command type")
         };
 
-        await task;
+        return await task;
     }
 
-    private async Task Handle<TCommand>(TCommand command, StringBuilder buffer, CancellationToken token = default)
+    private async Task<CommandResult> Handle<TCommand>(TCommand command, StringBuilder buffer, CancellationToken token = default)
         where TCommand : ICommand
     {
         var handler = serviceProvider.GetRequiredService<IHandler<TCommand>>();
 
-        await handler.Handle(command, buffer, token);
+        return await handler.Handle(command, buffer, token);
     }
 }
