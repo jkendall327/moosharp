@@ -10,13 +10,29 @@ public class MooHub(ChannelWriter<GameInput> writer, ILogger<MooHub> logger) : H
     {
         logger.LogInformation("Connection made with ID {Id}", Context.ConnectionId);
 
+        await base.OnConnectedAsync();
+    }
+
+    public Task Login(string username, string password)
+    {
         writer.TryWrite(new(Context.ConnectionId, new LoginCommand
         {
-            Username = "Jane Doe",
-            Password = "hunter123"
+            Username = username,
+            Password = password
         }));
 
-        await base.OnConnectedAsync();
+        return Task.CompletedTask;
+    }
+
+    public Task Register(string username, string password)
+    {
+        writer.TryWrite(new(Context.ConnectionId, new RegisterCommand
+        {
+            Username = username,
+            Password = password
+        }));
+
+        return Task.CompletedTask;
     }
 
     public Task SendCommand(string command)

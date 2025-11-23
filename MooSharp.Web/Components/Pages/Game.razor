@@ -14,23 +14,55 @@
 }
 else
 {
-    <div class="game-output-container">
-        <pre>@_gameOutput</pre>
+    <div class="auth-container">
+        <h4>Register or Log In</h4>
+        <div class="auth-fields">
+            <input @bind="_username" placeholder="Username" />
+            <input type="password" @bind="_password" placeholder="Password" />
+        </div>
+        <div class="auth-actions">
+            <button @onclick="LoginAsync" disabled="@(!CanSubmitCredentials)">Log In</button>
+            <button @onclick="RegisterAsync" disabled="@(!CanSubmitCredentials)">Register</button>
+        </div>
+        @if (!string.IsNullOrWhiteSpace(_loginStatus))
+        {
+            <p class="status-message">@_loginStatus</p>
+        }
     </div>
 
-    <div class="input-container">
-        <input @bind="_commandInput"
-               @bind:event="oninput"
-               @onkeydown="HandleKeyDown"
-               placeholder="Type a command..."/>
-        <button @onclick="SendCommandAsync">Send</button>
-    </div>
+    <fieldset disabled="@(!_isLoggedIn)">
+        <div class="game-output-container">
+            <pre>@_gameOutput</pre>
+        </div>
+
+        <div class="input-container">
+            <input @bind="_commandInput"
+                   @bind:event="oninput"
+                   @onkeydown="HandleKeyDown"
+                   placeholder="Type a command..." />
+            <button @onclick="SendCommandAsync">Send</button>
+        </div>
+
+        @if (!_isLoggedIn)
+        {
+            <p class="status-message">Log in or register to start playing.</p>
+        }
+    </fieldset>
 }
 
 @code {
     private HubConnection? _hubConnection;
     private readonly StringBuilder _gameOutput = new();
     private string _commandInput = string.Empty;
+    private string _username = string.Empty;
+    private string _password = string.Empty;
+    private string _loginStatus = string.Empty;
+    private bool _isLoggedIn;
+
+    private bool CanSubmitCredentials =>
+        _hubConnection?.State == HubConnectionState.Connected
+        && !string.IsNullOrWhiteSpace(_username)
+        && !string.IsNullOrWhiteSpace(_password);
 
     protected override async Task OnInitializedAsync()
     {
@@ -46,9 +78,20 @@ else
                 InvokeAsync(StateHasChanged);
             });
 
+        _hubConnection.On<bool, string>("LoginResult", (success, message) =>
+        {
+            _isLoggedIn = success;
+            _loginStatus = message;
+            _gameOutput.AppendLine(message);
+
+            InvokeAsync(StateHasChanged);
+        });
+
         _hubConnection.Reconnecting += error =>
         {
             Logger.LogWarning(error, "SignalR reconnecting...");
+
+            _isLoggedIn = false;
 
             return Task.CompletedTask;
         };
@@ -57,12 +100,16 @@ else
         {
             Logger.LogInformation("SignalR reconnected. New ConnectionId={ConnectionId}", connectionId);
 
+            _isLoggedIn = false;
+
             return Task.CompletedTask;
         };
 
         _hubConnection.Closed += error =>
         {
             Logger.LogWarning(error, "SignalR closed");
+
+            _isLoggedIn = false;
 
             return Task.CompletedTask;
         };
@@ -88,7 +135,7 @@ else
 
     private async Task SendCommandAsync()
     {
-        if (_hubConnection is null || string.IsNullOrWhiteSpace(_commandInput))
+        if (_hubConnection is null || string.IsNullOrWhiteSpace(_commandInput) || !_isLoggedIn)
         {
             return;
         }
@@ -105,6 +152,50 @@ else
         }
 
         _commandInput = string.Empty;
+    }
+
+    private async Task LoginAsync()
+    {
+        if (!CanSubmitCredentials)
+        {
+            return;
+        }
+
+        _loginStatus = "Logging in...";
+
+        await SendCredentialCommandAsync(nameof(MooHub.Login));
+    }
+
+    private async Task RegisterAsync()
+    {
+        if (!CanSubmitCredentials)
+        {
+            return;
+        }
+
+        _loginStatus = "Registering...";
+
+        await SendCredentialCommandAsync(nameof(MooHub.Register));
+    }
+
+    private async Task SendCredentialCommandAsync(string commandName)
+    {
+        if (_hubConnection is null)
+        {
+            return;
+        }
+
+        try
+        {
+            await _hubConnection.SendAsync(commandName, _username, _password);
+        }
+        catch (Exception e)
+        {
+            Logger.LogError(e, "Error on SignalR send for {CommandName}", commandName);
+
+            _loginStatus = $"Failed to send {commandName.ToLowerInvariant()} request.";
+            throw;
+        }
     }
 
     public async ValueTask DisposeAsync()
