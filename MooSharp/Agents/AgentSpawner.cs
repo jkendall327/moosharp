@@ -1,9 +1,12 @@
 namespace MooSharp.Agents;
 
 using System.Text.Json;
+using System.Threading.Channels;
 using Microsoft.Extensions.Options;
+using MooSharp;
+using MooSharp.Messaging;
 
-public class AgentSpawner(World world, AgentFactory factory, IOptions<AgentOptions> options)
+public class AgentSpawner(AgentFactory factory, ChannelWriter<GameInput> writer, IOptions<AgentOptions> options)
 {
     public async Task ExecuteAsync(CancellationToken stoppingToken)
     {
@@ -13,7 +16,7 @@ public class AgentSpawner(World world, AgentFactory factory, IOptions<AgentOptio
         {
             stoppingToken.ThrowIfCancellationRequested();
 
-            await SpawnAgent(identity);
+            await SpawnAgentAsync(identity, stoppingToken);
         }
     }
 
@@ -39,24 +42,18 @@ public class AgentSpawner(World world, AgentFactory factory, IOptions<AgentOptio
         return identities;
     }
 
-    private Task SpawnAgent(AgentIdentity identity)
+    private async Task SpawnAgentAsync(AgentIdentity identity, CancellationToken cancellationToken)
     {
         var brain = factory.Build(identity);
 
-        var currentLocation = world.Rooms.First()
-            .Value;
-
-        var player = new Player
+        var registerAgentCommand = new RegisterAgentCommand
         {
-            Username = identity.Name,
-            Connection = brain.Connection,
-            CurrentLocation = currentLocation
+            Identity = identity,
+            Connection = brain.Connection
         };
-        
-        currentLocation.PlayersInRoom.Add(player);
-        
-        world.Players.Add(player.Connection.Id, player);
 
-        return Task.CompletedTask;
+        var connectionId = new ConnectionId(brain.Connection.Id);
+
+        await writer.WriteAsync(new(connectionId, registerAgentCommand), cancellationToken);
     }
 }

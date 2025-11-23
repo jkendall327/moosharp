@@ -31,6 +31,7 @@ public class GameEngine(
         {
             case RegisterCommand rc: await CreateNewPlayer(input.ConnectionId, rc); break;
             case LoginCommand lc: await Login(input.ConnectionId, lc); break;
+            case RegisterAgentCommand ra: await RegisterAgent(input.ConnectionId, ra); break;
             case WorldCommand wc:
                 var player = world.Players[input.ConnectionId.Value];
                 await ProcessWorldCommand(wc, ct, player);
@@ -107,6 +108,7 @@ public class GameEngine(
         await playerStore.SaveNewPlayer(player, rc.Password);
 
         world.Players.Add(connectionId.Value, player);
+        player.CurrentLocation.PlayersInRoom.Add(player);
 
         var description = BuildCurrentRoomDescription(player);
 
@@ -143,8 +145,9 @@ public class GameEngine(
             Connection = new SignalRPlayerConnection(connectionId, hubContext),
             CurrentLocation = startingRoom,
         };
-        
+
         world.Players.Add(connectionId.Value, player);
+        player.CurrentLocation.PlayersInRoom.Add(player);
 
         var description = BuildCurrentRoomDescription(player);
 
@@ -193,5 +196,26 @@ public class GameEngine(
         sb.AppendLine(availableExitsMessage);
 
         return sb;
+    }
+
+    private Task RegisterAgent(ConnectionId connectionId, RegisterAgentCommand command)
+    {
+        var defaultRoom = world.Rooms.First()
+            .Value;
+
+        var player = new Player
+        {
+            Username = command.Identity.Name,
+            Connection = command.Connection,
+            CurrentLocation = defaultRoom
+        };
+
+        defaultRoom.PlayersInRoom.Add(player);
+
+        world.Players.Add(connectionId.Value, player);
+
+        logger.LogInformation("Agent {AgentName} registered", player.Username);
+
+        return Task.CompletedTask;
     }
 }
