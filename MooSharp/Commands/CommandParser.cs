@@ -23,9 +23,13 @@ public class CommandParser
 
     public Task<ICommand?> ParseAsync(Player player, string command, CancellationToken token = default)
     {
-        _logger.LogDebug("Parsing player input: {Input}", command);
+        var split = command
+            .Trim()
+            .Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
 
-        var split = command.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        var sanitized = string.Join(' ', split);
+
+        _logger.LogDebug("Parsing player input: {Input}", sanitized);
 
         var verb = split.FirstOrDefault();
 
