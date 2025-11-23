@@ -9,6 +9,9 @@ public class MoveCommand : ICommand
     public required string TargetExit { get; init; }
 
     public string BroadcastMessage(string username) => $"{username} went to {TargetExit}";
+    
+    public async Task<CommandResult> Dispatch(CommandExecutor executor, CancellationToken token)
+        => await executor.Handle(this, token);
 }
 
 public class MoveHandler(World world, ILogger<MoveHandler> logger) : IHandler<MoveCommand>

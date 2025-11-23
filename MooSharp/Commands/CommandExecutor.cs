@@ -4,31 +4,41 @@ using MooSharp.Messaging;
 
 namespace MooSharp;
 
-public class CommandExecutor(IServiceProvider serviceProvider, ILogger<CommandExecutor> logger)
+/// <summary>
+/// Routes commands to their appropriate handlers by utilising the visitor pattern.
+/// </summary>
+public class CommandExecutor(IServiceProvider services, ILogger<CommandExecutor> logger)
 {
-    public async Task<CommandResult> Handle(ICommand cmd, CancellationToken token = default)
-    {
-        logger.LogDebug("Parsed input to command {CommandType}", cmd.GetType().Name);
+    // Pass control to the command...
+    public Task<CommandResult> Handle(ICommand cmd, CancellationToken token = default)
+        // The command calls back into the Handle method below, with proper generic type arguments
+        => cmd.Dispatch(this, token);
 
-        // This switch expression is just here so the compiler determines the type of the cmd,
-        // and by extension, the generic argument to executor.Handle<T>().
-        // This lets the executor get the correct handler implementation from DI.
-        var task = cmd switch
-        {
-            ExamineCommand e => Handle(e, token),
-            MoveCommand m => Handle(m, token),
-            TakeCommand t => Handle(t, token),
-            _ => throw new ArgumentOutOfRangeException(nameof(cmd), "Unrecognised command type")
-        };
-
-        return await task;
-    }
-
-    private async Task<CommandResult> Handle<TCommand>(TCommand command, CancellationToken token = default)
+    public async Task<CommandResult> Handle<TCommand>(TCommand cmd, CancellationToken token)
         where TCommand : ICommand
     {
-        var handler = serviceProvider.GetRequiredService<IHandler<TCommand>>();
+        using var scope = logger.BeginScope(new Dictionary<string, object?>
+        {
+            { "CommandType", cmd.GetType().Name }
+        });
+        
+        logger.LogInformation("Beginning command execution");
+        
+        var handler = services.GetRequiredService<IHandler<TCommand>>();
 
-        return await handler.Handle(command, token);
+        try
+        {
+            var result = await handler.Handle(cmd, token);
+            
+            logger.LogDebug("Command execution completed");
+
+            return result;
+        }
+        catch (Exception e)
+        {
+            logger.LogError(e, "Error executing command");
+
+            throw;
+        }
     }
 }

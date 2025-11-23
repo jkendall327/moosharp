@@ -2,6 +2,9 @@ using Microsoft.Extensions.Logging;
 
 namespace MooSharp;
 
+/// <summary>
+/// Parses raw text into commands.
+/// </summary>
 public class CommandParser(ILogger<CommandParser> logger)
 {
     public Task<ICommand?> ParseAsync(Player player, string command, CancellationToken token = default)
