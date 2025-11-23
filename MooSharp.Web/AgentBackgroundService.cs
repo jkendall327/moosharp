@@ -3,11 +3,11 @@ using MooSharp.Agents;
 
 namespace MooSharp.Web;
 
-public class AgentBackgroundService(AgentSpawner spawner, IOptions<AppOptions> options) : BackgroundService
+public class AgentBackgroundService(AgentSpawner spawner, IOptions<AgentOptions> options) : BackgroundService
 {
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        if (!options.Value.EnableAgents)
+        if (!options.Value.Enabled)
         {
             return;
         }
