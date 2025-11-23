@@ -32,8 +32,13 @@ public class PlayerGameLoopManager(CommandParser parser, CommandExecutor executo
 
         var players = await room.GetPeopleInRoom();
         
-        foreach (var playerActor in players.Except([player]))
+        foreach (var playerActor in players)
         {
+            if (playerActor == player)
+            {
+                continue;
+            }
+            
             sb.AppendLine($"{playerActor.Username} is here.");
         }
 
