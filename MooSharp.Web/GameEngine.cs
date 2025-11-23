@@ -33,7 +33,12 @@ public class GameEngine(
             case LoginCommand lc: await Login(input.ConnectionId, lc); break;
             case RegisterAgentCommand ra: await RegisterAgent(input.ConnectionId, ra); break;
             case WorldCommand wc:
-                var player = world.Players[input.ConnectionId.Value];
+                if (!world.TryGetPlayer(input.ConnectionId, out var player))
+                {
+                    logger.LogWarning("Received world command for unknown connection {ConnectionId}", input.ConnectionId);
+
+                    return;
+                }
                 await ProcessWorldCommand(wc, ct, player);
 
                 break;
@@ -47,7 +52,7 @@ public class GameEngine(
 
     private async Task HandleDisconnectAsync(ConnectionId connectionId)
     {
-        if (!world.Players.TryGetValue(connectionId.Value, out var player))
+        if (!world.TryGetPlayer(connectionId, out var player))
         {
             logger.LogWarning("Player with connection {ConnectionId} not found during disconnect", connectionId);
 
@@ -60,7 +65,7 @@ public class GameEngine(
         {
             logger.LogWarning("Player {Player} has no known location during disconnect.", player.Username);
 
-            location = world.Rooms.First().Value;
+            location = world.GetDefaultRoom();
 
             world.MovePlayer(player, location);
         }
@@ -68,7 +73,7 @@ public class GameEngine(
         await playerStore.SavePlayer(player, location);
         location.PlayersInRoom.Remove(player);
 
-        world.Players.Remove(connectionId.Value);
+        world.RemovePlayer(connectionId);
 
         logger.LogInformation("Player {Player} disconnected", player.Username);
 
@@ -101,8 +106,7 @@ public class GameEngine(
 
     private async Task CreateNewPlayer(ConnectionId connectionId, RegisterCommand rc)
     {
-        var defaultRoom = world.Rooms.First()
-            .Value;
+        var defaultRoom = world.GetDefaultRoom();
 
         var player = new Player
         {
@@ -114,7 +118,7 @@ public class GameEngine(
 
         await playerStore.SaveNewPlayer(player, defaultRoom, rc.Password);
 
-        world.Players.Add(connectionId.Value, player);
+        world.AddPlayer(connectionId, player);
 
         var description = BuildCurrentRoomDescription(player);
 
@@ -141,7 +145,7 @@ public class GameEngine(
             return;
         }
         
-        var startingRoom = world.Rooms.TryGetValue(dto.CurrentLocation, out var r) ? r : world.Rooms.First().Value;
+        var startingRoom = world.TryGetRoom(dto.CurrentLocation, out var r) ? r : world.GetDefaultRoom();
         
         // TODO: inventory?
         
@@ -153,7 +157,7 @@ public class GameEngine(
 
         world.MovePlayer(player, startingRoom);
 
-        world.Players.Add(connectionId.Value, player);
+        world.AddPlayer(connectionId, player);
 
         var description = BuildCurrentRoomDescription(player);
 
@@ -205,8 +209,7 @@ public class GameEngine(
 
     private Task RegisterAgent(ConnectionId connectionId, RegisterAgentCommand command)
     {
-        var defaultRoom = world.Rooms.First()
-            .Value;
+        var defaultRoom = world.GetDefaultRoom();
 
         var player = new Player
         {
@@ -216,7 +219,7 @@ public class GameEngine(
 
         world.MovePlayer(player, defaultRoom);
 
-        world.Players.Add(connectionId.Value, player);
+        world.AddPlayer(connectionId, player);
 
         logger.LogInformation("Agent {AgentName} registered", player.Username);
 

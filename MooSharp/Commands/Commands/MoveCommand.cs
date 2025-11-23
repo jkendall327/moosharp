@@ -42,7 +42,7 @@ public class MoveHandler(World world, ILogger<MoveHandler> logger) : IHandler<Mo
             return Task.FromResult(result);
         }
 
-        var exitRoom = world.Rooms[exit];
+        var exitRoom = world.GetRoom(exit);
 
         result.Add(player, new PlayerMovedEvent(player, exitRoom));
 

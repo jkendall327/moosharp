@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Diagnostics.CodeAnalysis;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
@@ -6,15 +7,22 @@ namespace MooSharp;
 
 public class World(IOptions<AppOptions> options, ILogger<World> logger)
 {
-    public Dictionary<string, Player> Players { get; } = [];
-    public Dictionary<RoomId, Room> Rooms { get; private set; } = [];
+    private readonly object _syncRoot = new();
+
+    private readonly Dictionary<string, Player> _players = [];
+    private Dictionary<RoomId, Room> _rooms = [];
 
     public async Task InitializeAsync(CancellationToken cancellationToken = default)
     {
         var dto = await GetWorldDto(cancellationToken);
 
-        Rooms = CreateRooms(dto);
-        CreateObjects(dto, Rooms);
+        var rooms = CreateRooms(dto);
+        CreateObjects(dto, rooms);
+
+        lock (_syncRoot)
+        {
+            _rooms = rooms;
+        }
     }
 
     private async Task<WorldDto> GetWorldDto(CancellationToken cancellationToken)
@@ -149,29 +157,100 @@ public class World(IOptions<AppOptions> options, ILogger<World> logger)
         }
     }
 
+    public IReadOnlyCollection<Room> GetRooms()
+    {
+        lock (_syncRoot)
+        {
+            return _rooms.Values.ToList();
+        }
+    }
+
+    public Room GetDefaultRoom()
+    {
+        lock (_syncRoot)
+        {
+            return _rooms.Values.First();
+        }
+    }
+
+    public Room GetRoom(RoomId id)
+    {
+        lock (_syncRoot)
+        {
+            return _rooms[id];
+        }
+    }
+
+    public bool TryGetRoom(RoomId id, [NotNullWhen(true)] out Room? room)
+    {
+        lock (_syncRoot)
+        {
+            var found = _rooms.TryGetValue(id, out var value);
+            room = value;
+            return found;
+        }
+    }
+
+    public bool TryGetPlayer(ConnectionId connectionId, [NotNullWhen(true)] out Player? player)
+    {
+        lock (_syncRoot)
+        {
+            var found = _players.TryGetValue(connectionId.Value, out var value);
+            player = value;
+            return found;
+        }
+    }
+
+    public void AddPlayer(ConnectionId connectionId, Player player)
+    {
+        ArgumentNullException.ThrowIfNull(player);
+
+        lock (_syncRoot)
+        {
+            _players.Add(connectionId.Value, player);
+        }
+    }
+
+    public bool RemovePlayer(ConnectionId connectionId)
+    {
+        lock (_syncRoot)
+        {
+            return _players.Remove(connectionId.Value);
+        }
+    }
+
     public Room? GetPlayerLocation(Player player)
     {
-        return Rooms
-            .Values
-            .FirstOrDefault(room => room.PlayersInRoom.Contains(player));
+        ArgumentNullException.ThrowIfNull(player);
+
+        lock (_syncRoot)
+        {
+            return _rooms
+                .Values
+                .FirstOrDefault(room => room.PlayersInRoom.Contains(player));
+        }
     }
 
     public void MovePlayer(Player player, Room destination)
     {
+        ArgumentNullException.ThrowIfNull(player);
         ArgumentNullException.ThrowIfNull(destination);
 
-        var origin = GetPlayerLocation(player);
-
-        if (origin == destination)
+        lock (_syncRoot)
         {
-            return;
-        }
+            var origin = GetPlayerLocation(player);
 
-        origin?.PlayersInRoom.Remove(player);
+            if (origin == destination)
+            {
+                return;
+            }
 
-        if (!destination.PlayersInRoom.Contains(player))
-        {
-            destination.PlayersInRoom.Add(player);
+            origin?.PlayersInRoom.Remove(player);
+
+            if (!destination.PlayersInRoom.Contains(player))
+            {
+                destination.PlayersInRoom.Add(player);
+            }
         }
     }
 }
