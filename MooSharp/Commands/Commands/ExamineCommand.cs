@@ -2,13 +2,10 @@ using MooSharp.Messaging;
 
 namespace MooSharp;
 
-public class ExamineCommand : ICommand
+public class ExamineCommand : CommandBase<ExamineCommand>
 {
     public required Player Player { get; init; }
     public required string Target { get; init; }
-    
-    public async Task<CommandResult> Dispatch(CommandExecutor executor, CancellationToken token)
-        => await executor.Handle(this, token);
 }
 
 public class ExamineHandler : IHandler<ExamineCommand>

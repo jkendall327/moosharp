@@ -9,3 +9,10 @@ public interface ICommand
     /// </summary>
     Task<CommandResult> Dispatch(CommandExecutor executor, CancellationToken token);
 }
+
+public abstract class CommandBase<TSelf> : ICommand
+    where TSelf : CommandBase<TSelf>
+{
+    public Task<CommandResult> Dispatch(CommandExecutor executor, CancellationToken token = default)
+        => executor.Handle((TSelf)this, token);
+}
