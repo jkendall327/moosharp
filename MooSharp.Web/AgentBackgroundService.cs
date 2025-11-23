@@ -3,7 +3,7 @@ using MooSharp.Agents;
 
 namespace MooSharp.Web;
 
-public class AgentBackgroundService(AgentService service, IOptions<AppOptions> options) : BackgroundService
+public class AgentBackgroundService(AgentSpawner spawner, IOptions<AppOptions> options) : BackgroundService
 {
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
@@ -12,6 +12,6 @@ public class AgentBackgroundService(AgentService service, IOptions<AppOptions> o
             return;
         }
         
-        await service.ExecuteAsync(stoppingToken);
+        await spawner.ExecuteAsync(stoppingToken);
     }
 }

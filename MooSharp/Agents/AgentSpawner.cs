@@ -1,11 +1,6 @@
-using System.Threading.Channels;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.SemanticKernel;
-using Microsoft.SemanticKernel.ChatCompletion;
-
 namespace MooSharp.Agents;
 
-public class AgentService(World world, AgentFactory factory)
+public class AgentSpawner(World world, AgentFactory factory)
 {
     public async Task ExecuteAsync(CancellationToken stoppingToken)
     {

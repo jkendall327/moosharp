@@ -14,7 +14,7 @@ builder.Services.AddRazorComponents().AddInteractiveServerComponents();
 builder.Services.AddSingleton<World>();
 builder.Services.AddSingleton<CommandParser>();
 builder.Services.AddSingleton<CommandExecutor>();
-builder.Services.AddSingleton<AgentService>();
+builder.Services.AddSingleton<AgentSpawner>();
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddSingleton<IPlayerStore, JsonPlayerStore>();
 
@@ -48,12 +48,10 @@ var app = builder.Build();
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Error", createScopeForErrors: true);
-
     app.UseHsts();
 }
 
 app.UseHttpsRedirection();
-
 app.UseAntiforgery();
 
 app.MapStaticAssets();

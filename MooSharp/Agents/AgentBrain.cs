@@ -9,21 +9,6 @@ using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.ChatCompletion;
 using System.Threading.Channels;
 
-public enum AgentSource
-{
-    OpenAI,
-    Gemini,
-    OpenRouter
-}
-
-public class AgentFactory(ChannelWriter<GameInput> writer, TimeProvider clock, IOptions<AgentOptions> options)
-{
-    public AgentBrain Build(string name, string persona, AgentSource source, TimeSpan? cooldown = null)
-    {
-        return new(name, persona, source, writer, options, clock, cooldown);
-    }
-}
-
 public class AgentBrain
 {
     private readonly AgentPlayerConnection _connection;
@@ -68,7 +53,7 @@ public class AgentBrain
 
     private async Task<bool> ShouldActAsync()
     {
-        var now = DateTimeOffset.UtcNow;
+        var now = _clock.GetUtcNow();
 
         await _cooldownLock
             .WaitAsync()
@@ -128,11 +113,13 @@ public class AgentBrain
 
     private async Task<ChatMessageContent> GetResponse()
     {
+        var o = _options.Value;
+        
         if (_source is AgentSource.OpenAI)
         {
             var kernel = Kernel
                 .CreateBuilder()
-                .AddOpenAIChatCompletion("", "")
+                .AddOpenAIChatCompletion(o.OpenAIModelId, o.OpenAIApiKey)
                 .Build();
 
             var chat = kernel.Services.GetRequiredService<IChatCompletionService>();
