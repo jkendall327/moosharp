@@ -5,6 +5,10 @@ public class AgentOptions
     public const string SectionName = "Agents";
 
     public bool Enabled { get; set; }
+    /// <summary>
+    /// The number of recent non-system chat messages to retain in memory. The system prompt is always preserved.
+    /// </summary>
+    public int MaxRecentMessages { get; set; } = 20;
     public required string OpenAIModelId { get; set; }
     public required string OpenAIApiKey { get; set; }
     public required string GeminiModelId { get; set; }
