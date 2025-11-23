@@ -11,6 +11,11 @@ public interface ICommandDefinition
     IReadOnlyCollection<string> Verbs { get; }
 
     /// <summary>
+    /// Short description of what the command does, for help text.
+    /// </summary>
+    string Description { get; }
+
+    /// <summary>
     /// Parses raw text into the command.
     /// </summary>
     ICommand Create(Player player, string args);

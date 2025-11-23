@@ -14,6 +14,8 @@ public class MoveCommandDefinition : ICommandDefinition
 {
     public IReadOnlyCollection<string> Verbs { get; } = ["move", "go", "walk"];
 
+    public string Description => "Move to an adjacent room. Usage: move <exit>.";
+
     public ICommand Create(Player player, string args)
         => new MoveCommand
         {

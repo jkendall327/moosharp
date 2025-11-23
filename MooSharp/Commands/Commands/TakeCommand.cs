@@ -15,6 +15,8 @@ public class TakeCommandDefinition : ICommandDefinition
         "take", "grab", "get"
     ];
 
+    public string Description => "Pick up an item from the room. Usage: take <item>.";
+
     public ICommand Create(Player player, string args) =>
         new TakeCommand
         {
