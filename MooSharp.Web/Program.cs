@@ -13,11 +13,6 @@ builder.Services.AddRazorComponents().AddInteractiveServerComponents();
 
 builder.Services.AddSingleton<World>();
 builder.Services.AddSingleton<CommandParser>();
-
-builder.Services.AddTransient<ICommandDefinition, MoveCommandDefinition>();
-builder.Services.AddTransient<ICommandDefinition, ExamineCommandDefinition>();
-builder.Services.AddTransient<ICommandDefinition, TakeCommandDefinition>();
-
 builder.Services.AddSingleton<CommandExecutor>();
 builder.Services.AddSingleton<AgentService>();
 builder.Services.AddSingleton<IPlayerStore, JsonPlayerStore>();
@@ -35,7 +30,8 @@ var channel = Channel.CreateUnbounded<GameInput>();
 builder.Services.AddSingleton(channel.Writer);
 builder.Services.AddSingleton(channel.Reader);
 
-RegisterCommandHandlers(builder);
+builder.RegisterCommandDefinitions();
+builder.RegisterCommandHandlers();
 
 builder.Services.AddSignalR();
 
@@ -65,28 +61,3 @@ await world.InitializeAsync();
 
 await app.RunAsync();
 
-void RegisterCommandHandlers(WebApplicationBuilder webApplicationBuilder)
-{
-    var assemblies = new List<Assembly>([Assembly.GetExecutingAssembly(), typeof(CommandExecutor).Assembly]);
-
-    var handlerInterfaceType = typeof(IHandler<>);
-
-    foreach (var assembly in assemblies)
-    {
-        var handlerTypes = assembly.GetTypes()
-                                   .Where(t => t is {IsAbstract: false, IsInterface: false})
-                                   .SelectMany(t => t.GetInterfaces()
-                                                     .Where(i => i.IsGenericType && i.GetGenericTypeDefinition() ==
-                                                         handlerInterfaceType)
-                                                     .Select(i => new
-                                                     {
-                                                         Implementation = t,
-                                                         Service = i
-                                                     }));
-
-        foreach (var typePair in handlerTypes)
-        {
-            webApplicationBuilder.Services.AddTransient(typePair.Service, typePair.Implementation);
-        }
-    }
-}
