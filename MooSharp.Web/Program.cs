@@ -16,7 +16,7 @@ builder.Services.AddSingleton<CommandParser>();
 builder.Services.AddSingleton<CommandExecutor>();
 builder.Services.AddSingleton<AgentSpawner>();
 builder.Services.AddSingleton(TimeProvider.System);
-builder.Services.AddSingleton<IPlayerStore, JsonPlayerStore>();
+builder.Services.AddSingleton<IPlayerStore, SqlitePlayerStore>();
 
 builder.Services.AddHostedService<GameEngine>();
 builder.Services.AddHostedService<AgentBackgroundService>();
