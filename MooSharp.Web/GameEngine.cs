@@ -157,21 +157,13 @@ public class GameEngine(
 
         sb.AppendLine(room.Description);
 
-        var players = room.PlayersInRoom;
+        var otherPlayers = room.PlayersInRoom.Select(s => s.Username).Except([player.Username]);
 
-        foreach (var playerActor in players)
-        {
-            if (playerActor == player)
-            {
-                continue;
-            }
+        sb.AppendLine($"{string.Join(", ", otherPlayers)} are here.");
 
-            sb.AppendLine($"{playerActor.Username} is here.");
-        }
+        var availableExits = player.CurrentLocation.Exits.Select(s => s.Key);
 
-        var availableExits = player.CurrentLocation.Exits;
-
-        var availableExitsMessage = $"Available exits: {string.Join(", ", availableExits.Select(s => s.Key))}";
+        var availableExitsMessage = $"Available exits: {string.Join(", ", availableExits)}";
 
         sb.AppendLine(availableExitsMessage);
 
