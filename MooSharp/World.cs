@@ -15,7 +15,7 @@ public class RoomDto
     public required string Name { get; set; }
     public required string Description { get; set; }
     public required string Slug { get; set; }
-    public List<string> ConnectedRooms { get; set; } = [];
+    public IReadOnlyList<string> ConnectedRooms { get; set; } = [];
 }
 
 public class ObjectDto
@@ -25,20 +25,18 @@ public class ObjectDto
     public string? RoomSlug { get; set; }
 }
 
-public class World(IOptions<AppOptions> appOptions, ILoggerFactory loggerFactory)
+public class World(IOptions<AppOptions> appOptions, ILogger<World> logger)
 {
     public List<Player> Players { get; set; } = [];
     public Dictionary<string, Room> Rooms { get; private set; } = [];
     public Dictionary<string, List<Object>> Objects { get; set; } = [];
 
-    private readonly ILogger<World> _logger = loggerFactory.CreateLogger<World>();
-
     public async Task InitializeAsync(CancellationToken cancellationToken = default)
     {
         var dto = await GetWorldDto(cancellationToken);
 
-        Rooms = await CreateRooms(dto);
-        Objects = await CreateObjects(dto);
+        Rooms = CreateRooms(dto);
+        Objects = CreateObjects(dto);
     }
 
     private async Task<WorldDto> GetWorldDto(CancellationToken cancellationToken)
@@ -81,7 +79,7 @@ public class World(IOptions<AppOptions> appOptions, ILoggerFactory loggerFactory
         return dto;
     }
 
-    private async Task<Dictionary<string, Room>> CreateRooms(WorldDto dto)
+    private Dictionary<string, Room> CreateRooms(WorldDto dto)
     {
         var roomActorsBySlug = dto.Rooms.ToDictionary(r => r.Slug,
             r => new Room()
@@ -97,7 +95,7 @@ public class World(IOptions<AppOptions> appOptions, ILoggerFactory loggerFactory
         {
             try
             {
-                _logger.LogInformation("Initializing exits for {Room}", roomDto.Slug);
+                logger.LogInformation("Initializing exits for {Room}", roomDto.Slug);
 
                 var currentRoomActor = roomActorsBySlug[roomDto.Slug];
 
@@ -106,7 +104,7 @@ public class World(IOptions<AppOptions> appOptions, ILoggerFactory loggerFactory
                     {
                         if (!roomActorsBySlug.ContainsKey(exitSlug))
                         {
-                            _logger.LogError("Missing slug {Slug} for room {Room}", exitSlug, roomDto.Slug);
+                            logger.LogError("Missing slug {Slug} for room {Room}", exitSlug, roomDto.Slug);
                         }
 
                         return roomActorsBySlug[exitSlug];
@@ -119,7 +117,7 @@ public class World(IOptions<AppOptions> appOptions, ILoggerFactory loggerFactory
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to initialize exits for {Room}", roomDto.Slug);
+                logger.LogError(ex, "Failed to initialize exits for {Room}", roomDto.Slug);
 
                 throw;
             }
@@ -128,7 +126,7 @@ public class World(IOptions<AppOptions> appOptions, ILoggerFactory loggerFactory
         return roomActorsBySlug;
     }
 
-    private async Task<Dictionary<string, List<Object>>> CreateObjects(WorldDto dto)
+    private Dictionary<string, List<Object>> CreateObjects(WorldDto dto)
     {
         var bySlug = dto
             .Objects

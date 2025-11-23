@@ -10,7 +10,7 @@ public class ExamineCommand : ICommand
 
 public class ExamineHandler(StringProvider provider) : IHandler<ExamineCommand>
 {
-    public async Task<CommandResult> Handle(ExamineCommand cmd, CancellationToken cancellationToken = default)
+    public Task<CommandResult> Handle(ExamineCommand cmd, CancellationToken cancellationToken = default)
     {
         var result = new CommandResult();
 
@@ -50,6 +50,6 @@ public class ExamineHandler(StringProvider provider) : IHandler<ExamineCommand>
             result.Add(player, content.Description);
         }
 
-        return result;
+        return Task.FromResult(result);
     }
 }
