@@ -1,4 +1,4 @@
-using Microsoft.Extensions.Logging;
+using System.Collections.Frozen;
 
 namespace MooSharp;
 
@@ -13,8 +13,7 @@ public class Object
     public ObjectId Id { get; init; } = ObjectId.New();
     public required string Name { get; init; }
     public required string Description { get; init; }
-
-    public HashSet<string> Keywords { get; init; } = new(StringComparer.OrdinalIgnoreCase); 
+    public IReadOnlyCollection<string> Keywords { get; } = new HashSet<string>(StringComparer.OrdinalIgnoreCase).ToFrozenSet(); 
 
     private Player? _owner;
 

@@ -1,7 +1,6 @@
 using System.Reflection;
 using System.Threading.Channels;
 using MooSharp;
-using MooSharp.Web;
 using MooSharp.Web.Components;
 
 var builder = WebApplication.CreateBuilder(args);

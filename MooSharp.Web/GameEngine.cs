@@ -1,6 +1,5 @@
 using System.Text;
 using Microsoft.AspNetCore.SignalR;
-using Microsoft.Extensions.Logging.Abstractions;
 using MooSharp.Messaging;
 
 namespace MooSharp;
