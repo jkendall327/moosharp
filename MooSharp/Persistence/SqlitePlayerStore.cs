@@ -1,5 +1,6 @@
 using System;
 using System.Data;
+using BCrypt.Net;
 using Dapper;
 using Microsoft.Data.Sqlite;
 using Microsoft.Extensions.Options;
@@ -28,10 +29,12 @@ public class SqlitePlayerStore : IPlayerStore
 
     public async Task SaveNewPlayer(Player player, Room currentLocation, string password)
     {
+        var hashedPassword = BCrypt.Net.BCrypt.HashPassword(password);
+
         var dto = new PlayerDto
         {
             Username = player.Username,
-            Password = password,
+            Password = hashedPassword,
             CurrentLocation = currentLocation.Id
         };
 
@@ -51,9 +54,13 @@ public class SqlitePlayerStore : IPlayerStore
     {
         await using var connection = new SqliteConnection(_connectionString);
 
-        return await connection.QuerySingleOrDefaultAsync<PlayerDto>(
-            "SELECT Username, Password, CurrentLocation FROM Players WHERE Username = @Username AND Password = @Password LIMIT 1",
-            new { command.Username, command.Password });
+        var player = await connection.QuerySingleOrDefaultAsync<PlayerDto>(
+            "SELECT Username, Password, CurrentLocation FROM Players WHERE Username = @Username LIMIT 1",
+            new { command.Username });
+
+        return player is not null && BCrypt.Net.BCrypt.Verify(command.Password, player.Password)
+            ? player
+            : null;
     }
 
     private async Task UpsertPlayerAsync(PlayerDto player)
