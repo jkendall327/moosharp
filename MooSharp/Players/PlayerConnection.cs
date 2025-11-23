@@ -5,7 +5,7 @@ namespace MooSharp;
 public interface IPlayerConnection
 {
     string Id { get; }
-    PlayerActor Player { get; }
+    Player Player { get; }
 
     Task SendMessageAsync(string message, CancellationToken cancellationToken = default);
     Task SendMessageAsync(StringBuilder message, CancellationToken cancellationToken = default);
@@ -19,4 +19,4 @@ public interface IPlayerConnection
     Task OnConnectionLostAsync();
 }
 
-public record InputReceivedEvent(PlayerActor Player, string Input, CancellationToken Token);
+public record InputReceivedEvent(Player Player, string Input, CancellationToken Token);

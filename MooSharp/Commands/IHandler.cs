@@ -5,5 +5,5 @@ namespace MooSharp;
 
 public interface IHandler<in T> where T : ICommand
 {
-    Task<CommandResult> Handle(T command, StringBuilder buffer, CancellationToken cancellationToken = default);
+    Task<CommandResult> Handle(T command, CancellationToken cancellationToken = default);
 }

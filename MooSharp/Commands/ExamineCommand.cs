@@ -1,17 +1,19 @@
-using System.Text;
+using MooSharp.Messaging;
 
 namespace MooSharp;
 
 public class ExamineCommand : ICommand
 {
-    public required PlayerActor Player { get; init; }
+    public required Player Player { get; init; }
     public required string Target { get; init; }
 }
 
 public class ExamineHandler(StringProvider provider) : IHandler<ExamineCommand>
 {
-    public async Task Handle(ExamineCommand cmd, StringBuilder buffer, CancellationToken cancellationToken = default)
+    public async Task<CommandResult> Handle(ExamineCommand cmd, CancellationToken cancellationToken = default)
     {
+        var result = new CommandResult();
+
         var player = cmd.Player;
 
         if (string.IsNullOrWhiteSpace(cmd.Target))
@@ -19,35 +21,35 @@ public class ExamineHandler(StringProvider provider) : IHandler<ExamineCommand>
             throw new NotImplementedException(
                 "When no target is specified for 'examine', just print the room's description");
         }
-        
+
         if (cmd.Target is "me")
         {
-            buffer.AppendLine(provider.ExamineSelf());
+            result.Add(player, provider.ExamineSelf());
 
-            var inventory = await player.QueryAsync(s => s.Inventory);
-            
-            var descriptions = inventory
-                               .Select(s => s.Value.Description)
-                               .ToList();
+            var descriptions = player.Inventory
+                .Select(s => s.Value.Description)
+                .ToList();
 
             if (descriptions.Any())
             {
-                buffer.AppendLine("You have:");
+                result.Add(player, "You have:");
 
                 foreach (var se in descriptions)
                 {
-                    buffer.AppendLine(se);
+                    result.Add(player, se);
                 }
             }
         }
-        
-        var current = await player.QueryAsync(s => s.CurrentLocation);
 
-        var contents = await current.QueryAsync(s => s.Contents);
+        var current = player.CurrentLocation;
+
+        var contents = current.Contents;
 
         if (contents.TryGetValue(cmd.Target, out var content))
         {
-            buffer.AppendLine(content.Description);
+            result.Add(player, content.Description);
         }
+
+        return result;
     }
 }

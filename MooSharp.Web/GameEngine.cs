@@ -12,6 +12,8 @@ public record GameInput(string ConnectionId, string Command);
 public class GameEngine(World world, CommandParser parser, CommandExecutor executor, IHubContext<MooHub> hubContext)
     : BackgroundService
 {
+    private readonly Dictionary<string, Player> _playerConnections = new();
+    
     private readonly Channel<GameInput> _inputQueue = Channel.CreateUnbounded<GameInput>();
 
     public void EnqueueInput(string connectionId, string command)
@@ -32,7 +34,11 @@ public class GameEngine(World world, CommandParser parser, CommandExecutor execu
         // var player = _world.Players.Values
         //     .FirstOrDefault(p => p.ConnectionId == input.ConnectionId);
 
-        var player = new PlayerActor(null!, new NullLoggerFactory());
+        var player = new Player()
+        {
+            Username = "fake",
+            CurrentLocation = null!
+        };
 
         if (player == null) return; // Or handle login logic
 
@@ -77,5 +83,30 @@ public class GameEngine(World world, CommandParser parser, CommandExecutor execu
         {
             // Log error, but don't crash the game
         }
+    }
+    
+    private void BuildCurrentRoomDescription(Player player, StringBuilder sb)
+    {
+        var room = player.CurrentLocation;
+
+        sb.AppendLine(room.Description);
+
+        var players = room.PlayersInRoom;
+        
+        foreach (var playerActor in players)
+        {
+            if (playerActor == player)
+            {
+                continue;
+            }
+            
+            sb.AppendLine($"{playerActor.Username} is here.");
+        }
+
+        var availableExits = player.CurrentLocation.Exits;
+
+        var availableExitsMessage = $"Available exits: {string.Join(", ", availableExits.Select(s => s.Key))}";
+
+        sb.AppendLine(availableExitsMessage);
     }
 }

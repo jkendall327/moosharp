@@ -1,63 +1,44 @@
-using System.Text;
+using MooSharp.Messaging;
 
 namespace MooSharp;
 
 public class TakeCommand : ICommand
 {
-    public required PlayerActor Player { get; init; }
+    public required Player Player { get; init; }
     public required string Target { get; init; }
 }
 
 public class TakeHandler : IHandler<TakeCommand>
 {
-    public async Task Handle(TakeCommand cmd, StringBuilder buffer, CancellationToken cancellationToken = default)
+    public Task<CommandResult> Handle(TakeCommand cmd, CancellationToken cancellationToken = default)
     {
+        var result = new CommandResult();
         var player = cmd.Player;
 
-        var location = await player.GetCurrentRoomAsync();
+        var contents = player.CurrentLocation.Contents;
+
+        if (!contents.TryGetValue(cmd.Target, out var o))
+        {
+            result.Add(player, $"There is no {cmd.Target} here.");
+
+            return Task.FromResult(result);
+        }
+
+        if (o.Owner is null)
+        {
+            contents.Remove(o.Name);
+            o.Owner = player;
+            player.Inventory.Add(o.Name, o);
+        }
+        else if (o.Owner == player)
+        {
+            result.Add(player, $"You take the {o.Name}.");
+        }
+        else
+        {
+            result.Add(player, $"Someone else already has the {o.Name}!");
+        }
         
-        var contents = await location.QueryAsync(s => s.Contents);
-
-        if (contents.TryGetValue(cmd.Target, out var o))
-        {
-            o.Post(new ActionMessage<Object>(obj => TakeOwnership(buffer, o, obj, player)));
-        }
-        else
-        {
-            buffer.AppendLine($"There is no {cmd.Target} here.");
-        }
-    }
-
-    private static Task TakeOwnership(StringBuilder buffer, ObjectActor o, Object obj, PlayerActor player)
-    {
-        if (obj.Owner is null)
-        {
-            obj.Location?.Post(new ActionMessage<Room>(s =>
-            {
-                s.Contents.Remove(obj.Name);
-
-                return Task.CompletedTask;
-            }));
-
-            obj.Owner = player;
-            
-            player.Post(new ActionMessage<Player>(s =>
-            {
-                s.Inventory.Add(obj.Name, o);
-                return Task.CompletedTask;
-            }));
-
-            buffer.AppendLine($"You picked up the {obj.Name}.");
-        }
-        else if (obj.Owner.Equals(player))
-        {
-            buffer.AppendLine($"You already have the {obj.Name}.");
-        }
-        else
-        {
-            buffer.AppendLine($"There is no {obj.Name} here.");
-        }
-
-        return Task.CompletedTask;
+        return Task.FromResult(result);
     }
 }

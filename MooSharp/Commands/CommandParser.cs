@@ -4,7 +4,7 @@ namespace MooSharp;
 
 public class CommandParser(ILogger<CommandParser> logger)
 {
-    public Task<ICommand?> ParseAsync(PlayerActor player, string command, CancellationToken token = default)
+    public Task<ICommand?> ParseAsync(Player player, string command, CancellationToken token = default)
     {
         logger.LogDebug("Parsing player input: {Input}", command);
         

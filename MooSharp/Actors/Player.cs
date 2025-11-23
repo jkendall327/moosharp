@@ -5,34 +5,8 @@ namespace MooSharp;
 public class Player
 {
     public Guid Id { get; } = Guid.CreateVersion7();
-    public required RoomActor CurrentLocation { get; set; }
-    public Dictionary<string, ObjectActor> Inventory { get; } = new();
+    public required Room CurrentLocation { get; set; }
+    public Dictionary<string, Object> Inventory { get; } = new();
     public required string Username { get; init; }
     public override string ToString() => Username;
-}
-
-public class PlayerActor(Player state, ILoggerFactory factory) : Actor<Player>(state, factory)
-{
-    private readonly ILogger<PlayerActor> _logger = factory.CreateLogger<PlayerActor>();
-    public string Username => _state.Username;
-    
-    public async Task<IReadOnlyDictionary<string, RoomActor>> GetCurrentlyAvailableExitsAsync()
-    {
-        var current = await QueryAsync(s => s.CurrentLocation);
-        
-        return current.Exits;
-    }
-
-    public Task MoveTo(RoomActor room)
-    {
-        _logger.LogDebug("Setting player location to exit {Exit}", room.Name);
-        _state.CurrentLocation = room;
-
-        return Task.CompletedTask;
-    }
-
-    public async Task<RoomActor> GetCurrentRoomAsync()
-    {
-        return await QueryAsync(s => s.CurrentLocation);
-    }
 }

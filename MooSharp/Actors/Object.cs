@@ -8,9 +8,9 @@ public class Object
     public required string Name { get; init; }
     public required string Description { get; init; }
 
-    private PlayerActor? _owner;
+    private Player? _owner;
 
-    public PlayerActor? Owner
+    public Player? Owner
     {
         get => _owner;
         set
@@ -24,9 +24,9 @@ public class Object
         }
     }
 
-    private RoomActor? _location;
+    private Room? _location;
 
-    public RoomActor? Location
+    public Room? Location
     {
         get => _location;
         set
@@ -41,11 +41,4 @@ public class Object
     }
     
     public override string ToString() => Name;
-}
-
-public class ObjectActor(Object state, ILoggerFactory factory) : Actor<Object>(state, factory)
-{
-    public int Id => _state.Id;
-    public string Name => _state.Name; 
-    public string Description =>  _state.Description; 
 }

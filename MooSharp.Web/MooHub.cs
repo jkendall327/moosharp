@@ -40,7 +40,7 @@ public class MooHub(
             CurrentLocation = defaultRoom
         };
 
-        var playerActor = new PlayerActor(player, factory);
+        var playerActor = new Player(player, factory);
 
         await defaultRoom.AddPlayer(playerActor);
 

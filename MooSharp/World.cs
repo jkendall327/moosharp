@@ -27,8 +27,8 @@ public class ObjectDto
 
 public class World(IOptions<AppOptions> appOptions, ILoggerFactory loggerFactory)
 {
-    public Dictionary<string, RoomActor> Rooms { get; private set; } = [];
-    public Dictionary<string, List<ObjectActor>> Objects { get; set; } = [];
+    public Dictionary<string, Room> Rooms { get; private set; } = [];
+    public Dictionary<string, List<Object>> Objects { get; set; } = [];
 
     private readonly ILogger<World> _logger = loggerFactory.CreateLogger<World>();
 
@@ -80,22 +80,16 @@ public class World(IOptions<AppOptions> appOptions, ILoggerFactory loggerFactory
         return dto;
     }
 
-    private async Task<Dictionary<string, RoomActor>> CreateRooms(WorldDto dto)
+    private async Task<Dictionary<string, Room>> CreateRooms(WorldDto dto)
     {
         var roomActorsBySlug = dto.Rooms.ToDictionary(r => r.Slug,
-            r => new RoomActor(new()
+            r => new Room()
                 {
                     Id = Random.Shared.Next(),
                     Slug = r.Slug,
                     Name = r.Name,
                     Description = r.Description,
-                },
-                loggerFactory));
-
-        foreach (var roomActor in roomActorsBySlug.Values)
-        {
-            roomActor.Start();
-        }
+                });
         
         // Connect exits.
         foreach (var roomDto in dto.Rooms)
@@ -117,15 +111,10 @@ public class World(IOptions<AppOptions> appOptions, ILoggerFactory loggerFactory
                         return roomActorsBySlug[exitSlug];
                     });
 
-                await currentRoomActor.Ask(new RequestMessage<Room, bool>(roomState =>
+                foreach (var exit in exits)
                 {
-                    foreach (var exit in exits)
-                    {
-                        roomState.Exits.Add(exit.Key, exit.Value);
-                    }
-
-                    return Task.FromResult(true);
-                }));
+                    currentRoomActor.Exits.Add(exit.Key, exit.Value);
+                }
             }
             catch (Exception ex)
             {
@@ -138,7 +127,7 @@ public class World(IOptions<AppOptions> appOptions, ILoggerFactory loggerFactory
         return roomActorsBySlug;
     }
 
-    private async Task<Dictionary<string, List<ObjectActor>>> CreateObjects(WorldDto dto)
+    private async Task<Dictionary<string, List<Object>>> CreateObjects(WorldDto dto)
     {
         var bySlug = dto
             .Objects
@@ -155,16 +144,8 @@ public class World(IOptions<AppOptions> appOptions, ILoggerFactory loggerFactory
 
         var dictionary = bySlug.ToDictionary(s => s.Key,
             grouping => grouping
-                .Select(o => new ObjectActor(o, loggerFactory))
+                .Select(o => o)
                 .ToList());
-
-        foreach (var obj in dictionary.Values)
-        {
-            foreach (var objectActor in obj)
-            {
-                objectActor.Start();
-            }
-        }
         
         foreach (var grouping in bySlug)
         {
@@ -178,7 +159,7 @@ public class World(IOptions<AppOptions> appOptions, ILoggerFactory loggerFactory
             var objectStates = grouping.ToList();
             var objectActors = dictionary[grouping.Key];
 
-            var contents = new Dictionary<string, ObjectActor>();
+            var contents = new Dictionary<string, Object>();
 
             for (var i = 0; i < objectStates.Count; i++)
             {
@@ -186,15 +167,10 @@ public class World(IOptions<AppOptions> appOptions, ILoggerFactory loggerFactory
                 contents.Add(objectStates[i].Name, objectActors[i]);
             }
 
-            await room.Ask(new RequestMessage<Room, bool>(roomState =>
+            foreach ((var name, var actor) in contents)
             {
-                foreach ((var name, var actor) in contents)
-                {
-                    roomState.Contents.Add(name, actor);
-                }
-
-                return Task.FromResult(true);
-            }));
+                room.Contents.Add(name, actor);
+            }
         }
 
         return dictionary;

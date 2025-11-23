@@ -24,4 +24,9 @@ public class CommandResult
             }
         }
     }
+
+    public void BroadcastToAllButPlayer(Player player, string content)
+    {
+        Broadcast(player.CurrentLocation, content, exclude: player);
+    }
 }
