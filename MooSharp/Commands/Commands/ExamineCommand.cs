@@ -43,7 +43,6 @@ public class ExamineHandler(World world) : IHandler<ExamineCommand>
         if (cmd.Target is "me")
         {
             var inventory = player.Inventory
-                .Select(s => s.Value)
                 .ToList();
 
             result.Add(player, new SelfExaminedEvent(player, inventory));
