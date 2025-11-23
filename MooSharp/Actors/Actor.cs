@@ -15,6 +15,7 @@ public abstract class Actor<TState> where TState : class
     protected readonly TState _state;
     private readonly ILogger _logger;
     private readonly string _typeName;
+    private bool _started;
 
     protected Actor(TState state, ILoggerFactory loggerFactory)
     {
@@ -23,11 +24,16 @@ public abstract class Actor<TState> where TState : class
 
         _mailbox = Channel.CreateBounded<IActorMessage<TState>>(100);
 
-        _typeName = state.GetType()
-            .Name;
+        _typeName = state.GetType().Name;
+    }
 
-        // Start the long-running task that processes messages.
+    /// <summary>
+    /// Informs this actor to begin receiving and processing messages.
+    /// </summary>
+    public void Start()
+    {
         Task.Run(ProcessMailboxAsync);
+        _started = true;
     }
 
     // The main loop for the actor. It runs forever, processing one message at a time.
@@ -76,6 +82,12 @@ public abstract class Actor<TState> where TState : class
 
     public void Post(IActorMessage<TState> message)
     {
+        if (!_started)
+        {
+            throw new InvalidOperationException(
+                "This actor hasn't been started yet - you forgot to call .Start() somewhere.");
+        }
+        
         var posted = _mailbox.Writer.TryWrite(message);
 
         if (!posted)

@@ -92,10 +92,15 @@ public class World(IOptions<AppOptions> appOptions, ILoggerFactory loggerFactory
                 },
                 loggerFactory));
 
+        foreach (var roomActor in roomActorsBySlug.Values)
+        {
+            roomActor.Start();
+        }
+        
         // Connect exits.
         foreach (var roomDto in dto.Rooms)
         {
-            try // Wrap this loop in try-catch
+            try
             {
                 _logger.LogInformation("Initializing exits for {Room}", roomDto.Slug);
 
@@ -153,6 +158,14 @@ public class World(IOptions<AppOptions> appOptions, ILoggerFactory loggerFactory
                 .Select(o => new ObjectActor(o, loggerFactory))
                 .ToList());
 
+        foreach (var obj in dictionary.Values)
+        {
+            foreach (var objectActor in obj)
+            {
+                objectActor.Start();
+            }
+        }
+        
         foreach (var grouping in bySlug)
         {
             var room = Rooms.GetValueOrDefault(grouping.Key);
