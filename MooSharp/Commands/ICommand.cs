@@ -2,6 +2,9 @@ using MooSharp.Messaging;
 
 namespace MooSharp;
 
+/// <summary>
+/// An action that players can take in the game.
+/// </summary>
 public interface ICommand
 {
     /// <summary>

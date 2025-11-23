@@ -8,6 +8,18 @@ public class ExamineCommand : CommandBase<ExamineCommand>
     public required string Target { get; init; }
 }
 
+public class ExamineCommandDefinition : ICommandDefinition
+{
+    public IReadOnlyCollection<string> Verbs { get; } = ["examine", "view", "look"];
+
+    public ICommand Create(Player player, string args)
+        => new ExamineCommand
+        {
+            Player = player,
+            Target = args
+        };
+}
+
 public class ExamineHandler : IHandler<ExamineCommand>
 {
     public Task<CommandResult> Handle(ExamineCommand cmd, CancellationToken cancellationToken = default)

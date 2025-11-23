@@ -13,7 +13,11 @@ builder.Services.AddRazorComponents().AddInteractiveServerComponents();
 
 builder.Services.AddSingleton<World>();
 builder.Services.AddSingleton<CommandParser>();
-builder.Services.AddSingleton<CommandParser>();
+
+builder.Services.AddTransient<ICommandDefinition, MoveCommandDefinition>();
+builder.Services.AddTransient<ICommandDefinition, ExamineCommandDefinition>();
+builder.Services.AddTransient<ICommandDefinition, TakeCommandDefinition>();
+
 builder.Services.AddSingleton<CommandExecutor>();
 builder.Services.AddSingleton<AgentService>();
 builder.Services.AddSingleton<IPlayerStore, JsonPlayerStore>();

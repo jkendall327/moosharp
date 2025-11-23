@@ -8,6 +8,21 @@ public class TakeCommand : CommandBase<TakeCommand>
     public required string Target { get; init; }
 }
 
+public class TakeCommandDefinition : ICommandDefinition
+{
+    public IReadOnlyCollection<string> Verbs { get; } =
+    [
+        "take", "grab", "get"
+    ];
+
+    public ICommand Create(Player player, string args) =>
+        new TakeCommand
+        {
+            Player = player,
+            Target = args
+        };
+}
+
 public class TakeHandler : IHandler<TakeCommand>
 {
     public Task<CommandResult> Handle(TakeCommand cmd, CancellationToken cancellationToken = default)
@@ -38,7 +53,7 @@ public class TakeHandler : IHandler<TakeCommand>
         {
             result.Add(player, $"Someone else already has the {o.Name}!");
         }
-        
+
         return Task.FromResult(result);
     }
 }

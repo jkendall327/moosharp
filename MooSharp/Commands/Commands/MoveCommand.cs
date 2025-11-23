@@ -11,6 +11,18 @@ public class MoveCommand : CommandBase<MoveCommand>
     public string BroadcastMessage(string username) => $"{username} went to {TargetExit}";
 }
 
+public class MoveCommandDefinition : ICommandDefinition
+{
+    public IReadOnlyCollection<string> Verbs { get; } = ["move", "go", "walk"];
+
+    public ICommand Create(Player player, string args)
+        => new MoveCommand
+        {
+            Player = player,
+            TargetExit = args
+        };
+}
+
 public class MoveHandler(World world, ILogger<MoveHandler> logger) : IHandler<MoveCommand>
 {
     public Task<CommandResult> Handle(MoveCommand cmd, CancellationToken cancellationToken = default)
