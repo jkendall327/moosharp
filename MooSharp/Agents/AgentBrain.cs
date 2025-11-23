@@ -84,11 +84,10 @@ public class AgentBrain
             return;
         }
 
-        // We limit tokens to prevent it from writing a novel, we just want a command.
         // var result = await _chatService.GetChatMessageContentAsync(_history,
         //     executionSettings: new OpenAIPromptExecutionSettings
         //     {
-        //         MaxTokens = 50
+        //         MaxTokens = 500
         //     },
         //     kernel: _kernel);
         //
