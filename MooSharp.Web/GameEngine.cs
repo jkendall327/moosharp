@@ -25,11 +25,11 @@ public class GameEngine(World world, CommandParser parser, CommandExecutor execu
     {
         await foreach (var input in _inputQueue.Reader.ReadAllAsync(stoppingToken))
         {
-            await ProcessInput(input);
+            await ProcessInput(input, stoppingToken);
         }
     }
 
-    private async Task ProcessInput(GameInput input)
+    private async Task ProcessInput(GameInput input, CancellationToken ct = default)
     {
         // var player = _world.Players.Values
         //     .FirstOrDefault(p => p.ConnectionId == input.ConnectionId);
@@ -42,29 +42,23 @@ public class GameEngine(World world, CommandParser parser, CommandExecutor execu
 
         if (player == null) return; // Or handle login logic
 
-        var command = await parser.ParseAsync(player, input.Command);
+        var command = await parser.ParseAsync(player, input.Command, ct);
 
         if (command is null)
         {
-            throw new NotImplementedException("Tell player command was invalid");
+            _ = SendMessagesAsync([new GameMessage(player, "That command wasn't recognised.")]);
+            return;
         }
         
-        var outputBuffer = new StringBuilder();
-
         try
         {
-            var result = await executor.Handle(command, outputBuffer);
+            var result = await executor.Handle(command, ct);
             _ = SendMessagesAsync(result.Messages);
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-            throw new NotImplementedException("Tell player something went wrong");
+            _ = SendMessagesAsync([new(player, "An unexpected error occurred.")]);
         }
-
-        // await hubContext
-        //     .Clients
-        //     .Client(input.ConnectionId)
-        //     .SendAsync("ReceiveMessage", outputBuffer.ToString());
     }
 
     private async Task SendMessagesAsync(List<GameMessage> messages)
