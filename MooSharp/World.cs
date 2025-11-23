@@ -30,6 +30,8 @@ public class World(IOptions<AppOptions> appOptions, ILoggerFactory loggerFactory
     public Dictionary<string, RoomActor> Rooms { get; private set; } = [];
     public Dictionary<string, List<ObjectActor>> Objects { get; set; } = [];
 
+    private readonly ILogger<World> _logger = loggerFactory.CreateLogger<World>();
+
     public async Task InitializeAsync(CancellationToken cancellationToken = default)
     {
         var dto = await GetWorldDto(cancellationToken);
@@ -61,12 +63,14 @@ public class World(IOptions<AppOptions> appOptions, ILoggerFactory loggerFactory
             throw new InvalidOperationException("Room data failed to deserialize.");
         }
 
-        var slugs = dto.Rooms
-                       .Select(s => s.Slug)
-                       .ToList();
+        var slugs = dto
+            .Rooms
+            .Select(s => s.Slug)
+            .ToList();
 
-        var filtered = slugs.Distinct()
-                            .ToList();
+        var filtered = slugs
+            .Distinct()
+            .ToList();
 
         if (slugs.Count != filtered.Count)
         {
@@ -80,26 +84,31 @@ public class World(IOptions<AppOptions> appOptions, ILoggerFactory loggerFactory
     {
         var roomActorsBySlug = dto.Rooms.ToDictionary(r => r.Slug,
             r => new RoomActor(new()
-            {
-                Id = Random.Shared.Next(),
-                Slug = r.Slug,
-                Name = r.Name,
-                Description = r.Description,
-            }, loggerFactory));
+                {
+                    Id = Random.Shared.Next(),
+                    Slug = r.Slug,
+                    Name = r.Name,
+                    Description = r.Description,
+                },
+                loggerFactory));
 
         // Connect exits.
         foreach (var roomDto in dto.Rooms)
         {
             try // Wrap this loop in try-catch
             {
-                loggerFactory.CreateLogger<World>().LogInformation("Initializing exits for {Room}", roomDto.Slug);
-            
+                _logger.LogInformation("Initializing exits for {Room}", roomDto.Slug);
+
                 var currentRoomActor = roomActorsBySlug[roomDto.Slug];
 
                 var exits = roomDto.ConnectedRooms.ToDictionary(exitSlug => exitSlug,
-                    exitSlug => {
-                        if(!roomActorsBySlug.ContainsKey(exitSlug)) 
-                            loggerFactory.CreateLogger<World>().LogError("Missing slug {Slug} for room {Room}", exitSlug, roomDto.Slug);
+                    exitSlug =>
+                    {
+                        if (!roomActorsBySlug.ContainsKey(exitSlug))
+                        {
+                            _logger.LogError("Missing slug {Slug} for room {Room}", exitSlug, roomDto.Slug);
+                        }
+
                         return roomActorsBySlug[exitSlug];
                     });
 
@@ -109,13 +118,15 @@ public class World(IOptions<AppOptions> appOptions, ILoggerFactory loggerFactory
                     {
                         roomState.Exits.Add(exit.Key, exit.Value);
                     }
+
                     return Task.FromResult(true);
                 }));
             }
             catch (Exception ex)
             {
-                loggerFactory.CreateLogger<World>().LogError(ex, "Failed to initialize exits for {Room}", roomDto.Slug);
-                throw; 
+                _logger.LogError(ex, "Failed to initialize exits for {Room}", roomDto.Slug);
+
+                throw;
             }
         }
 
@@ -124,24 +135,28 @@ public class World(IOptions<AppOptions> appOptions, ILoggerFactory loggerFactory
 
     private async Task<Dictionary<string, List<ObjectActor>>> CreateObjects(WorldDto dto)
     {
-        var bySlug = dto.Objects
-                        .Where(s => s.RoomSlug is not null)
-                        .ToLookup(r => r.RoomSlug!,
-                            o => new Object()
-                            {
-                                Id = Random.Shared.Next(),
-                                Description = o.Description,
-                                Name = o.Name,
-                                Location = null,
-                                Owner = null
-                            });
-        
+        var bySlug = dto
+            .Objects
+            .Where(s => s.RoomSlug is not null)
+            .ToLookup(r => r.RoomSlug!,
+                o => new Object
+                {
+                    Id = Random.Shared.Next(),
+                    Description = o.Description,
+                    Name = o.Name,
+                    Location = null,
+                    Owner = null
+                });
+
         var dictionary = bySlug.ToDictionary(s => s.Key,
-            grouping => grouping.Select(o => new ObjectActor(o, loggerFactory)).ToList());
+            grouping => grouping
+                .Select(o => new ObjectActor(o, loggerFactory))
+                .ToList());
 
         foreach (var grouping in bySlug)
         {
             var room = Rooms.GetValueOrDefault(grouping.Key);
+
             if (room is null)
             {
                 continue;
@@ -149,17 +164,18 @@ public class World(IOptions<AppOptions> appOptions, ILoggerFactory loggerFactory
 
             var objectStates = grouping.ToList();
             var objectActors = dictionary[grouping.Key];
-            
+
             var contents = new Dictionary<string, ObjectActor>();
+
             for (var i = 0; i < objectStates.Count; i++)
             {
                 objectStates[i].Location = room;
                 contents.Add(objectStates[i].Name, objectActors[i]);
             }
-            
+
             await room.Ask(new RequestMessage<Room, bool>(roomState =>
             {
-                foreach (var (name, actor) in contents)
+                foreach ((var name, var actor) in contents)
                 {
                     roomState.Contents.Add(name, actor);
                 }
