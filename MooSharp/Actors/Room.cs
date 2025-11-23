@@ -17,11 +17,11 @@ public class Room
 
 public class RoomActor(Room state, ILoggerFactory factory) : Actor<Room>(state, factory)
 {
-    public int Id => State.Id;
-    public string Name => State.Name; 
-    public string Slug => State.Slug;
-    public string Description =>  State.Description; 
-    public IReadOnlyDictionary<string, RoomActor> Exits => State.Exits;
+    public int Id => _state.Id;
+    public string Name => _state.Name; 
+    public string Slug => _state.Slug;
+    public string Description =>  _state.Description; 
+    public IReadOnlyDictionary<string, RoomActor> Exits => _state.Exits;
     
     public async Task<List<PlayerActor>> GetPeopleInRoom()
     {

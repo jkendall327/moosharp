@@ -45,7 +45,7 @@ public class Object
 
 public class ObjectActor(Object state, ILoggerFactory factory) : Actor<Object>(state, factory)
 {
-    public int Id => State.Id;
-    public string Name => State.Name; 
-    public string Description =>  State.Description; 
+    public int Id => _state.Id;
+    public string Name => _state.Name; 
+    public string Description =>  _state.Description; 
 }

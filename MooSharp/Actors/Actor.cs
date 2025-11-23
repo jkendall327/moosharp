@@ -12,19 +12,20 @@ public interface IActorMessage<in T>
 public abstract class Actor<TState> where TState : class
 {
     private readonly Channel<IActorMessage<TState>> _mailbox;
-    protected readonly TState State;
+    protected readonly TState _state;
     private readonly ILogger _logger;
-    private string _typeName;
+    private readonly string _typeName;
 
     protected Actor(TState state, ILoggerFactory loggerFactory)
     {
-        State = state;
+        _state = state;
         _logger = loggerFactory.CreateLogger(GetType());
 
         _mailbox = Channel.CreateBounded<IActorMessage<TState>>(100);
 
-        _typeName = state.GetType().Name;
-        
+        _typeName = state.GetType()
+            .Name;
+
         // Start the long-running task that processes messages.
         Task.Run(ProcessMailboxAsync);
     }
@@ -32,33 +33,44 @@ public abstract class Actor<TState> where TState : class
     // The main loop for the actor. It runs forever, processing one message at a time.
     private async Task ProcessMailboxAsync()
     {
-        using var scope = _logger.BeginScope("Actor {ActorType}-{ActorId}", _typeName, State.GetHashCode());
-        _logger.LogInformation("Actor Loop STARTED {ActorType}-{ActorId}", _typeName, State.GetHashCode()); // <--- ADD THIS
+        using var scope = _logger.BeginScope(new Dictionary<string, object?>
+        {
+            {
+                "ActorType", _typeName
+            },
+            {
+                "State", _state.GetHashCode()
+            }
+        });
 
-        try 
+        _logger.LogInformation("Actor Loop STARTED");
+
+        try
         {
             await foreach (var message in _mailbox.Reader.ReadAllAsync())
             {
                 _logger.LogDebug("Processing message...");
+
                 try
                 {
-                    await message.Process(State);
+                    await message.Process(_state);
                 }
                 catch (Exception e)
                 {
                     _logger.LogError(e, "Error while processing message");
                 }
+
                 _logger.LogDebug("Processed message");
             }
         }
         catch (Exception ex)
         {
             // This captures if the Channel reader itself crashes or the loop exits unexpectedly
-            _logger.LogCritical(ex, "Actor Loop CRASHED"); // <--- ADD THIS
+            _logger.LogCritical(ex, "Actor Loop CRASHED");
         }
         finally
         {
-            _logger.LogWarning("Actor Loop STOPPED"); // <--- ADD THIS
+            _logger.LogWarning("Actor Loop STOPPED");
         }
     }
 
@@ -86,7 +98,7 @@ public abstract class Actor<TState> where TState : class
         return await Ask(message);
     }
 
-    public override string? ToString() => State.ToString();
+    public override string? ToString() => _state.ToString();
 }
 
 /// A message that just performs an action and doesn't return anything.
@@ -98,7 +110,7 @@ public class ActionMessage<T> : IActorMessage<T>
 }
 
 // An interface for messages that need to return a value.
-public interface IRequestMessage<TState, TResult> : IActorMessage<TState>
+public interface IRequestMessage<in TState, TResult> : IActorMessage<TState>
 {
     Task<TResult> GetResponseAsync();
 }
@@ -116,6 +128,7 @@ public class RequestMessage<TState, TResult> : IRequestMessage<TState, TResult> 
     /// An actor should not run a caller's code. It's too dangerous.
     /// </summary>
     private readonly TaskCompletionSource<TResult> _tcs = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
     private readonly Func<TState, Task<TResult>> _request;
 
     public RequestMessage(Func<TState, Task<TResult>> request) => _request = request;

@@ -13,7 +13,7 @@ public class Player
 
 public class PlayerActor(Player state, ILoggerFactory factory) : Actor<Player>(state, factory)
 {
-    public string Username => State.Username;
+    public string Username => _state.Username;
     
     public async Task<IReadOnlyDictionary<string, RoomActor>> GetCurrentlyAvailableExitsAsync()
     {
