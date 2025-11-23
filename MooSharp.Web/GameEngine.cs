@@ -43,6 +43,10 @@ public class GameEngine(
         try
         {
             var result = await executor.Handle(command, ct);
+
+            var description = BuildCurrentRoomDescription(player).ToString();
+            result.Messages.Add(new(player, description));
+            
             _ = SendMessagesAsync(result.Messages);
         }
         catch (Exception)
