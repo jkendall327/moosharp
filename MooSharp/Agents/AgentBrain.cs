@@ -85,6 +85,7 @@ public class AgentBrain
     {
         // Always record history.
         _history.AddUserMessage(message);
+        TrimHistory();
 
         // Only sometimes actually act, based on cooldown
         if (!await ShouldActAsync())
@@ -101,6 +102,7 @@ public class AgentBrain
         }
 
         _history.AddAssistantMessage(commandText);
+        TrimHistory();
 
         var id = new ConnectionId(_connection.Id);
 
@@ -123,6 +125,22 @@ public class AgentBrain
             AgentSource.Anthropic => await GetAnthropicResponseAsync(o),
             _ => throw new NotSupportedException($"Unknown agent source {_source}")
         };
+    }
+
+    private void TrimHistory()
+    {
+        var maxRecentMessages = Math.Max(0, _options.Value.MaxRecentMessages);
+
+        // Always reserve one slot for the system prompt at index 0.
+        var maxHistorySize = maxRecentMessages + 1;
+
+        if (_history.Count <= maxHistorySize)
+        {
+            return;
+        }
+
+        var messagesToRemove = _history.Count - maxHistorySize;
+        _history.RemoveRange(1, messagesToRemove);
     }
 
     private async Task<ChatMessageContent> GetOpenAIResponseAsync(string modelId, string apiKey, string? endpoint = null)
