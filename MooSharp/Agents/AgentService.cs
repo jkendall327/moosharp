@@ -9,17 +9,14 @@ public class AgentService(World world, ChannelWriter<GameInput> writer, IService
 {
     public async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        // Create agents.
         await SpawnAgent("Gandalf",
-            "You are a wise wizard. You speak in riddles. You enjoy examining things.",
-            stoppingToken);
+            "You are a wise wizard. You speak in riddles. You enjoy examining things.");
 
         await SpawnAgent("Gollum",
-            "You are obsessed with finding your precious. You are sneaky and rude.",
-            stoppingToken);
+            "You are obsessed with finding your precious. You are sneaky and rude.");
     }
 
-    private Task SpawnAgent(string name, string persona, CancellationToken ct)
+    private Task SpawnAgent(string name, string persona)
     {
         using var scope = services.CreateScope();
         var kernel = scope.ServiceProvider.GetRequiredService<Kernel>();

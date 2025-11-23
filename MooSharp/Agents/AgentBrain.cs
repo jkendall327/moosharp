@@ -16,7 +16,7 @@ public class AgentBrain
     private readonly ChatHistory _history;
     private readonly string _persona;
 
-    // Rate limiting fields
+    // Rate limiting
     private readonly TimeSpan _actionCooldown;
     private DateTimeOffset _nextAllowedActionTime = DateTimeOffset.MinValue;
     private readonly SemaphoreSlim _cooldownLock = new(1, 1);
