@@ -14,7 +14,7 @@ public class TakeHandler : IHandler<TakeCommand>
     {
         var player = cmd.Player;
 
-        var location = await player.QueryAsync(s => s.CurrentLocation);
+        var location = await player.GetCurrentRoomAsync();
         
         var contents = await location.QueryAsync(s => s.Contents);
 

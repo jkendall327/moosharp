@@ -9,13 +9,13 @@ public class MooHub(
     PlayerGameLoopManager manager,
     World world,
     ILoggerFactory factory,
-    ILogger<MooHub>  logger,
+    ILogger<MooHub> logger,
     IHubContext<MooHub> hubContext) : Hub
 {
     public async Task SendCommand(string command)
     {
         logger.LogInformation("Got command {Command}", command);
-        
+
         var connection = connectionManager.TryGetPlayer(Context.ConnectionId);
 
         if (connection != null)
@@ -27,7 +27,7 @@ public class MooHub(
     public override async Task OnConnectedAsync()
     {
         logger.LogInformation("Connection made with ID {Id}", Context.ConnectionId);
-        
+
         var atrium = world.Rooms.GetValueOrDefault("atrium");
 
         if (atrium is null)
@@ -37,18 +37,19 @@ public class MooHub(
 
         var player = new Player
         {
-            Username = Random.Shared
-                             .Next()
-                             .ToString(),
-            
+            Username = Random
+                .Shared
+                .Next()
+                .ToString(),
             CurrentLocation = atrium
         };
 
         var playerActor = new PlayerActor(player, factory);
-        
+
         atrium.Post(new ActionMessage<Room>(s =>
         {
             s.PlayersInRoom.Add(playerActor);
+
             return Task.CompletedTask;
         }));
 
@@ -63,27 +64,33 @@ public class MooHub(
         await manager.BuildCurrentRoomDescription(playerActor, sb);
 
         await connection.SendMessageAsync(sb);
-        
+
         await base.OnConnectedAsync();
     }
 
     public override async Task OnDisconnectedAsync(Exception? exception)
     {
-        logger.LogInformation("Connection lost for {Id}",  Context.ConnectionId);
+        logger.LogInformation("Connection lost for {Id}", Context.ConnectionId);
 
         if (exception is not null)
         {
             logger.LogError(exception, "Exception was present on connection loss");
         }
-        
+
         var connection = connectionManager.TryGetPlayer(Context.ConnectionId);
 
-        if (connection != null)
+        if (connection is not null)
         {
+            // Remove player from the world.
+            // Otherwise you could refresh your ghosts would be left around forever.
+            var currentRoom = await connection.Player.GetCurrentRoomAsync();
+            await currentRoom.RemovePlayer(connection.Player);
+
+            // Kill the connection.
             await connection.OnConnectionLostAsync();
             connectionManager.RemovePlayer(connection);
         }
-
+        
         await base.OnDisconnectedAsync(exception);
     }
 }

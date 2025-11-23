@@ -30,4 +30,9 @@ public class PlayerActor(Player state, ILoggerFactory factory) : Actor<Player>(s
 
         return Task.CompletedTask;
     }
+
+    public async Task<RoomActor> GetCurrentRoomAsync()
+    {
+        return await QueryAsync(s => s.CurrentLocation);
+    }
 }
