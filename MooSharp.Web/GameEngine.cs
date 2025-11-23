@@ -87,8 +87,9 @@ public class GameEngine(
 
             _ = SendMessagesAsync(result.Messages);
         }
-        catch (Exception)
+        catch (Exception ex)
         {
+            logger.LogError(ex, "Error processing world command {Command}", command.Command);
             _ = SendMessagesAsync([new(player, new SystemMessageEvent("An unexpected error occurred."))]);
         }
     }
