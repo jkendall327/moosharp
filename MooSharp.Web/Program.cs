@@ -14,6 +14,7 @@ builder.Services.AddRazorComponents().AddInteractiveServerComponents();
 builder.Services.AddSingleton<World>();
 builder.Services.AddSingleton<CommandParser>();
 builder.Services.AddSingleton<CommandExecutor>();
+builder.Services.AddSingleton<CommandReference>();
 builder.Services.AddSingleton<AgentSpawner>();
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddSingleton<IPlayerStore, JsonPlayerStore>();

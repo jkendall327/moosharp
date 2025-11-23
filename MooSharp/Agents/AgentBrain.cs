@@ -8,6 +8,7 @@ using Microsoft.SemanticKernel.ChatCompletion;
 using Microsoft.SemanticKernel.Connectors.Google;
 using Microsoft.SemanticKernel.Connectors.OpenAI;
 using MooSharp.Messaging;
+using System.Text;
 using System.Threading.Channels;
 
 namespace MooSharp.Agents;
@@ -21,6 +22,7 @@ public class AgentBrain
     private readonly TimeProvider _clock;
     private readonly string _persona;
     private readonly AgentSource _source;
+    private readonly string _availableCommands;
 
     private readonly Channel<string> _incomingMessages;
 
@@ -32,6 +34,7 @@ public class AgentBrain
     public AgentBrain(string name,
         string persona,
         AgentSource source,
+        string availableCommands,
         ChannelWriter<GameInput> gameInputWriter,
         IOptions<AgentOptions> options,
         TimeProvider clock,
@@ -39,6 +42,7 @@ public class AgentBrain
     {
         _persona = persona;
         _source = source;
+        _availableCommands = availableCommands;
         _gameInputWriter = gameInputWriter;
         _options = options;
         _clock = clock;
@@ -59,7 +63,14 @@ public class AgentBrain
 
         _ = Task.Run(ProcessIncomingMessagesAsync);
 
-        _history = new($"You are a player in a text-based adventure game. Your name is {name}. {persona}");
+        var systemPrompt = new StringBuilder()
+            .AppendLine($"You are a player in a text-based adventure game. Your name is {name}.")
+            .AppendLine(persona)
+            .AppendLine("Use only the commands listed below, and respond with a single command starting with the command verb.")
+            .AppendLine(_availableCommands)
+            .ToString();
+
+        _history = new(systemPrompt);
     }
 
     public IPlayerConnection Connection => _connection;
