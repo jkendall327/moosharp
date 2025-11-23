@@ -8,7 +8,6 @@ public class MoveCommand : CommandBase<MoveCommand>
     public required Player Player { get; init; }
     public required string TargetExit { get; init; }
 
-    public string BroadcastMessage(string username) => $"{username} went to {TargetExit}";
 }
 
 public class MoveCommandDefinition : ICommandDefinition
@@ -34,23 +33,22 @@ public class MoveHandler(World world, ILogger<MoveHandler> logger) : IHandler<Mo
 
         if (!exits.TryGetValue(cmd.TargetExit, out var exit))
         {
-            result.Add(player, "That exit doesn't exist.");
+            result.Add(player, new ExitNotFoundEvent(cmd.TargetExit));
             return Task.FromResult(result);
         }
-        
-        var exitRoom = world.Rooms[exit]; 
 
-        result.Add(player, $"You head to {exitRoom.Description}.");
+        var originRoom = player.CurrentLocation;
+        var exitRoom = world.Rooms[exit];
 
-        var broadcastMessage = cmd.BroadcastMessage(player.Username);
+        result.Add(player, new PlayerMovedEvent(player, exitRoom));
 
-        result.BroadcastToAllButPlayer(player, broadcastMessage);
-        
-        player.CurrentLocation.PlayersInRoom.Remove(player);
+        result.BroadcastToAllButPlayer(player, new PlayerDepartedEvent(player, originRoom, cmd.TargetExit));
+
+        originRoom.PlayersInRoom.Remove(player);
         player.CurrentLocation = exitRoom;
         player.CurrentLocation.PlayersInRoom.Add(player);
-        
-        result.BroadcastToAllButPlayer(player, $"{player.Username} arrived");
+
+        result.BroadcastToAllButPlayer(player, new PlayerArrivedEvent(player, exitRoom));
 
         logger.LogDebug("Move complete");
 

@@ -36,30 +36,20 @@ public class ExamineHandler : IHandler<ExamineCommand>
 
         if (cmd.Target is "me")
         {
-            result.Add(player, "You took a look at yourself. You're looking pretty good.");
-
-            var descriptions = player.Inventory
-                .Select(s => s.Value.Description)
+            var inventory = player.Inventory
+                .Select(s => s.Value)
                 .ToList();
 
-            if (descriptions.Any())
-            {
-                result.Add(player, "You have:");
-
-                foreach (var se in descriptions)
-                {
-                    result.Add(player, se);
-                }
-            }
+            result.Add(player, new SelfExaminedEvent(player, inventory));
         }
 
         var current = player.CurrentLocation;
 
         var obj = player.CurrentLocation.FindObject(cmd.Target);
-        
+
         if (obj is not null)
         {
-            result.Add(player, obj.Description);
+            result.Add(player, new ObjectExaminedEvent(obj));
         }
 
         return Task.FromResult(result);

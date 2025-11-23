@@ -1,4 +1,5 @@
 using System.Reflection;
+using MooSharp.Messaging;
 
 namespace MooSharp.Web;
 
@@ -58,6 +59,35 @@ public static class ServiceCollectionExtensions
                 builder.Services.AddTransient(definitionType, type);
             }
         }
+    }
+
+    /// <summary>
+    /// Register all IGameEventFormatter implementations and the presenter pipeline.
+    /// </summary>
+    public static void RegisterPresenters(this WebApplicationBuilder builder)
+    {
+        var assemblies = new[] { Assembly.GetExecutingAssembly(), typeof(CommandExecutor).Assembly };
+        var formatterInterfaceType = typeof(IGameEventFormatter<>);
+
+        foreach (var assembly in assemblies)
+        {
+            var formatterTypes = assembly.GetTypes()
+                .Where(t => t is { IsAbstract: false, IsInterface: false })
+                .SelectMany(t => t.GetInterfaces()
+                    .Where(i => i.IsGenericType && i.GetGenericTypeDefinition() == formatterInterfaceType)
+                    .Select(i => new
+                    {
+                        Implementation = t,
+                        Service = i
+                    }));
+
+            foreach (var typePair in formatterTypes)
+            {
+                builder.Services.AddSingleton(typePair.Service, typePair.Implementation);
+            }
+        }
+
+        builder.Services.AddSingleton<IGameMessagePresenter, GameMessagePresenter>();
     }
 
 }

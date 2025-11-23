@@ -1,0 +1,30 @@
+using System.Linq;
+using Microsoft.Extensions.Logging;
+
+namespace MooSharp.Messaging;
+
+public interface IGameMessagePresenter
+{
+    string Present(GameMessage message);
+}
+
+public class GameMessagePresenter(IEnumerable<IGameEventFormatter> formatters, ILogger<GameMessagePresenter> logger) : IGameMessagePresenter
+{
+    public string Present(GameMessage message)
+    {
+        var formatter = formatters.FirstOrDefault(f => f.CanFormat(message.Event));
+
+        if (formatter is null)
+        {
+            logger.LogWarning("No formatter registered for event type {EventType}", message.Event.GetType().Name);
+            return string.Empty;
+        }
+
+        return message.Audience switch
+        {
+            MessageAudience.Actor => formatter.FormatForActor(message.Event),
+            MessageAudience.Observer => formatter.FormatForObserver(message.Event),
+            _ => string.Empty
+        };
+    }
+}

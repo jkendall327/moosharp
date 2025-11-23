@@ -14,7 +14,8 @@ public class GameEngine(
     ChannelReader<GameInput> reader,
     IPlayerStore playerStore,
     IHubContext<MooHub> hubContext,
-    ILogger<GameEngine> logger) : BackgroundService
+    ILogger<GameEngine> logger,
+    IGameMessagePresenter presenter) : BackgroundService
 {
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
@@ -67,7 +68,7 @@ public class GameEngine(
 
         if (parsed is null)
         {
-            _ = SendMessagesAsync([new(player, "That command wasn't recognised.")]);
+            _ = SendMessagesAsync([new(player, new SystemMessageEvent("That command wasn't recognised."))]);
 
             return;
         }
@@ -79,13 +80,13 @@ public class GameEngine(
             var description = BuildCurrentRoomDescription(player)
                 .ToString();
 
-            result.Messages.Add(new(player, description));
+            result.Messages.Add(new(player, new RoomDescriptionEvent(description)));
 
             _ = SendMessagesAsync(result.Messages);
         }
         catch (Exception)
         {
-            _ = SendMessagesAsync([new(player, "An unexpected error occurred.")]);
+            _ = SendMessagesAsync([new(player, new SystemMessageEvent("An unexpected error occurred."))]);
         }
     }
 
@@ -109,8 +110,8 @@ public class GameEngine(
 
         var messages = new List<GameMessage>
         {
-            new(player, $"Welcome, {player.Username}."),
-            new(player, description.ToString())
+            new(player, new SystemMessageEvent($"Welcome, {player.Username}.")),
+            new(player, new RoomDescriptionEvent(description.ToString()))
         };
 
         _ = SendMessagesAsync(messages);
@@ -147,8 +148,8 @@ public class GameEngine(
 
         var messages = new List<GameMessage>
         {
-            new(player, $"Welcome back, {player.Username}."),
-            new(player, description.ToString())
+            new(player, new SystemMessageEvent($"Welcome back, {player.Username}.")),
+            new(player, new RoomDescriptionEvent(description.ToString()))
         };
 
         _ = SendMessagesAsync(messages);
@@ -156,7 +157,10 @@ public class GameEngine(
 
     private async Task SendMessagesAsync(List<GameMessage> messages)
     {
-        var tasks = messages.Select(msg => msg.Player.Connection.SendMessageAsync(msg.Content));
+        var tasks = messages
+            .Select(msg => (msg.Player, Content: presenter.Present(msg)))
+            .Where(msg => !string.IsNullOrWhiteSpace(msg.Content))
+            .Select(msg => msg.Player.Connection.SendMessageAsync(msg.Content));
 
         try
         {

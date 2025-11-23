@@ -28,6 +28,7 @@ builder.Services.AddSingleton(channel.Reader);
 
 builder.RegisterCommandDefinitions();
 builder.RegisterCommandHandlers();
+builder.RegisterPresenters();
 
 builder.Services.AddSignalR();
 
