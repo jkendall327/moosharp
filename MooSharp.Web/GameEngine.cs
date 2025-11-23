@@ -44,14 +44,16 @@ public class GameEngine(
         }
     }
 
-    private Task HandleDisconnectAsync(ConnectionId connectionId)
+    private async Task HandleDisconnectAsync(ConnectionId connectionId)
     {
         if (!world.Players.TryGetValue(connectionId.Value, out var player))
         {
             logger.LogWarning("Player with connection {ConnectionId} not found during disconnect", connectionId);
 
-            return Task.CompletedTask;
+            return;
         }
+
+        await playerStore.SavePlayer(player);
 
         player.CurrentLocation.PlayersInRoom.Remove(player);
 
@@ -59,7 +61,7 @@ public class GameEngine(
 
         logger.LogInformation("Player {Player} disconnected", player.Username);
 
-        return Task.CompletedTask;
+        return;
     }
 
     private async Task ProcessWorldCommand(WorldCommand command, CancellationToken ct, Player player)
