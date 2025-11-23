@@ -11,7 +11,7 @@ public class Player
 {
     public PlayerId Id { get; } = PlayerId.New();
     public required IPlayerConnection Connection { get; init; }
-    public Dictionary<string, Object> Inventory { get; } = new();
+    public List<Object> Inventory { get; } = [];
     public required string Username { get; init; }
     public override string ToString() => Username;
 }
