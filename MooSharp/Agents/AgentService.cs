@@ -5,7 +5,7 @@ using Microsoft.SemanticKernel.ChatCompletion;
 
 namespace MooSharp.Agents;
 
-public class AgentService(World world, ChannelWriter<GameInput> writer, IServiceProvider services)
+public class AgentService(World world, AgentFactory factory)
 {
     public async Task ExecuteAsync(CancellationToken stoppingToken)
     {
@@ -18,11 +18,7 @@ public class AgentService(World world, ChannelWriter<GameInput> writer, IService
 
     private Task SpawnAgent(string name, string persona)
     {
-        using var scope = services.CreateScope();
-        var kernel = scope.ServiceProvider.GetRequiredService<Kernel>();
-        var chat = scope.ServiceProvider.GetRequiredService<IChatCompletionService>();
-
-        var brain = new AgentBrain(name, persona, writer, chat, kernel);
+        var brain = factory.Build(name, persona, AgentSource.OpenAI);
 
         var currentLocation = world.Rooms.First()
             .Value;

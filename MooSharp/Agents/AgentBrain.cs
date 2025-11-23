@@ -1,3 +1,5 @@
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 using Microsoft.SemanticKernel.Connectors.OpenAI;
 using MooSharp.Messaging;
 
@@ -7,14 +9,30 @@ using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.ChatCompletion;
 using System.Threading.Channels;
 
+public enum AgentSource
+{
+    OpenAI,
+    Gemini,
+    OpenRouter
+}
+
+public class AgentFactory(ChannelWriter<GameInput> writer, TimeProvider clock, IOptions<AgentOptions> options)
+{
+    public AgentBrain Build(string name, string persona, AgentSource source, TimeSpan? cooldown = null)
+    {
+        return new(name, persona, source, writer, options, clock, cooldown);
+    }
+}
+
 public class AgentBrain
 {
     private readonly AgentPlayerConnection _connection;
     private readonly ChannelWriter<GameInput> _gameInputWriter;
-    private readonly IChatCompletionService _chatService;
-    private readonly Kernel _kernel;
     private readonly ChatHistory _history;
+    private readonly IOptions<AgentOptions> _options;
+    private readonly TimeProvider _clock;
     private readonly string _persona;
+    private readonly AgentSource _source;
 
     // Rate limiting
     private readonly TimeSpan _actionCooldown;
@@ -23,15 +41,17 @@ public class AgentBrain
 
     public AgentBrain(string name,
         string persona,
+        AgentSource source,
         ChannelWriter<GameInput> gameInputWriter,
-        IChatCompletionService chatService,
-        Kernel kernel,
+        IOptions<AgentOptions> options,
+        TimeProvider clock,
         TimeSpan? actionCooldown = null)
     {
         _persona = persona;
+        _source = source;
         _gameInputWriter = gameInputWriter;
-        _chatService = chatService;
-        _kernel = kernel;
+        _options = options;
+        _clock = clock;
 
         _actionCooldown = actionCooldown ?? TimeSpan.FromSeconds(10);
 
@@ -84,17 +104,11 @@ public class AgentBrain
             return;
         }
 
-        // var result = await _chatService.GetChatMessageContentAsync(_history,
-        //     executionSettings: new OpenAIPromptExecutionSettings
-        //     {
-        //         MaxTokens = 500
-        //     },
-        //     kernel: _kernel);
-        //
-        // var commandText = result.Content?.Trim();
+        var kernel = await GetResponse();
+        var commandText = kernel.Content?.Trim();
 
-        var commandText = "examine me";
-        
+        commandText = "examine me";
+
         if (string.IsNullOrEmpty(commandText))
         {
             return;
@@ -102,10 +116,35 @@ public class AgentBrain
 
         _history.AddAssistantMessage(commandText);
 
-        await _gameInputWriter.WriteAsync(new(new(_connection.Id),
-            new WorldCommand
-            {
-                Command = commandText
-            }));
+        var id = new ConnectionId(_connection.Id);
+
+        var command = new WorldCommand
+        {
+            Command = commandText
+        };
+
+        await _gameInputWriter.WriteAsync(new(id, command));
+    }
+
+    private async Task<ChatMessageContent> GetResponse()
+    {
+        if (_source is AgentSource.OpenAI)
+        {
+            var kernel = Kernel
+                .CreateBuilder()
+                .AddOpenAIChatCompletion("", "")
+                .Build();
+
+            var chat = kernel.Services.GetRequiredService<IChatCompletionService>();
+
+            return await chat.GetChatMessageContentAsync(_history,
+                executionSettings: new OpenAIPromptExecutionSettings
+                {
+                    MaxTokens = 500
+                },
+                kernel: kernel);
+        }
+
+        throw new NotImplementedException();
     }
 }

@@ -15,12 +15,8 @@ builder.Services.AddSingleton<World>();
 builder.Services.AddSingleton<CommandParser>();
 builder.Services.AddSingleton<CommandExecutor>();
 builder.Services.AddSingleton<AgentService>();
+builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddSingleton<IPlayerStore, JsonPlayerStore>();
-
-builder
-    .Services
-    .AddKernel()
-    .AddOpenAIChatCompletion(builder.Configuration["Agents:OpenAIModelId"], builder.Configuration["Agents:OpenAIApiKey"]);
 
 builder.Services.AddHostedService<GameEngine>();
 builder.Services.AddHostedService<AgentBackgroundService>();
@@ -39,6 +35,12 @@ builder
     .Services
     .AddOptionsWithValidateOnStart<AppOptions>()
     .BindConfiguration(nameof(AppOptions))
+    .ValidateDataAnnotations();
+
+builder
+    .Services
+    .AddOptionsWithValidateOnStart<AgentOptions>()
+    .BindConfiguration(AgentOptions.SectionName)
     .ValidateDataAnnotations();
 
 var app = builder.Build();
