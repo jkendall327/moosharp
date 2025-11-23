@@ -1,13 +1,16 @@
+using Anthropic.SDK;
+using Anthropic.SDK.Messaging;
+using Microsoft.Extensions.AI;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
-using Microsoft.SemanticKernel.Connectors.OpenAI;
-using MooSharp.Messaging;
-
-namespace MooSharp.Agents;
-
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.ChatCompletion;
+using Microsoft.SemanticKernel.Connectors.Google;
+using Microsoft.SemanticKernel.Connectors.OpenAI;
+using MooSharp.Messaging;
 using System.Threading.Channels;
+
+namespace MooSharp.Agents;
 
 public class AgentBrain
 {
@@ -92,8 +95,6 @@ public class AgentBrain
         var kernel = await GetResponse();
         var commandText = kernel.Content?.Trim();
 
-        commandText = "examine me";
-
         if (string.IsNullOrEmpty(commandText))
         {
             return;
@@ -114,24 +115,88 @@ public class AgentBrain
     private async Task<ChatMessageContent> GetResponse()
     {
         var o = _options.Value;
-        
-        if (_source is AgentSource.OpenAI)
+        return _source switch
         {
-            var kernel = Kernel
-                .CreateBuilder()
-                .AddOpenAIChatCompletion(o.OpenAIModelId, o.OpenAIApiKey)
-                .Build();
+            AgentSource.OpenAI => await GetOpenAIResponseAsync(o.OpenAIModelId, o.OpenAIApiKey),
+            AgentSource.OpenRouter => await GetOpenAIResponseAsync(o.OpenRouterModelId, o.OpenRouterApiKey, o.OpenRouterEndpoint),
+            AgentSource.Gemini => await GetGeminiResponseAsync(o),
+            AgentSource.Anthropic => await GetAnthropicResponseAsync(o),
+            _ => throw new NotSupportedException($"Unknown agent source {_source}")
+        };
+    }
 
-            var chat = kernel.Services.GetRequiredService<IChatCompletionService>();
+    private async Task<ChatMessageContent> GetOpenAIResponseAsync(string modelId, string apiKey, string? endpoint = null)
+    {
+        var builder = Kernel.CreateBuilder();
 
-            return await chat.GetChatMessageContentAsync(_history,
-                executionSettings: new OpenAIPromptExecutionSettings
-                {
-                    MaxTokens = 500
-                },
-                kernel: kernel);
+        if (endpoint is null)
+        {
+            builder.AddOpenAIChatCompletion(modelId, apiKey);
+        }
+        else
+        {
+            builder.AddOpenAIChatCompletion(modelId, new Uri(endpoint), apiKey);
         }
 
-        throw new NotImplementedException();
+        var kernel = builder.Build();
+
+        var chat = kernel.Services.GetRequiredService<IChatCompletionService>();
+
+        return await chat.GetChatMessageContentAsync(_history,
+            executionSettings: new OpenAIPromptExecutionSettings
+            {
+                MaxTokens = 500
+            },
+            kernel: kernel);
+    }
+
+    private async Task<ChatMessageContent> GetGeminiResponseAsync(AgentOptions options)
+    {
+        var kernel = Kernel
+            .CreateBuilder()
+            .AddGoogleAIGeminiChatCompletion(options.GeminiModelId, options.GeminiApiKey)
+            .Build();
+
+        var chat = kernel.Services.GetRequiredService<IChatCompletionService>();
+
+        return await chat.GetChatMessageContentAsync(
+            _history,
+            executionSettings: new GeminiPromptExecutionSettings
+            {
+                MaxTokens = 500
+            },
+            kernel: kernel);
+    }
+
+    private async Task<ChatMessageContent> GetAnthropicResponseAsync(AgentOptions options)
+    {
+        using var client = new AnthropicClient(new APIAuthentication(apiKey: options.AnthropicApiKey));
+        var chatClient = (IChatClient)client.Messages;
+
+        var messages = _history
+            .Select(ConvertToChatMessage)
+            .ToList();
+
+        var response = await chatClient.GetResponseAsync(
+            messages,
+            new ChatOptions
+            {
+                ModelId = options.AnthropicModelId,
+                MaxOutputTokens = 500
+            },
+            CancellationToken.None);
+
+        return new ChatMessageContent(AuthorRole.Assistant, response.Text ?? string.Empty);
+    }
+
+    private static ChatMessage ConvertToChatMessage(ChatMessageContent message)
+    {
+        return message.Role switch
+        {
+            var role when role == AuthorRole.User => new ChatMessage(ChatRole.User, message.Content ?? string.Empty),
+            var role when role == AuthorRole.Assistant => new ChatMessage(ChatRole.Assistant, message.Content ?? string.Empty),
+            var role when role == AuthorRole.System => new ChatMessage(ChatRole.System, message.Content ?? string.Empty),
+            _ => new ChatMessage(ChatRole.User, message.Content ?? string.Empty)
+        };
     }
 }
