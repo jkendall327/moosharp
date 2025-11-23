@@ -2,11 +2,19 @@ using Microsoft.Extensions.Logging;
 
 namespace MooSharp;
 
+public readonly record struct ObjectId(Guid Value)
+{
+    public static ObjectId New() => new(Guid.NewGuid());
+    public override string ToString() => Value.ToString();
+}
+
 public class Object
 {
-    public int Id { get; init; }
+    public ObjectId Id { get; init; } = ObjectId.New();
     public required string Name { get; init; }
     public required string Description { get; init; }
+
+    public HashSet<string> Keywords { get; init; } = new(StringComparer.OrdinalIgnoreCase); 
 
     private Player? _owner;
 
@@ -39,6 +47,6 @@ public class Object
             }
         }
     }
-    
+
     public override string ToString() => Name;
 }

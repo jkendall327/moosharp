@@ -15,9 +15,9 @@ public class TakeHandler : IHandler<TakeCommand>
         var result = new CommandResult();
         var player = cmd.Player;
 
-        var contents = player.CurrentLocation.Contents;
+        var o = player.CurrentLocation.FindObject(cmd.Target);
 
-        if (!contents.TryGetValue(cmd.Target, out var o))
+        if (o is null)
         {
             result.Add(player, $"There is no {cmd.Target} here.");
 
@@ -26,7 +26,7 @@ public class TakeHandler : IHandler<TakeCommand>
 
         if (o.Owner is null)
         {
-            contents.Remove(o.Name);
+            player.CurrentLocation.Contents.Remove(o);
             o.Owner = player;
             player.Inventory.Add(o.Name, o);
         }

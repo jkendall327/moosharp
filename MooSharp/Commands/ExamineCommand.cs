@@ -43,11 +43,11 @@ public class ExamineHandler(StringProvider provider) : IHandler<ExamineCommand>
 
         var current = player.CurrentLocation;
 
-        var contents = current.Contents;
-
-        if (contents.TryGetValue(cmd.Target, out var content))
+        var obj = player.CurrentLocation.FindObject(cmd.Target);
+        
+        if (obj is not null)
         {
-            result.Add(player, content.Description);
+            result.Add(player, obj.Description);
         }
 
         return Task.FromResult(result);

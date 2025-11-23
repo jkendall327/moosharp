@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
@@ -14,7 +15,9 @@ public class RoomDto
 {
     public required string Name { get; set; }
     public required string Description { get; set; }
-    public required string Slug { get; set; }
+    
+    [JsonConverter(typeof(RoomIdJsonConverter))]
+    public required RoomId Slug { get; set; }
     public IReadOnlyList<string> ConnectedRooms { get; set; } = [];
 }
 
@@ -28,7 +31,7 @@ public class ObjectDto
 public class World(IOptions<AppOptions> options, ILogger<World> logger)
 {
     public List<Player> Players { get; } = [];
-    public Dictionary<string, Room> Rooms { get; private set; } = [];
+    public Dictionary<RoomId, Room> Rooms { get; private set; } = [];
 
     public async Task InitializeAsync(CancellationToken cancellationToken = default)
     {
@@ -78,13 +81,12 @@ public class World(IOptions<AppOptions> options, ILogger<World> logger)
         return dto;
     }
 
-    private Dictionary<string, Room> CreateRooms(WorldDto dto)
+    private Dictionary<RoomId, Room> CreateRooms(WorldDto dto)
     {
         var roomActorsBySlug = dto.Rooms.ToDictionary(r => r.Slug,
             r => new Room
                 {
-                    Id = Random.Shared.Next(),
-                    Slug = r.Slug,
+                    Id = r.Slug,
                     Name = r.Name,
                     Description = r.Description,
                 });
@@ -111,7 +113,7 @@ public class World(IOptions<AppOptions> options, ILogger<World> logger)
 
                 foreach (var exit in exits)
                 {
-                    currentRoomActor.Exits.Add(exit.Key, exit.Value);
+                    currentRoomActor.Exits.Add(exit.Key, exit.Value.Id);
                 }
             }
             catch (Exception ex)
@@ -125,7 +127,7 @@ public class World(IOptions<AppOptions> options, ILogger<World> logger)
         return roomActorsBySlug;
     }
 
-    private void CreateObjects(WorldDto dto, Dictionary<string, Room> rooms)
+    private void CreateObjects(WorldDto dto, Dictionary<RoomId, Room> rooms)
     {
         var bySlug = dto
             .Objects
@@ -133,7 +135,6 @@ public class World(IOptions<AppOptions> options, ILogger<World> logger)
             .ToLookup(r => r.RoomSlug!,
                 o => new Object
                 {
-                    Id = Random.Shared.Next(),
                     Description = o.Description,
                     Name = o.Name,
                     Location = null,
@@ -167,7 +168,7 @@ public class World(IOptions<AppOptions> options, ILogger<World> logger)
 
             foreach ((var name, var actor) in contents)
             {
-                room.Contents.Add(name, actor);
+                room.Contents.Add(actor);
             }
         }
     }

@@ -1,8 +1,13 @@
 namespace MooSharp;
 
+public readonly record struct PlayerId(Guid Value)
+{
+    public static PlayerId New() => new(Guid.CreateVersion7());
+}
+
 public class Player
 {
-    public Guid Id { get; } = Guid.CreateVersion7();
+    public PlayerId Id { get; } = PlayerId.New();
     public required string ConnectionId { get; init; }
     public required Room CurrentLocation { get; set; }
     public Dictionary<string, Object> Inventory { get; } = new();

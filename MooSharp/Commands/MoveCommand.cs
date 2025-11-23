@@ -12,7 +12,7 @@ public class MoveCommand : ICommand
     public string BroadcastMessage(string username) => $"{username} went to {TargetExit}";
 }
 
-public class MoveHandler(ILogger<MoveHandler> logger) : IHandler<MoveCommand>
+public class MoveHandler(World world, ILogger<MoveHandler> logger) : IHandler<MoveCommand>
 {
     public Task<CommandResult> Handle(MoveCommand cmd, CancellationToken cancellationToken = default)
     {
@@ -26,15 +26,17 @@ public class MoveHandler(ILogger<MoveHandler> logger) : IHandler<MoveCommand>
             result.Add(player, "That exit doesn't exist.");
             return Task.FromResult(result);
         }
+        
+        var exitRoom = world.Rooms[exit]; 
 
-        result.Add(player, $"You head to {exit.Description}.");
+        result.Add(player, $"You head to {exitRoom.Description}.");
 
         var broadcastMessage = cmd.BroadcastMessage(player.Username);
 
         result.BroadcastToAllButPlayer(player, broadcastMessage);
         
         player.CurrentLocation.PlayersInRoom.Remove(player);
-        player.CurrentLocation = exit;
+        player.CurrentLocation = exitRoom;
         player.CurrentLocation.PlayersInRoom.Add(player);
         
         result.BroadcastToAllButPlayer(player, $"{player.Username} arrived");
