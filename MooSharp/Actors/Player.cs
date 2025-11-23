@@ -13,6 +13,7 @@ public class Player
 
 public class PlayerActor(Player state, ILoggerFactory factory) : Actor<Player>(state, factory)
 {
+    private readonly ILogger<PlayerActor> _logger = factory.CreateLogger<PlayerActor>();
     public string Username => _state.Username;
     
     public async Task<IReadOnlyDictionary<string, RoomActor>> GetCurrentlyAvailableExitsAsync()
@@ -20,5 +21,13 @@ public class PlayerActor(Player state, ILoggerFactory factory) : Actor<Player>(s
         var current = await QueryAsync(s => s.CurrentLocation);
         
         return current.Exits;
+    }
+
+    public Task MoveTo(RoomActor room)
+    {
+        _logger.LogDebug("Setting player location to exit {Exit}", room.Name);
+        _state.CurrentLocation = room;
+
+        return Task.CompletedTask;
     }
 }

@@ -17,6 +17,8 @@ public class Room
 
 public class RoomActor(Room state, ILoggerFactory factory) : Actor<Room>(state, factory)
 {
+    private ILogger<RoomActor> _logger = factory.CreateLogger<RoomActor>();
+    
     public int Id => _state.Id;
     public string Name => _state.Name; 
     public string Slug => _state.Slug;
@@ -29,5 +31,23 @@ public class RoomActor(Room state, ILoggerFactory factory) : Actor<Room>(state, 
             Task.FromResult(r.PlayersInRoom.ToList()));
 
         return await Ask(message);
+    }
+
+    public Task RemovePlayer(PlayerActor player)
+    {
+        _logger.LogDebug("Removing player from room {Room}", _state.Name);
+
+        _state.PlayersInRoom.Remove(player);
+
+        return Task.CompletedTask;
+    }
+
+    public Task AddPlayer(PlayerActor player)
+    {
+        _logger.LogDebug("Adding player to room {Room}", _state.Name);
+
+        _state.PlayersInRoom.Add(player);
+
+        return Task.CompletedTask;
     }
 }

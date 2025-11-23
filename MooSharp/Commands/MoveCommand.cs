@@ -5,8 +5,8 @@ namespace MooSharp;
 
 public class MoveCommand : ICommand
 {
-    public required PlayerActor Player { get; set; }
-    public required string TargetExit { get; set; }
+    public required PlayerActor Player { get; init; }
+    public required string TargetExit { get; init; }
 
     public string BroadcastMessage(string username) => $"{username} went to {TargetExit}";
 }
@@ -21,46 +21,27 @@ public class MoveHandler(PlayerMultiplexer multiplexer, ILogger<MoveHandler> log
 
         var exits = await player.GetCurrentlyAvailableExitsAsync();
 
-        if (exits.TryGetValue(cmd.TargetExit, out var exit))
-        {
-            buffer.AppendLine($"You head to {exit.Description}");
-            
-            var broadcastMessage = cmd.BroadcastMessage(player.Username);
-
-            await multiplexer.SendToAllInRoomExceptPlayer(player, new(broadcastMessage), cancellationToken);
-
-            var playerMove = player.QueryAsync(s =>
-            {
-                logger.LogInformation("Move player lambda");
-                s.CurrentLocation = exit;
-                return true;
-            });
-
-            var roomLeave = current.QueryAsync(r =>
-            {
-                logger.LogInformation("Remove from origin lambda");
-                
-                r.PlayersInRoom.Remove(player);
-                return true;
-            });
-
-            var roomEnter = exit.QueryAsync(r =>
-            {
-                logger.LogInformation("Add to destination lambda");
-                
-                r.PlayersInRoom.Add(player);
-                return true;
-            });
-
-            await Task.WhenAll(playerMove, roomLeave, roomEnter);
-            
-            await multiplexer.SendToAllInRoomExceptPlayer(player, new($"{player.Username} arrived"), cancellationToken);
-            
-            logger.LogInformation("All tasks awaited");
-        }
-        else
+        if (!exits.TryGetValue(cmd.TargetExit, out var exit))
         {
             buffer.AppendLine("That exit doesn't exist.");
+            return;
         }
+
+        buffer.AppendLine($"You head to {exit.Description}");
+
+        var broadcastMessage = cmd.BroadcastMessage(player.Username);
+
+        await multiplexer.SendToAllInRoomExceptPlayer(player, new(broadcastMessage), cancellationToken);
+
+        // There is a known potential race condition here.
+        // Removing the player from one room and adding them to the other room is non-atomic.
+        // Probably fine for a toy game for now...
+        await player.MoveTo(exit);
+        await current.RemovePlayer(player);
+        await exit.AddPlayer(player);
+
+        await multiplexer.SendToAllInRoomExceptPlayer(player, new($"{player.Username} arrived"), cancellationToken);
+
+        logger.LogDebug("Move complete");
     }
 }
