@@ -54,9 +54,19 @@ public class GameEngine(
             return;
         }
 
-        await playerStore.SavePlayer(player);
+        var location = world.GetPlayerLocation(player);
 
-        player.CurrentLocation.PlayersInRoom.Remove(player);
+        if (location is null)
+        {
+            logger.LogWarning("Player {Player} has no known location during disconnect.", player.Username);
+
+            location = world.Rooms.First().Value;
+
+            world.MovePlayer(player, location);
+        }
+
+        await playerStore.SavePlayer(player, location);
+        location.PlayersInRoom.Remove(player);
 
         world.Players.Remove(connectionId.Value);
 
@@ -101,14 +111,14 @@ public class GameEngine(
         var player = new Player
         {
             Username = rc.Username,
-            Connection = new SignalRPlayerConnection(connectionId, hubContext),
-            CurrentLocation = defaultRoom
+            Connection = new SignalRPlayerConnection(connectionId, hubContext)
         };
 
-        await playerStore.SaveNewPlayer(player, rc.Password);
+        world.MovePlayer(player, defaultRoom);
+
+        await playerStore.SaveNewPlayer(player, defaultRoom, rc.Password);
 
         world.Players.Add(connectionId.Value, player);
-        player.CurrentLocation.PlayersInRoom.Add(player);
 
         var description = BuildCurrentRoomDescription(player);
 
@@ -143,11 +153,11 @@ public class GameEngine(
         {
             Username = dto.Username,
             Connection = new SignalRPlayerConnection(connectionId, hubContext),
-            CurrentLocation = startingRoom,
         };
 
+        world.MovePlayer(player, startingRoom);
+
         world.Players.Add(connectionId.Value, player);
-        player.CurrentLocation.PlayersInRoom.Add(player);
 
         var description = BuildCurrentRoomDescription(player);
 
@@ -181,7 +191,16 @@ public class GameEngine(
     {
         var sb = new StringBuilder();
 
-        var room = player.CurrentLocation;
+        var room = world.GetPlayerLocation(player);
+
+        if (room is null)
+        {
+            logger.LogWarning("Player {Player} has no known location when building description.", player.Username);
+
+            sb.AppendLine("You are nowhere.");
+
+            return sb;
+        }
 
         sb.AppendLine(room.Description);
 
@@ -189,7 +208,7 @@ public class GameEngine(
 
         sb.AppendLine($"{string.Join(", ", otherPlayers)} are here.");
 
-        var availableExits = player.CurrentLocation.Exits.Select(s => s.Key);
+        var availableExits = room.Exits.Select(s => s.Key);
 
         var availableExitsMessage = $"Available exits: {string.Join(", ", availableExits)}";
 
@@ -206,11 +225,10 @@ public class GameEngine(
         var player = new Player
         {
             Username = command.Identity.Name,
-            Connection = command.Connection,
-            CurrentLocation = defaultRoom
+            Connection = command.Connection
         };
 
-        defaultRoom.PlayersInRoom.Add(player);
+        world.MovePlayer(player, defaultRoom);
 
         world.Players.Add(connectionId.Value, player);
 

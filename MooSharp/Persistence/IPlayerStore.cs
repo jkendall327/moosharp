@@ -6,8 +6,8 @@ namespace MooSharp.Persistence;
 
 public interface IPlayerStore
 {
-    Task SaveNewPlayer(Player player, string password);
-    Task SavePlayer(Player player);
+    Task SaveNewPlayer(Player player, Room currentLocation, string password);
+    Task SavePlayer(Player player, Room currentLocation);
     Task<PlayerDto?> LoadPlayer(LoginCommand command);
 }
 
@@ -30,19 +30,19 @@ public class JsonPlayerStore : IPlayerStore
         _players = LoadPlayersFromDisk();
     }
 
-    public async Task SaveNewPlayer(Player player, string password)
+    public async Task SaveNewPlayer(Player player, Room currentLocation, string password)
     {
         var dto = new PlayerDto
         {
             Username = player.Username,
             Password = password,
-            CurrentLocation = player.CurrentLocation.Id
+            CurrentLocation = currentLocation.Id
         };
 
         await UpsertPlayerAsync(dto);
     }
 
-    public async Task SavePlayer(Player player)
+    public async Task SavePlayer(Player player, Room currentLocation)
     {
         await _sync.WaitAsync();
 
@@ -55,7 +55,7 @@ public class JsonPlayerStore : IPlayerStore
                 return;
             }
 
-            existingPlayer.CurrentLocation = player.CurrentLocation.Id;
+            existingPlayer.CurrentLocation = currentLocation.Id;
 
             await PersistAsync();
         }

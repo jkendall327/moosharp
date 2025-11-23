@@ -33,8 +33,8 @@ public class CommandResult
         }
     }
 
-    public void BroadcastToAllButPlayer(Player player, IGameEvent @event, MessageAudience audience = MessageAudience.Observer)
+    public void BroadcastToAllButPlayer(Room room, Player player, IGameEvent @event, MessageAudience audience = MessageAudience.Observer)
     {
-        Broadcast(player.CurrentLocation, @event, audience, exclude: player);
+        Broadcast(room, @event, audience, exclude: player);
     }
 }

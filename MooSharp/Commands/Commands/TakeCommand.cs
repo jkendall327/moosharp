@@ -23,14 +23,17 @@ public class TakeCommandDefinition : ICommandDefinition
         };
 }
 
-public class TakeHandler : IHandler<TakeCommand>
+public class TakeHandler(World world) : IHandler<TakeCommand>
 {
     public Task<CommandResult> Handle(TakeCommand cmd, CancellationToken cancellationToken = default)
     {
         var result = new CommandResult();
         var player = cmd.Player;
 
-        var o = player.CurrentLocation.FindObject(cmd.Target);
+        var currentLocation = world.GetPlayerLocation(player)
+            ?? throw new InvalidOperationException("Player has no known current location.");
+
+        var o = currentLocation.FindObject(cmd.Target);
 
         if (o is null)
         {
@@ -41,7 +44,7 @@ public class TakeHandler : IHandler<TakeCommand>
 
         if (o.Owner is null)
         {
-            player.CurrentLocation.Contents.Remove(o);
+            currentLocation.Contents.Remove(o);
             o.Owner = player;
             player.Inventory.Add(o.Name, o);
             result.Add(player, new ItemTakenEvent(o));

@@ -28,8 +28,11 @@ public class MoveHandler(World world, ILogger<MoveHandler> logger) : IHandler<Mo
     {
         var result = new CommandResult();
         var player = cmd.Player;
-        
-        var exits = player.CurrentLocation.Exits;
+
+        var originRoom = world.GetPlayerLocation(player)
+            ?? throw new InvalidOperationException("Player has no known current location.");
+
+        var exits = originRoom.Exits;
 
         if (!exits.TryGetValue(cmd.TargetExit, out var exit))
         {
@@ -37,18 +40,15 @@ public class MoveHandler(World world, ILogger<MoveHandler> logger) : IHandler<Mo
             return Task.FromResult(result);
         }
 
-        var originRoom = player.CurrentLocation;
         var exitRoom = world.Rooms[exit];
 
         result.Add(player, new PlayerMovedEvent(player, exitRoom));
 
-        result.BroadcastToAllButPlayer(player, new PlayerDepartedEvent(player, originRoom, cmd.TargetExit));
+        result.BroadcastToAllButPlayer(originRoom, player, new PlayerDepartedEvent(player, originRoom, cmd.TargetExit));
 
-        originRoom.PlayersInRoom.Remove(player);
-        player.CurrentLocation = exitRoom;
-        player.CurrentLocation.PlayersInRoom.Add(player);
+        world.MovePlayer(player, exitRoom);
 
-        result.BroadcastToAllButPlayer(player, new PlayerArrivedEvent(player, exitRoom));
+        result.BroadcastToAllButPlayer(exitRoom, player, new PlayerArrivedEvent(player, exitRoom));
 
         logger.LogDebug("Move complete");
 
