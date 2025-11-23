@@ -1,32 +1,8 @@
 using System.Text.Json;
-using System.Text.Json.Serialization;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 namespace MooSharp;
-
-public class WorldDto
-{
-    public List<RoomDto> Rooms { get; init; } = [];
-    public List<ObjectDto> Objects { get; init; } = [];
-}
-
-public class RoomDto
-{
-    public required string Name { get; set; }
-    public required string Description { get; set; }
-    
-    [JsonConverter(typeof(RoomIdJsonConverter))]
-    public required RoomId Slug { get; set; }
-    public IReadOnlyList<string> ConnectedRooms { get; set; } = [];
-}
-
-public class ObjectDto
-{
-    public required string Name { get; set; }
-    public required string Description { get; set; }
-    public string? RoomSlug { get; set; }
-}
 
 public class World(IOptions<AppOptions> options, ILogger<World> logger)
 {
