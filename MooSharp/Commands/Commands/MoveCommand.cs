@@ -50,6 +50,9 @@ public class MoveHandler(World world, ILogger<MoveHandler> logger) : IHandler<Mo
 
         world.MovePlayer(player, exitRoom);
 
+        var description = exitRoom.DescribeFor(player);
+        result.Add(player, new RoomDescriptionEvent(description));
+
         result.BroadcastToAllButPlayer(exitRoom, player, new PlayerArrivedEvent(player, exitRoom));
 
         logger.LogDebug("Move complete");
