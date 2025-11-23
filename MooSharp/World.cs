@@ -30,7 +30,7 @@ public class ObjectDto
 
 public class World(IOptions<AppOptions> options, ILogger<World> logger)
 {
-    public List<Player> Players { get; } = [];
+    public Dictionary<ConnectionId, Player> Players { get; } = [];
     public Dictionary<RoomId, Room> Rooms { get; private set; } = [];
 
     public async Task InitializeAsync(CancellationToken cancellationToken = default)

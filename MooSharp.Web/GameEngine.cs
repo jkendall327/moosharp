@@ -31,7 +31,7 @@ public class GameEngine(
             case RegisterCommand rc: await CreateNewPlayer(input.ConnectionId, rc); break;
             case LoginCommand lc: await Login(input.ConnectionId, lc); break;
             case WorldCommand wc:
-                var player = world.Players.Single(p => p.ConnectionId == input.ConnectionId);
+                var player = world.Players[input.ConnectionId];
                 await ProcessWorldCommand(wc, ct, player);
 
                 break;
@@ -67,7 +67,7 @@ public class GameEngine(
         }
     }
 
-    private async Task CreateNewPlayer(string connectionId, RegisterCommand rc)
+    private async Task CreateNewPlayer(ConnectionId connectionId, RegisterCommand rc)
     {
         var defaultRoom = world.Rooms.First()
             .Value;
@@ -81,7 +81,7 @@ public class GameEngine(
 
         await playerStore.SaveNewPlayer(player, rc.Password);
 
-        world.Players.Add(player);
+        world.Players.Add(connectionId, player);
 
         var description = BuildCurrentRoomDescription(player);
 
@@ -94,7 +94,7 @@ public class GameEngine(
         _ = SendMessagesAsync(messages);
     }
 
-    private async Task Login(string connectionId, LoginCommand lc)
+    private async Task Login(ConnectionId connectionId, LoginCommand lc)
     {
         var dto = await playerStore.LoadPlayer(lc);
 
@@ -102,7 +102,7 @@ public class GameEngine(
         {
             await hubContext
                 .Clients
-                .Client(connectionId)
+                .Client(connectionId.Value)
                 .SendAsync("ReceiveMessage", "Login failed, please try again.");
 
             return;
@@ -119,7 +119,7 @@ public class GameEngine(
             CurrentLocation = startingRoom,
         };
         
-        world.Players.Add(player);
+        world.Players.Add(connectionId, player);
 
         var description = BuildCurrentRoomDescription(player);
 
@@ -136,7 +136,7 @@ public class GameEngine(
     {
         var tasks = messages.Select(msg => hubContext
             .Clients
-            .Client(msg.Player.ConnectionId)
+            .Client(msg.Player.ConnectionId.Value)
             .SendAsync("ReceiveMessage", msg.Content));
 
         try

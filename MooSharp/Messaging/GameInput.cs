@@ -1,6 +1,6 @@
 namespace MooSharp;
 
-public record GameInput(string ConnectionId, InputCommand Command);
+public record GameInput(ConnectionId ConnectionId, InputCommand Command);
 
 public abstract class InputCommand;
 

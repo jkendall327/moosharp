@@ -40,14 +40,11 @@ public class MooHub(ChannelWriter<GameInput> writer, World world, ILogger<MooHub
             logger.LogError(exception, "Exception was present on connection loss");
         }
 
-        var player = world.Players.SingleOrDefault(s => s.ConnectionId == Context.ConnectionId);
+        _ = world.Players.TryGetValue(Context.ConnectionId, out var player);
 
-        if (player is not null)
-        {
-            // Remove player from the world.
-            // Otherwise you could refresh your ghosts would be left around forever.
-            player.CurrentLocation.PlayersInRoom.Remove(player);
-        }
+        // Remove player from the world.
+        // Otherwise you could refresh your ghosts would be left around forever.
+        player?.CurrentLocation.PlayersInRoom.Remove(player);
 
         await base.OnDisconnectedAsync(exception);
     }
