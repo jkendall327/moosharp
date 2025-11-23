@@ -28,30 +28,21 @@ public class MooHub(
     {
         logger.LogInformation("Connection made with ID {Id}", Context.ConnectionId);
 
-        var atrium = world.Rooms.GetValueOrDefault("atrium");
-
-        if (atrium is null)
-        {
-            throw new InvalidOperationException("Couldn't find atrium room to set as default location.");
-        }
-
+        var defaultRoom = world.Rooms.First().Value;
+        
         var player = new Player
         {
             Username = Random
                 .Shared
                 .Next()
                 .ToString(),
-            CurrentLocation = atrium
+            
+            CurrentLocation = defaultRoom
         };
 
         var playerActor = new PlayerActor(player, factory);
 
-        atrium.Post(new ActionMessage<Room>(s =>
-        {
-            s.PlayersInRoom.Add(playerActor);
-
-            return Task.CompletedTask;
-        }));
+        await defaultRoom.AddPlayer(playerActor);
 
         var connection = new SignalRPlayerConnection(playerActor, hubContext, Context.ConnectionId);
 
