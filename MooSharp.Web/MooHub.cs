@@ -4,7 +4,7 @@ namespace MooSharp;
 
 using Microsoft.AspNetCore.SignalR;
 
-public class MooHub(ChannelWriter<GameInput> writer, World world, ILogger<MooHub> logger) : Hub
+public class MooHub(ChannelWriter<GameInput> writer, ILogger<MooHub> logger) : Hub
 {
     public override async Task OnConnectedAsync()
     {
@@ -40,11 +40,7 @@ public class MooHub(ChannelWriter<GameInput> writer, World world, ILogger<MooHub
             logger.LogError(exception, "Exception was present on connection loss");
         }
 
-        _ = world.Players.TryGetValue(Context.ConnectionId, out var player);
-
-        // Remove player from the world.
-        // Otherwise you could refresh your ghosts would be left around forever.
-        player?.CurrentLocation.PlayersInRoom.Remove(player);
+        writer.TryWrite(new(Context.ConnectionId, new DisconnectCommand()));
 
         await base.OnDisconnectedAsync(exception);
     }

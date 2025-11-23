@@ -20,3 +20,5 @@ public class WorldCommand : InputCommand
 {
     public required string Command { get; init; }
 }
+
+public class DisconnectCommand : InputCommand;

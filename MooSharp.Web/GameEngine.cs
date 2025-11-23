@@ -35,8 +35,30 @@ public class GameEngine(
                 await ProcessWorldCommand(wc, ct, player);
 
                 break;
+            case DisconnectCommand:
+                await HandleDisconnectAsync(input.ConnectionId);
+
+                break;
             default: throw new ArgumentOutOfRangeException(nameof(input.Command));
         }
+    }
+
+    private Task HandleDisconnectAsync(ConnectionId connectionId)
+    {
+        if (!world.Players.TryGetValue(connectionId.Value, out var player))
+        {
+            logger.LogWarning("Player with connection {ConnectionId} not found during disconnect", connectionId);
+
+            return Task.CompletedTask;
+        }
+
+        player.CurrentLocation.PlayersInRoom.Remove(player);
+
+        world.Players.Remove(connectionId.Value);
+
+        logger.LogInformation("Player {Player} disconnected", player.Username);
+
+        return Task.CompletedTask;
     }
 
     private async Task ProcessWorldCommand(WorldCommand command, CancellationToken ct, Player player)
