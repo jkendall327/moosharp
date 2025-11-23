@@ -22,6 +22,8 @@ public class AgentBrain
     private readonly string _persona;
     private readonly AgentSource _source;
 
+    private readonly Channel<string> _incomingMessages;
+
     // Rate limiting
     private readonly TimeSpan _actionCooldown;
     private DateTimeOffset _nextAllowedActionTime = DateTimeOffset.MinValue;
@@ -43,16 +45,52 @@ public class AgentBrain
 
         _actionCooldown = actionCooldown ?? TimeSpan.FromSeconds(10);
 
+        _incomingMessages = Channel.CreateUnbounded<string>(new UnboundedChannelOptions
+        {
+            SingleReader = true,
+            SingleWriter = false
+        });
+
         _connection = new()
         {
             // When the Game Engine sends text to the Agent, this triggers:
-            OnMessageReceived = HandleIncomingGameMessage
+            OnMessageReceived = EnqueueIncomingMessageAsync
         };
+
+        _ = Task.Run(ProcessIncomingMessagesAsync);
 
         _history = new($"You are a player in a text-based adventure game. Your name is {name}. {persona}");
     }
 
     public IPlayerConnection Connection => _connection;
+
+    private Task EnqueueIncomingMessageAsync(string message)
+    {
+        if (!_incomingMessages.Writer.TryWrite(message))
+        {
+            return _incomingMessages.Writer.WriteAsync(message).AsTask();
+        }
+
+        return Task.CompletedTask;
+    }
+
+    private async Task ProcessIncomingMessagesAsync()
+    {
+        while (await _incomingMessages.Reader.WaitToReadAsync().ConfigureAwait(false))
+        {
+            while (_incomingMessages.Reader.TryRead(out var message))
+            {
+                try
+                {
+                    await HandleIncomingGameMessageAsync(message).ConfigureAwait(false);
+                }
+                catch
+                {
+                    // Swallow exceptions to keep the processing loop alive
+                }
+            }
+        }
+    }
 
     private async Task<bool> ShouldActAsync()
     {
@@ -66,7 +104,7 @@ public class AgentBrain
         {
             if (now < _nextAllowedActionTime)
             {
-                // Still on cooldown – no action
+                // Still on cooldown - no action
                 return false;
             }
 
@@ -81,7 +119,7 @@ public class AgentBrain
         }
     }
 
-    private async Task HandleIncomingGameMessage(string message)
+    private async Task HandleIncomingGameMessageAsync(string message)
     {
         // Always record history.
         _history.AddUserMessage(message);
