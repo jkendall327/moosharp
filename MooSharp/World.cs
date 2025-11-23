@@ -25,23 +25,22 @@ public class ObjectDto
     public string? RoomSlug { get; set; }
 }
 
-public class World(IOptions<AppOptions> appOptions, ILogger<World> logger)
+public class World(IOptions<AppOptions> options, ILogger<World> logger)
 {
-    public List<Player> Players { get; set; } = [];
+    public List<Player> Players { get; } = [];
     public Dictionary<string, Room> Rooms { get; private set; } = [];
-    public Dictionary<string, List<Object>> Objects { get; set; } = [];
 
     public async Task InitializeAsync(CancellationToken cancellationToken = default)
     {
         var dto = await GetWorldDto(cancellationToken);
 
         Rooms = CreateRooms(dto);
-        Objects = CreateObjects(dto);
+        CreateObjects(dto, Rooms);
     }
 
     private async Task<WorldDto> GetWorldDto(CancellationToken cancellationToken)
     {
-        var path = appOptions.Value.WorldDataFilepath;
+        var path = options.Value.WorldDataFilepath;
 
         if (string.IsNullOrEmpty(path))
         {
@@ -82,7 +81,7 @@ public class World(IOptions<AppOptions> appOptions, ILogger<World> logger)
     private Dictionary<string, Room> CreateRooms(WorldDto dto)
     {
         var roomActorsBySlug = dto.Rooms.ToDictionary(r => r.Slug,
-            r => new Room()
+            r => new Room
                 {
                     Id = Random.Shared.Next(),
                     Slug = r.Slug,
@@ -126,7 +125,7 @@ public class World(IOptions<AppOptions> appOptions, ILogger<World> logger)
         return roomActorsBySlug;
     }
 
-    private Dictionary<string, List<Object>> CreateObjects(WorldDto dto)
+    private void CreateObjects(WorldDto dto, Dictionary<string, Room> rooms)
     {
         var bySlug = dto
             .Objects
@@ -148,7 +147,7 @@ public class World(IOptions<AppOptions> appOptions, ILogger<World> logger)
         
         foreach (var grouping in bySlug)
         {
-            var room = Rooms.GetValueOrDefault(grouping.Key);
+            var room = rooms.GetValueOrDefault(grouping.Key);
 
             if (room is null)
             {
@@ -171,7 +170,5 @@ public class World(IOptions<AppOptions> appOptions, ILogger<World> logger)
                 room.Contents.Add(name, actor);
             }
         }
-
-        return dictionary;
     }
 }

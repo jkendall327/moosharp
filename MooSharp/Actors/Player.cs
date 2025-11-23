@@ -1,5 +1,3 @@
-using Microsoft.Extensions.Logging;
-
 namespace MooSharp;
 
 public class Player
