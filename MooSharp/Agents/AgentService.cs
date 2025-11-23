@@ -24,13 +24,17 @@ public class AgentService(World world, ChannelWriter<GameInput> writer, IService
 
         var brain = new AgentBrain(name, persona, writer, chat, kernel);
 
+        var currentLocation = world.Rooms.First()
+            .Value;
+
         var player = new Player
         {
             Username = name,
             Connection = brain.Connection,
-            CurrentLocation = world.Rooms.First()
-                .Value
+            CurrentLocation = currentLocation
         };
+        
+        currentLocation.PlayersInRoom.Add(player);
         
         world.Players.Add(player.Connection.Id, player);
 

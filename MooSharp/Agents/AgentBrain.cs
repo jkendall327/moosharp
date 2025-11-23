@@ -85,15 +85,17 @@ public class AgentBrain
         }
 
         // We limit tokens to prevent it from writing a novel, we just want a command.
-        var result = await _chatService.GetChatMessageContentAsync(_history,
-            executionSettings: new OpenAIPromptExecutionSettings
-            {
-                MaxTokens = 50
-            },
-            kernel: _kernel);
+        // var result = await _chatService.GetChatMessageContentAsync(_history,
+        //     executionSettings: new OpenAIPromptExecutionSettings
+        //     {
+        //         MaxTokens = 50
+        //     },
+        //     kernel: _kernel);
+        //
+        // var commandText = result.Content?.Trim();
 
-        var commandText = result.Content?.Trim();
-
+        var commandText = "examine me";
+        
         if (string.IsNullOrEmpty(commandText))
         {
             return;

@@ -2,6 +2,7 @@ using System.Reflection;
 using System.Threading.Channels;
 using Microsoft.SemanticKernel;
 using MooSharp;
+using MooSharp.Agents;
 using MooSharp.Persistence;
 using MooSharp.Web;
 using MooSharp.Web.Components;
@@ -14,12 +15,13 @@ builder.Services.AddSingleton<World>();
 builder.Services.AddSingleton<CommandParser>();
 builder.Services.AddSingleton<CommandParser>();
 builder.Services.AddSingleton<CommandExecutor>();
+builder.Services.AddSingleton<AgentService>();
 builder.Services.AddSingleton<IPlayerStore, JsonPlayerStore>();
 
 builder
     .Services
     .AddKernel()
-    .AddOpenAIChatCompletion(builder.Configuration["Agents:OpenAIModelId"], builder.Configuration["Agents:OpenAIModelName"]);
+    .AddOpenAIChatCompletion(builder.Configuration["Agents:OpenAIModelId"], builder.Configuration["Agents:OpenAIApiKey"]);
 
 builder.Services.AddHostedService<GameEngine>();
 builder.Services.AddHostedService<AgentBackgroundService>();
