@@ -2,11 +2,17 @@ namespace MooSharp;
 
 using Microsoft.AspNetCore.SignalR;
 
-public class MooHub(
-    GameEngine engine,
-    World world,
-    ILogger<MooHub> logger) : Hub
+public class MooHub(GameEngine engine, World world, ILogger<MooHub> logger) : Hub
 {
+    public override async Task OnConnectedAsync()
+    {
+        logger.LogInformation("Connection made with ID {Id}", Context.ConnectionId);
+
+        engine.EnqueueInput(Context.ConnectionId, "LOGIN");
+
+        await base.OnConnectedAsync();
+    }
+
     public Task SendCommand(string command)
     {
         logger.LogInformation("Got command {Command}", command);
@@ -14,15 +20,6 @@ public class MooHub(
         engine.EnqueueInput(Context.ConnectionId, command);
 
         return Task.CompletedTask;
-    }
-
-    public override async Task OnConnectedAsync()
-    {
-        logger.LogInformation("Connection made with ID {Id}", Context.ConnectionId);
-        
-        engine.EnqueueInput(Context.ConnectionId, "LOGIN"); 
-
-        await base.OnConnectedAsync();
     }
 
     public override async Task OnDisconnectedAsync(Exception? exception)
@@ -42,7 +39,7 @@ public class MooHub(
             // Otherwise you could refresh your ghosts would be left around forever.
             player.CurrentLocation.PlayersInRoom.Remove(player);
         }
-        
+
         await base.OnDisconnectedAsync(exception);
     }
 }
