@@ -34,7 +34,7 @@ public class TakeHandler : IHandler<TakeCommand>
 
         if (o is null)
         {
-            result.Add(player, $"There is no {cmd.Target} here.");
+            result.Add(player, new ItemNotFoundEvent(cmd.Target));
 
             return Task.FromResult(result);
         }
@@ -44,14 +44,15 @@ public class TakeHandler : IHandler<TakeCommand>
             player.CurrentLocation.Contents.Remove(o);
             o.Owner = player;
             player.Inventory.Add(o.Name, o);
+            result.Add(player, new ItemTakenEvent(o));
         }
         else if (o.Owner == player)
         {
-            result.Add(player, $"You take the {o.Name}.");
+            result.Add(player, new ItemTakenEvent(o));
         }
         else
         {
-            result.Add(player, $"Someone else already has the {o.Name}!");
+            result.Add(player, new ItemOwnedByOtherEvent(o, o.Owner));
         }
 
         return Task.FromResult(result);
