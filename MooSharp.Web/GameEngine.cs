@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Text;
 using Microsoft.AspNetCore.SignalR;
@@ -18,8 +19,11 @@ public class GameEngine(
     ILogger<GameEngine> logger,
     IGameMessagePresenter presenter) : BackgroundService
 {
+    private static readonly TimeSpan SessionGracePeriod = TimeSpan.FromSeconds(10);
+
     private readonly Dictionary<string, Player> _sessionPlayers = new(StringComparer.Ordinal);
     private readonly Dictionary<string, string> _sessionConnections = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, CancellationTokenSource> _sessionCleanupTokens = new(StringComparer.Ordinal);
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
@@ -106,8 +110,7 @@ public class GameEngine(
 
         if (sessionToken is not null)
         {
-            _sessionPlayers.Remove(sessionToken);
-            _sessionConnections.Remove(sessionToken);
+            ScheduleSessionCleanup(sessionToken);
         }
 
         logger.LogInformation("Player {Player} disconnected", player.Username);
@@ -135,6 +138,8 @@ public class GameEngine(
                 .SendAsync("ReceiveMessage", "Session expired. Please log in again.");
         }
 
+        CancelScheduledCleanup(sessionToken);
+
         var oldConnectionId = _sessionConnections.GetValueOrDefault(sessionToken);
 
         if (!string.IsNullOrEmpty(oldConnectionId))
@@ -154,6 +159,48 @@ public class GameEngine(
             newConnectionId.Value);
 
         return player.Connection.SendMessageAsync("Reconnected to your active session.");
+    }
+
+    private void ScheduleSessionCleanup(string sessionToken)
+    {
+        CancelScheduledCleanup(sessionToken);
+
+        var cts = new CancellationTokenSource();
+        _sessionCleanupTokens[sessionToken] = cts;
+
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                await Task.Delay(SessionGracePeriod, cts.Token);
+
+                _sessionPlayers.Remove(sessionToken);
+                _sessionConnections.Remove(sessionToken);
+                _sessionCleanupTokens.Remove(sessionToken);
+
+                logger.LogInformation(
+                    "Session {SessionId} removed after disconnect grace period of {GracePeriod}",
+                    sessionToken,
+                    SessionGracePeriod);
+            }
+            catch (TaskCanceledException)
+            {
+                logger.LogInformation("Cleanup cancelled for session {SessionId}", sessionToken);
+            }
+            finally
+            {
+                cts.Dispose();
+            }
+        });
+    }
+
+    private void CancelScheduledCleanup(string sessionToken)
+    {
+        if (_sessionCleanupTokens.Remove(sessionToken, out var cts))
+        {
+            cts.Cancel();
+            cts.Dispose();
+        }
     }
 
     private async Task ProcessWorldCommand(WorldCommand command, CancellationToken ct, Player player)
