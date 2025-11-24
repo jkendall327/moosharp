@@ -178,6 +178,17 @@ public sealed class AgentBrain : IAsyncDisposable
 
     private async Task<ChatMessageContent> GetResponse()
     {
+        /*
+         * We create a new kernel in each of these branches because setting up different AI providers in
+         * DI for Semantic Kernel is a real pain.
+         * This is fine because making new kernels is cheap.
+         * Official Microsoft statement:
+         * 'We recommend that you create a kernel as a transient service so that it is disposed of after each use because the plugin collection is mutable.
+         * The kernel is extremely lightweight (since it's just a container for services and plugins),
+         * so creating a new kernel for each use is not a performance concern.'
+         * https://learn.microsoft.com/en-us/semantic-kernel/concepts/kernel?pivots=programming-language-csharp
+         */
+        
         var o = _options.Value;
         return _source switch
         {
