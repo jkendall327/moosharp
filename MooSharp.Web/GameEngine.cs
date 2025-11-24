@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Text;
 using Microsoft.AspNetCore.SignalR;
 using MooSharp.Messaging;
@@ -17,6 +18,9 @@ public class GameEngine(
     ILogger<GameEngine> logger,
     IGameMessagePresenter presenter) : BackgroundService
 {
+    private readonly Dictionary<string, Player> _sessionPlayers = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, string> _sessionConnections = new(StringComparer.Ordinal);
+
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         await foreach (var input in reader.ReadAllAsync(stoppingToken))
@@ -29,8 +33,8 @@ public class GameEngine(
     {
         switch (input.Command)
         {
-            case RegisterCommand rc: await CreateNewPlayer(input.ConnectionId, rc); break;
-            case LoginCommand lc: await Login(input.ConnectionId, lc); break;
+            case RegisterCommand rc: await CreateNewPlayer(input.ConnectionId, rc, input.SessionToken); break;
+            case LoginCommand lc: await Login(input.ConnectionId, lc, input.SessionToken); break;
             case RegisterAgentCommand ra: await RegisterAgent(input.ConnectionId, ra); break;
             case WorldCommand wc:
                 if (!world.Players.TryGetValue(input.ConnectionId.Value, out var player))
@@ -52,15 +56,31 @@ public class GameEngine(
 
                 break;
             case DisconnectCommand:
-                await HandleDisconnectAsync(input.ConnectionId);
+                await HandleDisconnectAsync(input.ConnectionId, input.SessionToken);
+
+                break;
+            case ReconnectCommand:
+                await HandleReconnectAsync(input.ConnectionId, input.SessionToken);
 
                 break;
             default: throw new ArgumentOutOfRangeException(nameof(input.Command));
         }
     }
 
-    private async Task HandleDisconnectAsync(ConnectionId connectionId)
+    private async Task HandleDisconnectAsync(ConnectionId connectionId, string? sessionToken)
     {
+        if (sessionToken is not null
+            && _sessionConnections.TryGetValue(sessionToken, out var trackedConnection)
+            && !string.Equals(trackedConnection, connectionId.Value, StringComparison.Ordinal))
+        {
+            logger.LogInformation(
+                "Ignoring disconnect for stale connection {ConnectionId} (session {SessionId})",
+                connectionId,
+                sessionToken);
+
+            return;
+        }
+
         if (!world.Players.TryGetValue(connectionId.Value, out var player))
         {
             logger.LogWarning("Player with connection {ConnectionId} not found during disconnect", connectionId);
@@ -84,9 +104,58 @@ public class GameEngine(
 
         world.Players.Remove(connectionId.Value);
 
+        if (sessionToken is not null)
+        {
+            _sessionPlayers.Remove(sessionToken);
+            _sessionConnections.Remove(sessionToken);
+        }
+
         logger.LogInformation("Player {Player} disconnected", player.Username);
 
         return;
+    }
+
+    private Task HandleReconnectAsync(ConnectionId newConnectionId, string? sessionToken)
+    {
+        if (string.IsNullOrWhiteSpace(sessionToken))
+        {
+            logger.LogWarning("Reconnect attempted without session token for {ConnectionId}", newConnectionId);
+
+            return hubContext
+                .Clients
+                .Client(newConnectionId.Value)
+                .SendAsync("ReceiveMessage", "Session missing. Please log in again.");
+        }
+
+        if (!_sessionPlayers.TryGetValue(sessionToken, out var player))
+        {
+            logger.LogWarning("No player found for session {SessionId} during reconnect", sessionToken);
+
+            return hubContext
+                .Clients
+                .Client(newConnectionId.Value)
+                .SendAsync("ReceiveMessage", "Session expired. Please log in again.");
+        }
+
+        var oldConnectionId = _sessionConnections.GetValueOrDefault(sessionToken);
+
+        if (!string.IsNullOrEmpty(oldConnectionId))
+        {
+            world.Players.Remove(oldConnectionId);
+        }
+
+        player.Connection = new SignalRPlayerConnection(newConnectionId, hubContext);
+
+        world.Players[newConnectionId.Value] = player;
+        _sessionConnections[sessionToken] = newConnectionId.Value;
+
+        logger.LogInformation(
+            "Player {Player} reconnected. OldConnection={OldConnection} NewConnection={NewConnection}",
+            player.Username,
+            oldConnectionId,
+            newConnectionId.Value);
+
+        return player.Connection.SendMessageAsync("Reconnected to your active session.");
     }
 
     private async Task ProcessWorldCommand(WorldCommand command, CancellationToken ct, Player player)
@@ -113,7 +182,7 @@ public class GameEngine(
         }
     }
 
-    private async Task CreateNewPlayer(ConnectionId connectionId, RegisterCommand rc)
+    private async Task CreateNewPlayer(ConnectionId connectionId, RegisterCommand rc, string? sessionToken)
     {
         var defaultRoom = world.Rooms.First()
             .Value;
@@ -129,6 +198,7 @@ public class GameEngine(
         await playerStore.SaveNewPlayer(player, defaultRoom, rc.Password);
 
         world.Players.Add(connectionId.Value, player);
+        TrackSession(sessionToken, player, connectionId);
 
         var description = BuildCurrentRoomDescription(player);
 
@@ -142,7 +212,7 @@ public class GameEngine(
         _ = SendMessagesAsync(messages);
     }
 
-    private async Task Login(ConnectionId connectionId, LoginCommand lc)
+    private async Task Login(ConnectionId connectionId, LoginCommand lc, string? sessionToken)
     {
         var dto = await playerStore.LoadPlayer(lc);
 
@@ -171,6 +241,7 @@ public class GameEngine(
         world.MovePlayer(player, startingRoom);
 
         world.Players.Add(connectionId.Value, player);
+        TrackSession(sessionToken, player, connectionId);
 
         var description = BuildCurrentRoomDescription(player);
 
@@ -182,6 +253,17 @@ public class GameEngine(
 
         await SendLoginResultAsync(connectionId, true, $"Logged in as {player.Username}.");
         _ = SendMessagesAsync(messages);
+    }
+
+    private void TrackSession(string? sessionToken, Player player, ConnectionId connectionId)
+    {
+        if (string.IsNullOrWhiteSpace(sessionToken))
+        {
+            return;
+        }
+
+        _sessionPlayers[sessionToken] = player;
+        _sessionConnections[sessionToken] = connectionId.Value;
     }
 
     private Task SendLoginResultAsync(ConnectionId connectionId, bool success, string message)
