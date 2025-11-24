@@ -19,12 +19,11 @@ public sealed class AgentBrain : IAsyncDisposable
     private readonly ChatHistory _history;
     private readonly IOptions<AgentOptions> _options;
     private readonly TimeProvider _clock;
-    private readonly string _persona;
     private readonly AgentSource _source;
 
     private readonly Channel<string> _incomingMessages;
     private readonly CancellationTokenSource _cts;
-    private readonly Task _processingTask;
+    private Task? _processingTask;
 
     // Rate limiting
     private readonly TimeSpan _actionCooldown;
@@ -41,7 +40,6 @@ public sealed class AgentBrain : IAsyncDisposable
         TimeSpan? actionCooldown = null,
         CancellationToken cancellationToken = default)
     {
-        _persona = persona;
         _source = source;
         _gameInputWriter = gameInputWriter;
         _options = options;
@@ -51,7 +49,7 @@ public sealed class AgentBrain : IAsyncDisposable
 
         _actionCooldown = actionCooldown ?? TimeSpan.FromSeconds(10);
 
-        _incomingMessages = Channel.CreateUnbounded<string>(new UnboundedChannelOptions
+        _incomingMessages = Channel.CreateUnbounded<string>(new()
         {
             SingleReader = true,
             SingleWriter = false
@@ -63,12 +61,11 @@ public sealed class AgentBrain : IAsyncDisposable
             OnMessageReceived = EnqueueIncomingMessageAsync
         };
 
-        _processingTask = Task.Run(() => ProcessIncomingMessagesAsync(_cts.Token), cancellationToken);
-
         var systemPrompt = new StringBuilder()
             .AppendLine($"You are a player in a text-based adventure game. Your name is {name}.")
             .AppendLine(persona)
-            .AppendLine("Use only the commands listed below, and respond with a single command starting with the command verb.")
+            .AppendLine(
+                "Use only the commands listed below, and respond with a single command starting with the command verb.")
             .AppendLine(availableCommands)
             .ToString();
 
@@ -77,11 +74,19 @@ public sealed class AgentBrain : IAsyncDisposable
 
     public IPlayerConnection Connection => _connection;
 
+    public void Start(CancellationToken ct = default)
+    {
+        _processingTask = Task.Run(() => ProcessIncomingMessagesAsync(_cts.Token), ct);
+    }
+
     private Task EnqueueIncomingMessageAsync(string message)
     {
         if (!_incomingMessages.Writer.TryWrite(message))
         {
-            return _incomingMessages.Writer.WriteAsync(message).AsTask();
+            return _incomingMessages
+                .Writer
+                .WriteAsync(message)
+                .AsTask();
         }
 
         return Task.CompletedTask;
@@ -91,13 +96,17 @@ public sealed class AgentBrain : IAsyncDisposable
     {
         try
         {
-            while (await _incomingMessages.Reader.WaitToReadAsync(cancellationToken).ConfigureAwait(false))
+            while (await _incomingMessages
+                       .Reader
+                       .WaitToReadAsync(cancellationToken)
+                       .ConfigureAwait(false))
             {
                 while (_incomingMessages.Reader.TryRead(out var message))
                 {
                     try
                     {
-                        await HandleIncomingGameMessageAsync(message).ConfigureAwait(false);
+                        await HandleIncomingGameMessageAsync(message)
+                            .ConfigureAwait(false);
                     }
                     catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
                     {
@@ -188,12 +197,15 @@ public sealed class AgentBrain : IAsyncDisposable
          * so creating a new kernel for each use is not a performance concern.'
          * https://learn.microsoft.com/en-us/semantic-kernel/concepts/kernel?pivots=programming-language-csharp
          */
-        
+
         var o = _options.Value;
+
         return _source switch
         {
             AgentSource.OpenAI => await GetOpenAIResponseAsync(o.OpenAIModelId, o.OpenAIApiKey),
-            AgentSource.OpenRouter => await GetOpenAIResponseAsync(o.OpenRouterModelId, o.OpenRouterApiKey, o.OpenRouterEndpoint),
+            AgentSource.OpenRouter => await GetOpenAIResponseAsync(o.OpenRouterModelId,
+                o.OpenRouterApiKey,
+                o.OpenRouterEndpoint),
             AgentSource.Gemini => await GetGeminiResponseAsync(o),
             AgentSource.Anthropic => await GetAnthropicResponseAsync(o),
             _ => throw new NotSupportedException($"Unknown agent source {_source}")
@@ -216,7 +228,9 @@ public sealed class AgentBrain : IAsyncDisposable
         _history.RemoveRange(1, messagesToRemove);
     }
 
-    private async Task<ChatMessageContent> GetOpenAIResponseAsync(string modelId, string apiKey, string? endpoint = null)
+    private async Task<ChatMessageContent> GetOpenAIResponseAsync(string modelId,
+        string apiKey,
+        string? endpoint = null)
     {
         var builder = Kernel.CreateBuilder();
 
@@ -250,8 +264,7 @@ public sealed class AgentBrain : IAsyncDisposable
 
         var chat = kernel.Services.GetRequiredService<IChatCompletionService>();
 
-        return await chat.GetChatMessageContentAsync(
-            _history,
+        return await chat.GetChatMessageContentAsync(_history,
             executionSettings: new GeminiPromptExecutionSettings
             {
                 MaxTokens = 500
@@ -262,14 +275,13 @@ public sealed class AgentBrain : IAsyncDisposable
     private async Task<ChatMessageContent> GetAnthropicResponseAsync(AgentOptions options)
     {
         using var client = new AnthropicClient(new APIAuthentication(apiKey: options.AnthropicApiKey));
-        var chatClient = (IChatClient)client.Messages;
+        var chatClient = (IChatClient) client.Messages;
 
         var messages = _history
             .Select(ConvertToChatMessage)
             .ToList();
 
-        var response = await chatClient.GetResponseAsync(
-            messages,
+        var response = await chatClient.GetResponseAsync(messages,
             new ChatOptions
             {
                 ModelId = options.AnthropicModelId,
@@ -285,8 +297,10 @@ public sealed class AgentBrain : IAsyncDisposable
         return message.Role switch
         {
             var role when role == AuthorRole.User => new ChatMessage(ChatRole.User, message.Content ?? string.Empty),
-            var role when role == AuthorRole.Assistant => new ChatMessage(ChatRole.Assistant, message.Content ?? string.Empty),
-            var role when role == AuthorRole.System => new ChatMessage(ChatRole.System, message.Content ?? string.Empty),
+            var role when role == AuthorRole.Assistant => new ChatMessage(ChatRole.Assistant,
+                message.Content ?? string.Empty),
+            var role when role == AuthorRole.System =>
+                new ChatMessage(ChatRole.System, message.Content ?? string.Empty),
             _ => new ChatMessage(ChatRole.User, message.Content ?? string.Empty)
         };
     }
@@ -298,7 +312,10 @@ public sealed class AgentBrain : IAsyncDisposable
 
         try
         {
-            await _processingTask.ConfigureAwait(false);
+            if (_processingTask is not null)
+            {
+                await _processingTask.ConfigureAwait(false);
+            }
         }
         catch (OperationCanceledException) when (_cts.IsCancellationRequested)
         {

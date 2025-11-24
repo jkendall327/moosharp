@@ -10,7 +10,7 @@ public class AgentFactory(
     IOptions<AgentOptions> options,
     CommandReference commandReference)
 {
-    public AgentBrain Build(AgentIdentity identity, CancellationToken cancellationToken)
+    public AgentBrain Build(AgentIdentity identity)
     {
         var availableCommands = commandReference.BuildHelpText();
 
@@ -22,7 +22,6 @@ public class AgentFactory(
             writer,
             options,
             clock,
-            identity.Cooldown,
-            cancellationToken);
+            identity.Cooldown);
     }
 }
