@@ -20,6 +20,14 @@ public record ItemAlreadyInPossessionEvent(Object Item) : IGameEvent;
 
 public record ItemOwnedByOtherEvent(Object Item, Player Owner) : IGameEvent;
 
+public record ItemDroppedEvent(Object Item, Player Player) : IGameEvent;
+
+public record ItemNotCarriedEvent(string ItemName) : IGameEvent;
+
+public record ItemGivenEvent(Player Sender, Player Recipient, Object Item) : IGameEvent;
+
+public record ItemReceivedEvent(Player Sender, Player Recipient, Object Item) : IGameEvent;
+
 public record SelfExaminedEvent(Player Player, IReadOnlyCollection<Object> Inventory) : IGameEvent;
 
 public record ObjectExaminedEvent(Object Item) : IGameEvent;
@@ -27,3 +35,7 @@ public record ObjectExaminedEvent(Object Item) : IGameEvent;
 public record AmbiguousInputEvent(string Input, IReadOnlyCollection<Object> Candidates) : IGameEvent;
 
 public record PlayerSaidEvent(Player Player, string Message) : IGameEvent;
+
+public record PlayerEmotedEvent(Player Player, string Message) : IGameEvent;
+
+public record WhisperEvent(Player Sender, Player Recipient, string Message) : IGameEvent;
