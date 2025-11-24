@@ -44,6 +44,7 @@ public class MoveHandler(World world, ILogger<MoveHandler> logger) : IHandler<Mo
 
         var exitRoom = world.Rooms[exit];
 
+        result.Add(player, new PlayerDepartedEvent(player, originRoom, cmd.TargetExit));
         result.Add(player, new PlayerMovedEvent(player, exitRoom));
 
         result.BroadcastToAllButPlayer(originRoom, player, new PlayerDepartedEvent(player, originRoom, cmd.TargetExit));

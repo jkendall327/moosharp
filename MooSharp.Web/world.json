@@ -3,24 +3,36 @@
     {
       "Name": "atrium",
       "Description": "A beautiful atrium.",
+      "LongDescription": "A beautiful atrium with sun pouring through the glass ceiling. Benches line the walls beneath hanging plants.",
+      "EnterText": "You step into the atrium.",
+      "ExitText": "You leave the atrium.",
       "Slug": "atrium",
       "ConnectedRooms": ["side-room"]
     },
     {
       "Name": "side-room",
       "Description": "A small side-room for drinking coffee.",
+      "LongDescription": "A small side-room for drinking coffee, complete with a humming kettle and a few mismatched stools.",
+      "EnterText": "You shuffle into the side-room.",
+      "ExitText": "You step out of the side-room.",
       "Slug": "side-room",
       "ConnectedRooms": ["atrium", "closet"]
     },
     {
       "Name": "closet",
       "Description": "A cramped and dark closet.",
+      "LongDescription": "A cramped and dark closet filled with the scent of dust and old mops. Shelves crowd the narrow walls.",
+      "EnterText": "You head into the closet.",
+      "ExitText": "You leave the closet.",
       "Slug": "closet",
       "ConnectedRooms": ["side-room", "dark-world"]
     },
     {
       "Name": "dark world",
       "Description": "A secret place.",
+      "LongDescription": "A secret place hidden behind the closet. The air here is still and the walls vanish into darkness.",
+      "EnterText": "You cross over into the dark world.",
+      "ExitText": "You slip away from the dark world.",
       "Slug": "dark-world",
       "ConnectedRooms": ["closet"]
     }
