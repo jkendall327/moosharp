@@ -35,7 +35,7 @@ public class ExamineHandler(World world) : IHandler<ExamineCommand>
             var currentLocation = world.GetPlayerLocation(player)
                 ?? throw new InvalidOperationException("Player has no known current location.");
 
-            result.Add(player, new RoomDescriptionEvent(currentLocation.DescribeFor(player)));
+            result.Add(player, new RoomDescriptionEvent(currentLocation.DescribeFor(player, useLongDescription: true)));
 
             return Task.FromResult(result);
         }

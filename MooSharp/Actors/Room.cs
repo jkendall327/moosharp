@@ -28,6 +28,9 @@ public class Room : IContainer
     public RoomId Id { get; init; }
     public required string Name { get; init; }
     public required string Description { get; init; }
+    public required string LongDescription { get; init; }
+    public required string EnterText { get; init; }
+    public required string ExitText { get; init; }
     private readonly List<Object> _contents = new();
     public IReadOnlyCollection<Object> Contents => _contents;
     public Dictionary<string, RoomId> Exits { get; } = new(StringComparer.OrdinalIgnoreCase);
@@ -38,11 +41,11 @@ public class Room : IContainer
         return this.FindObjectInContainer(keyword);
     }
 
-    public string DescribeFor(Player player)
+    public string DescribeFor(Player player, bool useLongDescription = false)
     {
         var sb = new StringBuilder();
 
-        sb.AppendLine(Description);
+        sb.AppendLine(useLongDescription ? LongDescription : Description);
 
         var otherPlayers = PlayersInRoom.Select(s => s.Username).Except([player.Username]);
 

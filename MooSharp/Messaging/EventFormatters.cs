@@ -25,28 +25,28 @@ public class ExitNotFoundEventFormatter : IGameEventFormatter<ExitNotFoundEvent>
 
 public class PlayerMovedEventFormatter : IGameEventFormatter<PlayerMovedEvent>
 {
-    public string FormatForActor(PlayerMovedEvent gameEvent) => $"You head to {gameEvent.Destination.Description}.";
+    public string FormatForActor(PlayerMovedEvent gameEvent) => gameEvent.Destination.EnterText;
 
     public string FormatForObserver(PlayerMovedEvent gameEvent) =>
-        $"{gameEvent.Player.Username} moved towards {gameEvent.Destination.Description}.";
+        $"{gameEvent.Player.Username} arrives.";
 }
 
 public class PlayerDepartedEventFormatter : IGameEventFormatter<PlayerDepartedEvent>
 {
     public string FormatForActor(PlayerDepartedEvent gameEvent) =>
-        $"You head out through {gameEvent.ExitName}.";
+        gameEvent.Origin.ExitText;
 
     public string FormatForObserver(PlayerDepartedEvent gameEvent) =>
-        $"{gameEvent.Player.Username} went to {gameEvent.ExitName}";
+        $"{gameEvent.Player.Username} leaves.";
 }
 
 public class PlayerArrivedEventFormatter : IGameEventFormatter<PlayerArrivedEvent>
 {
     public string FormatForActor(PlayerArrivedEvent gameEvent) =>
-        $"You arrived in {gameEvent.Destination.Description}.";
+        gameEvent.Destination.EnterText;
 
     public string FormatForObserver(PlayerArrivedEvent gameEvent) =>
-        $"{gameEvent.Player.Username} arrived";
+        $"{gameEvent.Player.Username} arrives.";
 }
 
 public class ItemNotFoundEventFormatter : IGameEventFormatter<ItemNotFoundEvent>

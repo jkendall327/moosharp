@@ -65,6 +65,9 @@ public class World(IOptions<AppOptions> options, ILogger<World> logger)
                     Id = r.Slug,
                     Name = r.Name,
                     Description = r.Description,
+                    LongDescription = r.LongDescription,
+                    EnterText = r.EnterText,
+                    ExitText = r.ExitText,
                 });
         
         // Connect exits.
