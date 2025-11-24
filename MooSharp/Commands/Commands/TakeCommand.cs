@@ -12,7 +12,7 @@ public class TakeCommandDefinition : ICommandDefinition
 {
     public IReadOnlyCollection<string> Verbs { get; } =
     [
-        "take", "grab", "get"
+        "take", "grab", "get", "g"
     ];
 
     public string Description => "Pick up an item from the room. Usage: take <item>.";

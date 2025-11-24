@@ -10,7 +10,7 @@ public class SayCommand : CommandBase<SayCommand>
 
 public class SayCommandDefinition : ICommandDefinition
 {
-    public IReadOnlyCollection<string> Verbs { get; } = ["say"];
+    public IReadOnlyCollection<string> Verbs { get; } = ["say", "s"];
 
     public string Description => "Send a message to everyone in your current room. Usage: say <message>.";
 

@@ -10,7 +10,7 @@ public class ExamineCommand : CommandBase<ExamineCommand>
 
 public class ExamineCommandDefinition : ICommandDefinition
 {
-    public IReadOnlyCollection<string> Verbs { get; } = ["examine", "view", "look"];
+    public IReadOnlyCollection<string> Verbs { get; } = ["examine", "ex", "x", "view", "look"];
 
     public string Description => "Inspect yourself, an item, or the room. Usage: examine <target>.";
 

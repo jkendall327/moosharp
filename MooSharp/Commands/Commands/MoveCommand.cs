@@ -12,7 +12,7 @@ public class MoveCommand : CommandBase<MoveCommand>
 
 public class MoveCommandDefinition : ICommandDefinition
 {
-    public IReadOnlyCollection<string> Verbs { get; } = ["move", "go", "walk"];
+    public IReadOnlyCollection<string> Verbs { get; } = ["move", "m", "go", "walk"];
 
     public string Description => "Move to an adjacent room. Usage: move <exit>.";
 
