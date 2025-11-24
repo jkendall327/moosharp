@@ -9,6 +9,8 @@ public class World(IOptions<AppOptions> options, ILogger<World> logger)
     public Dictionary<string, Player> Players { get; } = [];
     public Dictionary<RoomId, Room> Rooms { get; private set; } = [];
 
+    private readonly Dictionary<Player, Room> _playerLocations = [];
+
     public async Task InitializeAsync(CancellationToken cancellationToken = default)
     {
         var dto = await GetWorldDto(cancellationToken);
@@ -127,9 +129,9 @@ public class World(IOptions<AppOptions> options, ILogger<World> logger)
 
     public Room? GetPlayerLocation(Player player)
     {
-        return Rooms
-            .Values
-            .FirstOrDefault(room => room.PlayersInRoom.Contains(player));
+        _ = _playerLocations.TryGetValue(player, out var room);
+
+        return room;
     }
 
     public void MovePlayer(Player player, Room destination)
@@ -149,5 +151,7 @@ public class World(IOptions<AppOptions> options, ILogger<World> logger)
         {
             destination.PlayersInRoom.Add(player);
         }
+        
+        _playerLocations[player] = destination;
     }
 }
