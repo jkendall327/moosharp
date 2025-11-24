@@ -10,13 +10,11 @@ public class CommandHandlerTests
     [Fact]
     public async Task MoveHandler_MovesPlayerAndAddsMovementEvents()
     {
-        var world = CreateWorld();
         var origin = CreateRoom("origin");
         var destination = CreateRoom("destination");
         origin.Exits.Add("north", destination.Id);
 
-        world.Rooms.Add(origin.Id, origin);
-        world.Rooms.Add(destination.Id, destination);
+        var world = CreateWorld(origin, destination);
 
         var player = CreatePlayer("Alice");
         world.MovePlayer(player, origin);
@@ -46,9 +44,8 @@ public class CommandHandlerTests
     [Fact]
     public async Task MoveHandler_ReturnsExitNotFoundWhenMissing()
     {
-        var world = CreateWorld();
         var origin = CreateRoom("origin");
-        world.Rooms.Add(origin.Id, origin);
+        var world = CreateWorld(origin);
 
         var player = CreatePlayer();
         world.MovePlayer(player, origin);
@@ -69,13 +66,11 @@ public class CommandHandlerTests
     [Fact]
     public async Task MoveHandler_BroadcastsToObservers()
     {
-        var world = CreateWorld();
         var origin = CreateRoom("origin");
         var destination = CreateRoom("destination");
         origin.Exits.Add("north", destination.Id);
 
-        world.Rooms.Add(origin.Id, origin);
-        world.Rooms.Add(destination.Id, destination);
+        var world = CreateWorld(origin, destination);
 
         var actor = CreatePlayer("Actor");
         var originObserver = CreatePlayer("OriginObserver");
@@ -105,9 +100,8 @@ public class CommandHandlerTests
     [Fact]
     public async Task TakeHandler_MovesUnownedItemToPlayer()
     {
-        var world = CreateWorld();
         var room = CreateRoom("room");
-        world.Rooms.Add(room.Id, room);
+        var world = CreateWorld(room);
 
         var player = CreatePlayer();
         world.MovePlayer(player, room);
@@ -138,9 +132,8 @@ public class CommandHandlerTests
     [Fact]
     public async Task TakeHandler_ReturnsNotFoundEventWhenMissing()
     {
-        var world = CreateWorld();
         var room = CreateRoom("room");
-        world.Rooms.Add(room.Id, room);
+        var world = CreateWorld(room);
 
         var player = CreatePlayer();
         world.MovePlayer(player, room);
@@ -161,9 +154,8 @@ public class CommandHandlerTests
     [Fact]
     public async Task TakeHandler_ReturnsOwnershipConflictWhenItemOwned()
     {
-        var world = CreateWorld();
         var room = CreateRoom("room");
-        world.Rooms.Add(room.Id, room);
+        var world = CreateWorld(room);
 
         var owner = CreatePlayer("Owner");
         var seeker = CreatePlayer("Seeker");
@@ -195,12 +187,11 @@ public class CommandHandlerTests
     [Fact]
     public async Task TakeHandler_ReturnsAlreadyOwnedWhenItemInInventory()
     {
-        var world = CreateWorld();
         var room = CreateRoom("room");
-        world.Rooms.Add(room.Id, room);
+        var world = CreateWorld(room);
 
         var player = CreatePlayer();
-        room.PlayersInRoom.Add(player);
+        world.MovePlayer(player, room);
 
         var item = new Object
         {
@@ -225,9 +216,8 @@ public class CommandHandlerTests
     [Fact]
     public async Task ExamineHandler_ReturnsRoomDescriptionWhenNoTarget()
     {
-        var world = CreateWorld();
         var room = CreateRoom("room");
-        world.Rooms.Add(room.Id, room);
+        var world = CreateWorld(room);
 
         var player = CreatePlayer();
         world.MovePlayer(player, room);
@@ -248,12 +238,11 @@ public class CommandHandlerTests
     [Fact]
     public async Task ExamineHandler_ReturnsSelfInventoryWhenTargetIsMe()
     {
-        var world = CreateWorld();
         var room = CreateRoom("room");
-        world.Rooms.Add(room.Id, room);
+        var world = CreateWorld(room);
 
         var player = CreatePlayer();
-        room.PlayersInRoom.Add(player);
+        world.MovePlayer(player, room);
 
         var item = new Object
         {
@@ -279,9 +268,8 @@ public class CommandHandlerTests
     [Fact]
     public async Task ExamineHandler_ReturnsObjectDetailsWhenFound()
     {
-        var world = CreateWorld();
         var room = CreateRoom("room");
-        world.Rooms.Add(room.Id, room);
+        var world = CreateWorld(room);
 
         var player = CreatePlayer();
         world.MovePlayer(player, room);
@@ -310,9 +298,8 @@ public class CommandHandlerTests
     [Fact]
     public async Task SayHandler_BroadcastsToRoom()
     {
-        var world = CreateWorld();
         var room = CreateRoom("room");
-        world.Rooms.Add(room.Id, room);
+        var world = CreateWorld(room);
 
         var speaker = CreatePlayer("Speaker");
         var listener = CreatePlayer("Listener");
@@ -339,12 +326,11 @@ public class CommandHandlerTests
     [Fact]
     public async Task SayHandler_ReturnsSystemMessageForEmptyContent()
     {
-        var world = CreateWorld();
         var room = CreateRoom("room");
-        world.Rooms.Add(room.Id, room);
+        var world = CreateWorld(room);
 
         var speaker = CreatePlayer();
-        room.PlayersInRoom.Add(speaker);
+        world.MovePlayer(speaker, room);
 
         var handler = new SayHandler(world);
 
@@ -359,7 +345,14 @@ public class CommandHandlerTests
         Assert.False(string.IsNullOrWhiteSpace(evt.Message));
     }
 
-    private static World CreateWorld()
+    private static World CreateWorld(params Room[] rooms)
+    {
+        var factory = CreateWorldFactory();
+
+        return factory.CreateWorld(rooms.ToList());
+    }
+
+    private static WorldFactory CreateWorldFactory()
     {
         var options = Options.Create(new AppOptions
         {
@@ -367,7 +360,7 @@ public class CommandHandlerTests
             WorldDataFilepath = "world.json"
         });
 
-        return new World(options, NullLogger<World>.Instance);
+        return new WorldFactory(options, NullLogger<WorldFactory>.Instance);
     }
 
     private static Room CreateRoom(string slug)

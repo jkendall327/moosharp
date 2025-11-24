@@ -32,9 +32,10 @@ public class Room : IContainer
     public required string EnterText { get; init; }
     public required string ExitText { get; init; }
     private readonly List<Object> _contents = new();
+    private readonly List<Player> _playersInRoom = new();
     public IReadOnlyCollection<Object> Contents => _contents;
     public Dictionary<string, RoomId> Exits { get; } = new(StringComparer.OrdinalIgnoreCase);
-    public List<Player> PlayersInRoom { get; } = new();
+    public IReadOnlyCollection<Player> PlayersInRoom => _playersInRoom;
 
     public SearchResult FindObjects(string query) => _contents.FindObjects(query);
 
@@ -69,6 +70,20 @@ public class Room : IContainer
     void IContainer.AddToContents(Object item) => _contents.Add(item);
 
     bool IContainer.RemoveFromContents(Object item) => _contents.Remove(item);
+
+    internal bool AddPlayer(Player player)
+    {
+        if (_playersInRoom.Contains(player))
+        {
+            return false;
+        }
+
+        _playersInRoom.Add(player);
+
+        return true;
+    }
+
+    internal bool RemovePlayer(Player player) => _playersInRoom.Remove(player);
 }
 
 public enum SearchStatus
