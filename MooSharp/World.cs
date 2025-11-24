@@ -7,7 +7,8 @@ namespace MooSharp;
 public class World(IOptions<AppOptions> options, ILogger<World> logger)
 {
     public Dictionary<string, Player> Players { get; } = [];
-    public Dictionary<RoomId, Room> Rooms { get; private set; } = [];
+    public IReadOnlyDictionary<RoomId, Room> Rooms => _rooms;
+    private Dictionary<RoomId, Room> _rooms = [];
 
     private readonly Dictionary<Player, Room> _playerLocations = [];
 
@@ -15,8 +16,8 @@ public class World(IOptions<AppOptions> options, ILogger<World> logger)
     {
         var dto = await GetWorldDto(cancellationToken);
 
-        Rooms = CreateRooms(dto);
-        CreateObjects(dto, Rooms);
+        _rooms = CreateRooms(dto);
+        CreateObjects(dto, _rooms);
     }
 
     private async Task<WorldDto> GetWorldDto(CancellationToken cancellationToken)
