@@ -14,6 +14,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<CommandParser>();
         services.AddSingleton<CommandExecutor>();
         services.AddSingleton<CommandReference>();
+        services.AddSingleton<IAgentPromptProvider, AgentPromptProvider>();
         services.AddSingleton<AgentSpawner>();
         services.AddSingleton<AgentFactory>();
         services.AddSingleton(TimeProvider.System);
