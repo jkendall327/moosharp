@@ -1,6 +1,7 @@
 namespace MooSharp.Agents;
 
 using System.Text.Json;
+using System.Threading;
 using System.Threading.Channels;
 using Microsoft.Extensions.Options;
 using MooSharp;
@@ -44,7 +45,7 @@ public class AgentSpawner(AgentFactory factory, ChannelWriter<GameInput> writer,
 
     private async Task SpawnAgentAsync(AgentIdentity identity, CancellationToken cancellationToken)
     {
-        var brain = factory.Build(identity);
+        var brain = factory.Build(identity, cancellationToken);
 
         var registerAgentCommand = new RegisterAgentCommand
         {
