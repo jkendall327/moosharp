@@ -195,7 +195,7 @@ public sealed class AgentBrain : IAsyncDisposable
 
         if (string.IsNullOrEmpty(commandText))
         {
-            _logger.LogWarning("No command returned for {AgentName}");
+            _logger.LogWarning("No command returned for {AgentName}", _name);
             return;
         }
 
