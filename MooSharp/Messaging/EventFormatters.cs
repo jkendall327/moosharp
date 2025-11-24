@@ -111,3 +111,23 @@ public class ObjectExaminedEventFormatter : IGameEventFormatter<ObjectExaminedEv
 
     public string FormatForObserver(ObjectExaminedEvent gameEvent) => gameEvent.Item.Description;
 }
+
+public class AmbiguousInputEventFormatter : IGameEventFormatter<AmbiguousInputEvent>
+{
+    public string FormatForActor(AmbiguousInputEvent evt)
+    {
+        var sb = new StringBuilder();
+        sb.AppendLine($"Which '{evt.Input}' do you mean?");
+
+        var i = 1;
+        foreach (var candidate in evt.Candidates)
+        {
+            sb.AppendLine($"{i++}. {candidate.Name}");
+        }
+
+        sb.Append("Type the name and the number (e.g., 'sword 2').");
+        return sb.ToString();
+    }
+
+    public string FormatForObserver(AmbiguousInputEvent evt) => null!;
+}

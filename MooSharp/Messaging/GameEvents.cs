@@ -23,3 +23,5 @@ public record ItemOwnedByOtherEvent(Object Item, Player Owner) : IGameEvent;
 public record SelfExaminedEvent(Player Player, IReadOnlyCollection<Object> Inventory) : IGameEvent;
 
 public record ObjectExaminedEvent(Object Item) : IGameEvent;
+
+public record AmbiguousInputEvent(string Input, IReadOnlyCollection<Object> Candidates) : IGameEvent;

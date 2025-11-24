@@ -35,27 +35,39 @@ public class TakeHandler(World world) : IHandler<TakeCommand>
         var currentLocation = world.GetPlayerLocation(player)
             ?? throw new InvalidOperationException("Player has no known current location.");
 
-        var o = currentLocation.FindObject(cmd.Target);
+        var search = currentLocation.FindObjects(cmd.Target);
 
-        if (o is null)
+        switch (search.Status)
         {
-            result.Add(player, new ItemNotFoundEvent(cmd.Target));
+            case SearchStatus.NotFound:
+                result.Add(player, new ItemNotFoundEvent(cmd.Target));
+                break;
 
-            return Task.FromResult(result);
-        }
+            case SearchStatus.IndexOutOfRange:
+                result.Add(player, new SystemMessageEvent($"You can't see a '{cmd.Target}' here."));
+                break;
 
-        if (o.Owner is null)
-        {
-            o.MoveTo(player);
-            result.Add(player, new ItemTakenEvent(o));
-        }
-        else if (o.Owner == player)
-        {
-            result.Add(player, new ItemAlreadyInPossessionEvent(o));
-        }
-        else
-        {
-            result.Add(player, new ItemOwnedByOtherEvent(o, o.Owner));
+            case SearchStatus.Ambiguous:
+                result.Add(player, new AmbiguousInputEvent(cmd.Target, search.Candidates));
+                break;
+
+            case SearchStatus.Found:
+                var o = search.Match!;
+
+                if (o.Owner is null)
+                {
+                    o.MoveTo(player);
+                    result.Add(player, new ItemTakenEvent(o));
+                }
+                else if (o.Owner == player)
+                {
+                    result.Add(player, new ItemAlreadyInPossessionEvent(o));
+                }
+                else
+                {
+                    result.Add(player, new ItemOwnedByOtherEvent(o, o.Owner));
+                }
+                break;
         }
 
         return Task.FromResult(result);

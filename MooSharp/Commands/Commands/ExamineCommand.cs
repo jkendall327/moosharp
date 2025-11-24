@@ -46,16 +46,32 @@ public class ExamineHandler(World world) : IHandler<ExamineCommand>
                 .ToList();
 
             result.Add(player, new SelfExaminedEvent(player, inventory));
+
+            return Task.FromResult(result);
         }
 
         var current = world.GetPlayerLocation(player)
             ?? throw new InvalidOperationException("Player has no known current location.");
 
-        var obj = current.FindObject(cmd.Target);
+        var search = current.FindObjects(cmd.Target);
 
-        if (obj is not null)
+        switch (search.Status)
         {
-            result.Add(player, new ObjectExaminedEvent(obj));
+            case SearchStatus.NotFound:
+                result.Add(player, new ItemNotFoundEvent(cmd.Target));
+                break;
+
+            case SearchStatus.IndexOutOfRange:
+                result.Add(player, new SystemMessageEvent($"You can't see a '{cmd.Target}' here."));
+                break;
+
+            case SearchStatus.Ambiguous:
+                result.Add(player, new AmbiguousInputEvent(cmd.Target, search.Candidates));
+                break;
+
+            case SearchStatus.Found:
+                result.Add(player, new ObjectExaminedEvent(search.Match!));
+                break;
         }
 
         return Task.FromResult(result);
