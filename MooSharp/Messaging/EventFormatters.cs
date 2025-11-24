@@ -81,6 +81,39 @@ public class ItemOwnedByOtherEventFormatter : IGameEventFormatter<ItemOwnedByOth
         $"{gameEvent.Owner.Username} already has the {gameEvent.Item.Name}!";
 }
 
+public class ItemDroppedEventFormatter : IGameEventFormatter<ItemDroppedEvent>
+{
+    public string FormatForActor(ItemDroppedEvent gameEvent) => $"You drop the {gameEvent.Item.Name}.";
+
+    public string FormatForObserver(ItemDroppedEvent gameEvent) =>
+        $"{gameEvent.Player.Username} drops the {gameEvent.Item.Name}.";
+}
+
+public class ItemNotCarriedEventFormatter : IGameEventFormatter<ItemNotCarriedEvent>
+{
+    public string FormatForActor(ItemNotCarriedEvent gameEvent) => $"You aren't carrying a {gameEvent.ItemName}.";
+
+    public string FormatForObserver(ItemNotCarriedEvent gameEvent) => FormatForActor(gameEvent);
+}
+
+public class ItemGivenEventFormatter : IGameEventFormatter<ItemGivenEvent>
+{
+    public string FormatForActor(ItemGivenEvent gameEvent) =>
+        $"You give the {gameEvent.Item.Name} to {gameEvent.Recipient.Username}.";
+
+    public string FormatForObserver(ItemGivenEvent gameEvent) =>
+        $"{gameEvent.Sender.Username} gives the {gameEvent.Item.Name} to {gameEvent.Recipient.Username}.";
+}
+
+public class ItemReceivedEventFormatter : IGameEventFormatter<ItemReceivedEvent>
+{
+    public string FormatForActor(ItemReceivedEvent gameEvent) =>
+        $"{gameEvent.Sender.Username} gives you the {gameEvent.Item.Name}.";
+
+    public string FormatForObserver(ItemReceivedEvent gameEvent) =>
+        $"{gameEvent.Sender.Username} gives the {gameEvent.Item.Name} to {gameEvent.Recipient.Username}.";
+}
+
 public class SelfExaminedEventFormatter : IGameEventFormatter<SelfExaminedEvent>
 {
     public string FormatForActor(SelfExaminedEvent gameEvent)
@@ -138,4 +171,22 @@ public class PlayerSaidEventFormatter : IGameEventFormatter<PlayerSaidEvent>
 
     public string FormatForObserver(PlayerSaidEvent gameEvent) =>
         $"{gameEvent.Player.Username} says, \"{gameEvent.Message}\"";
+}
+
+public class PlayerEmotedEventFormatter : IGameEventFormatter<PlayerEmotedEvent>
+{
+    public string FormatForActor(PlayerEmotedEvent gameEvent) =>
+        $"{gameEvent.Player.Username} {gameEvent.Message}";
+
+    public string FormatForObserver(PlayerEmotedEvent gameEvent) =>
+        $"{gameEvent.Player.Username} {gameEvent.Message}";
+}
+
+public class WhisperEventFormatter : IGameEventFormatter<WhisperEvent>
+{
+    public string FormatForActor(WhisperEvent gameEvent) =>
+        $"You whisper to {gameEvent.Recipient.Username}, \"{gameEvent.Message}\"";
+
+    public string FormatForObserver(WhisperEvent gameEvent) =>
+        $"{gameEvent.Sender.Username} whispers to you, \"{gameEvent.Message}\"";
 }
