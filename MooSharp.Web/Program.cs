@@ -16,6 +16,7 @@ builder.Services.AddSingleton<CommandParser>();
 builder.Services.AddSingleton<CommandExecutor>();
 builder.Services.AddSingleton<CommandReference>();
 builder.Services.AddSingleton<AgentSpawner>();
+builder.Services.AddSingleton<AgentFactory>();
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddSingleton<IPlayerStore, SqlitePlayerStore>();
 
