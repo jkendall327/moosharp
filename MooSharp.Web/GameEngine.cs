@@ -38,12 +38,12 @@ public class GameEngine(
                     await hubContext
                         .Clients
                         .Client(input.ConnectionId.Value)
-                        .SendAsync("ReceiveMessage", "Please log in before sending commands.");
+                        .SendAsync("ReceiveMessage", "Please log in before sending commands.", cancellationToken: ct);
 
                     await hubContext
                         .Clients
                         .Client(input.ConnectionId.Value)
-                        .SendAsync("LoginResult", false, "You must log in to play.");
+                        .SendAsync("LoginResult", false, "You must log in to play.", cancellationToken: ct);
 
                     break;
                 }
@@ -72,7 +72,7 @@ public class GameEngine(
 
         if (location is null)
         {
-            logger.LogWarning("Player {Player} has no known location during disconnect.", player.Username);
+            logger.LogWarning("Player {Player} has no known location during disconnect", player.Username);
 
             location = world.Rooms.First().Value;
 
@@ -85,8 +85,6 @@ public class GameEngine(
         world.Players.Remove(connectionId.Value);
 
         logger.LogInformation("Player {Player} disconnected", player.Username);
-
-        return;
     }
 
     private async Task ProcessWorldCommand(WorldCommand command, CancellationToken ct, Player player)
@@ -217,7 +215,7 @@ public class GameEngine(
 
         if (room is null)
         {
-            logger.LogWarning("Player {Player} has no known location when building description.", player.Username);
+            logger.LogWarning("Player {Player} has no known location when building description", player.Username);
 
             sb.AppendLine("You are nowhere.");
 
