@@ -228,13 +228,23 @@ public class GameEngine(
         
         var startingRoom = world.Rooms.TryGetValue(dto.CurrentLocation, out var r) ? r : world.Rooms.First().Value;
         
-        // TODO: inventory?
-        
         var player = new Player
         {
             Username = dto.Username,
             Connection = new SignalRPlayerConnection(connectionId, hubContext),
         };
+
+        foreach (var item in dto.Inventory)
+        {
+            var obj = new Object
+            {
+                Id = new ObjectId(Guid.Parse(item.Id)),
+                Name = item.Name,
+                Description = item.Description
+            };
+
+            obj.MoveTo(player);
+        }
 
         world.MovePlayer(player, startingRoom);
 

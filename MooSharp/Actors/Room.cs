@@ -23,20 +23,19 @@ public class RoomIdJsonConverter : JsonConverter<RoomId>
     }
 }
 
-public class Room
+public class Room : IContainer
 {
     public RoomId Id { get; init; }
     public required string Name { get; init; }
     public required string Description { get; init; }
-    public List<Object> Contents { get; } = new();
+    private readonly List<Object> _contents = new();
+    public IReadOnlyCollection<Object> Contents => _contents;
     public Dictionary<string, RoomId> Exits { get; } = new(StringComparer.OrdinalIgnoreCase);
     public List<Player> PlayersInRoom { get; } = new();
 
     public Object? FindObject(string keyword)
     {
-        // Simple fuzzy match
-        return Contents.FirstOrDefault(o =>
-            o.Name.Contains(keyword, StringComparison.OrdinalIgnoreCase) || o.Keywords.Contains(keyword));
+        return this.FindObjectInContainer(keyword);
     }
 
     public string DescribeFor(Player player)
@@ -58,4 +57,10 @@ public class Room
     }
 
     public override string ToString() => Id.ToString();
+
+    IReadOnlyCollection<Object> IContainer.Contents => _contents;
+
+    void IContainer.AddToContents(Object item) => _contents.Add(item);
+
+    bool IContainer.RemoveFromContents(Object item) => _contents.Remove(item);
 }

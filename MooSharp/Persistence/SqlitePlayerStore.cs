@@ -39,15 +39,25 @@ public class SqlitePlayerStore : IPlayerStore
         };
 
         await UpsertPlayerAsync(dto);
+        await ReplaceInventoryAsync(player);
     }
 
     public async Task SavePlayer(Player player, Room currentLocation)
     {
         await using var connection = new SqliteConnection(_connectionString);
 
+        await connection.OpenAsync();
+
+        await using var transaction = await connection.BeginTransactionAsync();
+
         await connection.ExecuteAsync(
             "UPDATE Players SET CurrentLocation = @CurrentLocation WHERE Username = @Username",
-            new { player.Username, CurrentLocation = currentLocation.Id });
+            new { player.Username, CurrentLocation = currentLocation.Id },
+            transaction);
+
+        await ReplaceInventoryAsync(connection, player, transaction);
+
+        await transaction.CommitAsync();
     }
 
     public async Task<PlayerDto?> LoadPlayer(LoginCommand command)
@@ -58,9 +68,16 @@ public class SqlitePlayerStore : IPlayerStore
             "SELECT Username, Password, CurrentLocation FROM Players WHERE Username = @Username LIMIT 1",
             new { command.Username });
 
-        return player is not null && BCrypt.Net.BCrypt.Verify(command.Password, player.Password)
-            ? player
-            : null;
+        if (player is null || !BCrypt.Net.BCrypt.Verify(command.Password, player.Password))
+        {
+            return null;
+        }
+
+        var inventory = await connection.QueryAsync<InventoryItemDto>(
+            "SELECT ItemId as Id, Name, Description FROM PlayerInventory WHERE Username = @Username",
+            new { command.Username });
+
+        return player with { Inventory = inventory.ToList() };
     }
 
     private async Task UpsertPlayerAsync(PlayerDto player)
@@ -115,6 +132,20 @@ public class SqlitePlayerStore : IPlayerStore
                 CurrentLocation TEXT NOT NULL
             );
             """);
+
+        connection.Execute(
+            """
+            CREATE TABLE IF NOT EXISTS PlayerInventory
+            (
+                ItemId TEXT PRIMARY KEY,
+                Username TEXT NOT NULL,
+                Name TEXT NOT NULL,
+                Description TEXT NOT NULL,
+                FOREIGN KEY (Username) REFERENCES Players (Username) ON DELETE CASCADE
+            );
+            """);
+
+        connection.Execute("CREATE INDEX IF NOT EXISTS IX_PlayerInventory_Username ON PlayerInventory (Username);");
     }
 
     private class RoomIdTypeHandler : SqlMapper.TypeHandler<RoomId>
@@ -125,5 +156,39 @@ public class SqlitePlayerStore : IPlayerStore
         {
             parameter.Value = value.Value;
         }
+    }
+
+    private async Task ReplaceInventoryAsync(Player player)
+    {
+        await using var connection = new SqliteConnection(_connectionString);
+        await connection.OpenAsync();
+
+        await using var transaction = await connection.BeginTransactionAsync();
+
+        await ReplaceInventoryAsync(connection, player, transaction);
+
+        await transaction.CommitAsync();
+    }
+
+    private static async Task ReplaceInventoryAsync(SqliteConnection connection, Player player, IDbTransaction transaction)
+    {
+        const string deleteSql = "DELETE FROM PlayerInventory WHERE Username = @Username";
+        const string insertSql =
+            """
+            INSERT INTO PlayerInventory (ItemId, Username, Name, Description)
+            VALUES (@ItemId, @Username, @Name, @Description);
+            """;
+
+        await connection.ExecuteAsync(deleteSql, new { player.Username }, transaction);
+
+        if (!player.Inventory.Any())
+        {
+            return;
+        }
+
+        var items = player.Inventory
+            .Select(o => new { ItemId = o.Id.Value.ToString(), player.Username, o.Name, o.Description });
+
+        await connection.ExecuteAsync(insertSql, items, transaction);
     }
 }

@@ -46,14 +46,12 @@ public class TakeHandler(World world) : IHandler<TakeCommand>
 
         if (o.Owner is null)
         {
-            currentLocation.Contents.Remove(o);
-            o.Owner = player;
-            player.Inventory.Add(o);
+            o.MoveTo(player);
             result.Add(player, new ItemTakenEvent(o));
         }
         else if (o.Owner == player)
         {
-            result.Add(player, new ItemTakenEvent(o));
+            result.Add(player, new ItemAlreadyInPossessionEvent(o));
         }
         else
         {

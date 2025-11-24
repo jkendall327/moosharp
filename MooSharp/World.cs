@@ -105,47 +105,20 @@ public class World(IOptions<AppOptions> options, ILogger<World> logger)
 
     private void CreateObjects(WorldDto dto, Dictionary<RoomId, Room> rooms)
     {
-        var bySlug = dto
-            .Objects
-            .Where(s => s.RoomSlug is not null)
-            .ToLookup(r => r.RoomSlug!,
-                o => new Object
-                {
-                    Description = o.Description,
-                    Name = o.Name,
-                    Location = null,
-                    Owner = null
-                });
-
-        var dictionary = bySlug.ToDictionary(s => s.Key,
-            grouping => grouping
-                .Select(o => o)
-                .ToList());
-        
-        foreach (var grouping in bySlug)
+        foreach (var objectDto in dto.Objects.Where(s => s.RoomSlug is not null))
         {
-            var room = rooms.GetValueOrDefault(grouping.Key);
-
-            if (room is null)
+            if (!rooms.TryGetValue(objectDto.RoomSlug!, out var room))
             {
                 continue;
             }
 
-            var objectStates = grouping.ToList();
-            var objectActors = dictionary[grouping.Key];
-
-            var contents = new Dictionary<string, Object>();
-
-            for (var i = 0; i < objectStates.Count; i++)
+            var obj = new Object
             {
-                objectStates[i].Location = room;
-                contents.Add(objectStates[i].Name, objectActors[i]);
-            }
+                Description = objectDto.Description,
+                Name = objectDto.Name
+            };
 
-            foreach ((var name, var actor) in contents)
-            {
-                room.Contents.Add(actor);
-            }
+            obj.MoveTo(room);
         }
     }
 
