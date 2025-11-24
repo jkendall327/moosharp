@@ -1,3 +1,4 @@
+using System.Threading;
 using System.Threading.Channels;
 using Microsoft.Extensions.Options;
 
@@ -9,7 +10,7 @@ public class AgentFactory(
     IOptions<AgentOptions> options,
     CommandReference commandReference)
 {
-    public AgentBrain Build(AgentIdentity identity)
+    public AgentBrain Build(AgentIdentity identity, CancellationToken cancellationToken)
     {
         var availableCommands = commandReference.BuildHelpText();
 
@@ -21,6 +22,7 @@ public class AgentFactory(
             writer,
             options,
             clock,
-            identity.Cooldown);
+            identity.Cooldown,
+            cancellationToken);
     }
 }

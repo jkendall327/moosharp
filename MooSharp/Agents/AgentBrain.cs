@@ -9,11 +9,12 @@ using Microsoft.SemanticKernel.Connectors.Google;
 using Microsoft.SemanticKernel.Connectors.OpenAI;
 using MooSharp.Messaging;
 using System.Text;
+using System.Threading;
 using System.Threading.Channels;
 
 namespace MooSharp.Agents;
 
-public class AgentBrain
+public class AgentBrain : IAsyncDisposable
 {
     private readonly AgentPlayerConnection _connection;
     private readonly ChannelWriter<GameInput> _gameInputWriter;
@@ -25,6 +26,8 @@ public class AgentBrain
     private readonly string _availableCommands;
 
     private readonly Channel<string> _incomingMessages;
+    private readonly CancellationTokenSource _cts;
+    private readonly Task _processingTask;
 
     // Rate limiting
     private readonly TimeSpan _actionCooldown;
@@ -38,7 +41,8 @@ public class AgentBrain
         ChannelWriter<GameInput> gameInputWriter,
         IOptions<AgentOptions> options,
         TimeProvider clock,
-        TimeSpan? actionCooldown = null)
+        TimeSpan? actionCooldown = null,
+        CancellationToken cancellationToken = default)
     {
         _persona = persona;
         _source = source;
@@ -46,6 +50,8 @@ public class AgentBrain
         _gameInputWriter = gameInputWriter;
         _options = options;
         _clock = clock;
+
+        _cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
 
         _actionCooldown = actionCooldown ?? TimeSpan.FromSeconds(10);
 
@@ -61,7 +67,7 @@ public class AgentBrain
             OnMessageReceived = EnqueueIncomingMessageAsync
         };
 
-        _ = Task.Run(ProcessIncomingMessagesAsync);
+        _processingTask = Task.Run(() => ProcessIncomingMessagesAsync(_cts.Token));
 
         var systemPrompt = new StringBuilder()
             .AppendLine($"You are a player in a text-based adventure game. Your name is {name}.")
@@ -85,21 +91,32 @@ public class AgentBrain
         return Task.CompletedTask;
     }
 
-    private async Task ProcessIncomingMessagesAsync()
+    private async Task ProcessIncomingMessagesAsync(CancellationToken cancellationToken)
     {
-        while (await _incomingMessages.Reader.WaitToReadAsync().ConfigureAwait(false))
+        try
         {
-            while (_incomingMessages.Reader.TryRead(out var message))
+            while (await _incomingMessages.Reader.WaitToReadAsync(cancellationToken).ConfigureAwait(false))
             {
-                try
+                while (_incomingMessages.Reader.TryRead(out var message))
                 {
-                    await HandleIncomingGameMessageAsync(message).ConfigureAwait(false);
-                }
-                catch
-                {
-                    // Swallow exceptions to keep the processing loop alive
+                    try
+                    {
+                        await HandleIncomingGameMessageAsync(message).ConfigureAwait(false);
+                    }
+                    catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+                    {
+                        throw;
+                    }
+                    catch
+                    {
+                        // Swallow exceptions to keep the processing loop alive
+                    }
                 }
             }
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            // Expected during disposal
         }
     }
 
@@ -265,5 +282,22 @@ public class AgentBrain
             var role when role == AuthorRole.System => new ChatMessage(ChatRole.System, message.Content ?? string.Empty),
             _ => new ChatMessage(ChatRole.User, message.Content ?? string.Empty)
         };
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        _cts.Cancel();
+        _incomingMessages.Writer.TryComplete();
+
+        try
+        {
+            await _processingTask.ConfigureAwait(false);
+        }
+        catch (OperationCanceledException) when (_cts.IsCancellationRequested)
+        {
+            // Expected during disposal
+        }
+
+        _cts.Dispose();
     }
 }
