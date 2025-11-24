@@ -19,4 +19,5 @@ public class AgentOptions
     public required string AnthropicModelId { get; set; }
     public required string AnthropicApiKey { get; set; }
     public required string AgentIdentitiesPath { get; set; }
+    public required string SystemPromptTemplatePath { get; set; }
 }

@@ -47,7 +47,7 @@ public class AgentSpawner(AgentFactory factory, ChannelWriter<GameInput> writer,
     {
         var brain = factory.Build(identity);
 
-        brain.Start(cancellationToken);
+        await brain.StartAsync(cancellationToken);
         
         var registerAgentCommand = new RegisterAgentCommand
         {

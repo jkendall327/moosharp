@@ -8,7 +8,6 @@ using Microsoft.SemanticKernel.ChatCompletion;
 using Microsoft.SemanticKernel.Connectors.Google;
 using Microsoft.SemanticKernel.Connectors.OpenAI;
 using MooSharp.Messaging;
-using System.Text;
 using System.Threading.Channels;
 
 namespace MooSharp.Agents;
@@ -20,6 +19,8 @@ public sealed class AgentBrain : IAsyncDisposable
     private readonly ChatHistory _history;
     private readonly ILogger _logger;
     private readonly string _name;
+    private readonly string _persona;
+    private readonly IAgentPromptProvider _promptProvider;
     private readonly IOptions<AgentOptions> _options;
     private readonly TimeProvider _clock;
     private readonly AgentSource _source;
@@ -36,19 +37,21 @@ public sealed class AgentBrain : IAsyncDisposable
     public AgentBrain(string name,
         string persona,
         AgentSource source,
-        string availableCommands,
         ChannelWriter<GameInput> gameInputWriter,
         IOptions<AgentOptions> options,
+        IAgentPromptProvider promptProvider,
         TimeProvider clock,
         ILogger logger,
         TimeSpan? actionCooldown = null,
         CancellationToken cancellationToken = default)
     {
         _name = name;
+        _persona = persona;
         _source = source;
         _gameInputWriter = gameInputWriter;
         _logger = logger;
         _options = options;
+        _promptProvider = promptProvider;
         _clock = clock;
 
         _cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
@@ -67,23 +70,30 @@ public sealed class AgentBrain : IAsyncDisposable
             OnMessageReceived = EnqueueIncomingMessageAsync
         };
 
-        var systemPrompt = new StringBuilder()
-            .AppendLine($"You are a player in a text-based adventure game. Your name is {name}.")
-            .AppendLine(persona)
-            .AppendLine(
-                "Use only the commands listed below, and respond with a single command starting with the command verb.")
-            .AppendLine(availableCommands)
-            .ToString();
-
-        _history = new(systemPrompt);
+        _history = new();
     }
 
     public IPlayerConnection Connection => _connection;
 
-    public void Start(CancellationToken ct = default)
+    public async Task StartAsync(CancellationToken ct = default)
     {
         _logger.LogInformation("Starting agent brain for {AgentName} (source: {AgentSource})", _name, _source);
+        await EnsureSystemPromptAsync(ct).ConfigureAwait(false);
         _processingTask = Task.Run(() => ProcessIncomingMessagesAsync(_cts.Token), ct);
+    }
+
+    private async Task EnsureSystemPromptAsync(CancellationToken cancellationToken)
+    {
+        if (_history.Count > 0)
+        {
+            return;
+        }
+
+        var systemPrompt = await _promptProvider
+            .GetSystemPromptAsync(_name, _persona, cancellationToken)
+            .ConfigureAwait(false);
+
+        _history.AddSystemMessage(systemPrompt);
     }
 
     private Task EnqueueIncomingMessageAsync(string message)
@@ -267,7 +277,9 @@ public sealed class AgentBrain : IAsyncDisposable
 
         var chat = kernel.Services.GetRequiredService<IChatCompletionService>();
 
-        return await chat.GetChatMessageContentAsync(_history,
+        var history = await _promptProvider.PrepareHistoryAsync(_history).ConfigureAwait(false);
+
+        return await chat.GetChatMessageContentAsync(history,
             executionSettings: new OpenAIPromptExecutionSettings
             {
                 MaxTokens = 500
@@ -284,7 +296,9 @@ public sealed class AgentBrain : IAsyncDisposable
 
         var chat = kernel.Services.GetRequiredService<IChatCompletionService>();
 
-        return await chat.GetChatMessageContentAsync(_history,
+        var history = await _promptProvider.PrepareHistoryAsync(_history).ConfigureAwait(false);
+
+        return await chat.GetChatMessageContentAsync(history,
             executionSettings: new GeminiPromptExecutionSettings
             {
                 MaxTokens = 500
@@ -297,7 +311,9 @@ public sealed class AgentBrain : IAsyncDisposable
         using var client = new AnthropicClient(new APIAuthentication(apiKey: options.AnthropicApiKey));
         var chatClient = (IChatClient) client.Messages;
 
-        var messages = _history
+        var history = await _promptProvider.PrepareHistoryAsync(_history).ConfigureAwait(false);
+
+        var messages = history
             .Select(ConvertToChatMessage)
             .ToList();
 
