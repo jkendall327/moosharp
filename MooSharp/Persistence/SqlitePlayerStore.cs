@@ -77,7 +77,9 @@ public class SqlitePlayerStore : IPlayerStore
             "SELECT ItemId as Id, Name, Description FROM PlayerInventory WHERE Username = @Username",
             new { command.Username });
 
-        return player with { Inventory = inventory.ToList() };
+        player.Inventory = inventory.ToList();
+        
+        return player;
     }
 
     private async Task UpsertPlayerAsync(PlayerDto player)
