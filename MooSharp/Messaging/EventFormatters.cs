@@ -111,3 +111,11 @@ public class ObjectExaminedEventFormatter : IGameEventFormatter<ObjectExaminedEv
 
     public string FormatForObserver(ObjectExaminedEvent gameEvent) => gameEvent.Item.Description;
 }
+
+public class PlayerSaidEventFormatter : IGameEventFormatter<PlayerSaidEvent>
+{
+    public string FormatForActor(PlayerSaidEvent gameEvent) => $"You say, \"{gameEvent.Message}\"";
+
+    public string FormatForObserver(PlayerSaidEvent gameEvent) =>
+        $"{gameEvent.Player.Username} says, \"{gameEvent.Message}\"";
+}
