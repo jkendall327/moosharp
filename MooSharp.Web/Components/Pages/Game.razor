@@ -24,6 +24,7 @@ else
         <div class="auth-actions">
             <button @onclick="LoginAsync" disabled="@(!CanSubmitCredentials)">Log In</button>
             <button @onclick="RegisterAsync" disabled="@(!CanSubmitCredentials)">Register</button>
+            <button @onclick="LogoutAsync" disabled="@(!_isLoggedIn)">Log Out</button>
         </div>
         @if (!string.IsNullOrWhiteSpace(_loginStatus))
         {
@@ -52,6 +53,8 @@ else
 }
 
 @code {
+    private const string SessionStorageKey = "mooSharpSession";
+
     private HubConnection? _hubConnection;
     private readonly StringBuilder _gameOutput = new();
     private string _commandInput = string.Empty;
@@ -81,6 +84,13 @@ else
     }
 
     private async Task InitializeAsync()
+    {
+        await SetupHubConnectionAsync();
+
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task SetupHubConnectionAsync()
     {
         _sessionId = await GetOrCreateSessionIdAsync();
 
@@ -144,8 +154,6 @@ else
         {
             _gameOutput.AppendLine($"Starting hub failed: {ex.Message}");
         }
-
-        await InvokeAsync(StateHasChanged);
     }
 
     private async Task HandleKeyDown(KeyboardEventArgs e)
@@ -201,6 +209,43 @@ else
         await SendCredentialCommandAsync(nameof(MooHub.Register));
     }
 
+    private async Task LogoutAsync()
+    {
+        _loginStatus = "Logging out...";
+
+        await JS.InvokeVoidAsync("localStorage.removeItem", SessionStorageKey);
+
+        if (_hubConnection is not null)
+        {
+            try
+            {
+                await _hubConnection.StopAsync();
+            }
+            catch (Exception e)
+            {
+                Logger.LogError(e, "Error stopping SignalR connection on logout");
+            }
+
+            await _hubConnection.DisposeAsync();
+            _hubConnection = null;
+        }
+
+        _sessionId = string.Empty;
+        _isLoggedIn = false;
+        _commandInput = string.Empty;
+        _username = string.Empty;
+        _password = string.Empty;
+
+        const string logoutMessage = "Logged out. Session cleared.";
+
+        _gameOutput.AppendLine(logoutMessage);
+        _loginStatus = logoutMessage;
+
+        await SetupHubConnectionAsync();
+
+        await InvokeAsync(StateHasChanged);
+    }
+
     private async Task SendCredentialCommandAsync(string commandName)
     {
         if (_hubConnection is null)
@@ -223,9 +268,7 @@ else
 
     private async Task<string> GetOrCreateSessionIdAsync()
     {
-        const string sessionStorageKey = "mooSharpSession";
-
-        var existingSessionId = await JS.InvokeAsync<string?>("localStorage.getItem", sessionStorageKey);
+        var existingSessionId = await JS.InvokeAsync<string?>("localStorage.getItem", SessionStorageKey);
 
         if (!string.IsNullOrWhiteSpace(existingSessionId))
         {
@@ -234,7 +277,7 @@ else
 
         var newSessionId = Guid.NewGuid().ToString();
 
-        await JS.InvokeVoidAsync("localStorage.setItem", sessionStorageKey, newSessionId);
+        await JS.InvokeVoidAsync("localStorage.setItem", SessionStorageKey, newSessionId);
 
         return newSessionId;
     }
