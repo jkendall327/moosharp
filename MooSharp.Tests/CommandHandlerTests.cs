@@ -19,7 +19,7 @@ public class CommandHandlerTests
         world.Rooms.Add(destination.Id, destination);
 
         var player = CreatePlayer("Alice");
-        origin.PlayersInRoom.Add(player);
+        world.MovePlayer(player, origin);
 
         var handler = new MoveHandler(world, NullLogger<MoveHandler>.Instance);
 
@@ -51,7 +51,7 @@ public class CommandHandlerTests
         world.Rooms.Add(origin.Id, origin);
 
         var player = CreatePlayer();
-        origin.PlayersInRoom.Add(player);
+        world.MovePlayer(player, origin);
 
         var handler = new MoveHandler(world, NullLogger<MoveHandler>.Instance);
 
@@ -80,11 +80,11 @@ public class CommandHandlerTests
         var actor = CreatePlayer("Actor");
         var originObserver = CreatePlayer("OriginObserver");
         var destinationObserver = CreatePlayer("DestinationObserver");
-
-        origin.PlayersInRoom.Add(actor);
-        origin.PlayersInRoom.Add(originObserver);
-        destination.PlayersInRoom.Add(destinationObserver);
-
+        
+        world.MovePlayer(actor, origin);
+        world.MovePlayer(originObserver, origin);
+        world.MovePlayer(destinationObserver, destination);
+        
         var handler = new MoveHandler(world, NullLogger<MoveHandler>.Instance);
 
         var result = await handler.Handle(new MoveCommand
@@ -110,7 +110,7 @@ public class CommandHandlerTests
         world.Rooms.Add(room.Id, room);
 
         var player = CreatePlayer();
-        room.PlayersInRoom.Add(player);
+        world.MovePlayer(player, room);
 
         var item = new Object
         {
@@ -143,7 +143,7 @@ public class CommandHandlerTests
         world.Rooms.Add(room.Id, room);
 
         var player = CreatePlayer();
-        room.PlayersInRoom.Add(player);
+        world.MovePlayer(player, room);
 
         var handler = new TakeHandler(world);
 
@@ -167,8 +167,8 @@ public class CommandHandlerTests
 
         var owner = CreatePlayer("Owner");
         var seeker = CreatePlayer("Seeker");
-        room.PlayersInRoom.Add(owner);
-        room.PlayersInRoom.Add(seeker);
+        world.MovePlayer(owner, room);
+        world.MovePlayer(seeker, room);
 
         var item = new Object
         {
@@ -230,7 +230,7 @@ public class CommandHandlerTests
         world.Rooms.Add(room.Id, room);
 
         var player = CreatePlayer();
-        room.PlayersInRoom.Add(player);
+        world.MovePlayer(player, room);
 
         var handler = new ExamineHandler(world);
 
@@ -284,7 +284,7 @@ public class CommandHandlerTests
         world.Rooms.Add(room.Id, room);
 
         var player = CreatePlayer();
-        room.PlayersInRoom.Add(player);
+        world.MovePlayer(player, room);
 
         var item = new Object
         {
@@ -316,8 +316,9 @@ public class CommandHandlerTests
 
         var speaker = CreatePlayer("Speaker");
         var listener = CreatePlayer("Listener");
-        room.PlayersInRoom.AddRange([speaker, listener]);
-
+        world.MovePlayer(speaker, room);
+        world.MovePlayer(listener, room);
+        
         var handler = new SayHandler(world);
 
         var result = await handler.Handle(new SayCommand

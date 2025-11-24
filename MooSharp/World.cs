@@ -7,7 +7,7 @@ namespace MooSharp;
 public class World(IOptions<AppOptions> options, ILogger<World> logger)
 {
     public Dictionary<string, Player> Players { get; } = [];
-    public IReadOnlyDictionary<RoomId, Room> Rooms => _rooms;
+    public Dictionary<RoomId, Room> Rooms => _rooms;
     private Dictionary<RoomId, Room> _rooms = [];
 
     private readonly Dictionary<Player, Room> _playerLocations = [];
