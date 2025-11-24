@@ -3,7 +3,7 @@ using MooSharp.Messaging;
 
 namespace MooSharp;
 
-public record GameInput(ConnectionId ConnectionId, InputCommand Command);
+public record GameInput(ConnectionId ConnectionId, InputCommand Command, string? SessionToken = null);
 
 public abstract class InputCommand;
 
@@ -31,3 +31,5 @@ public class WorldCommand : InputCommand
 }
 
 public class DisconnectCommand : InputCommand;
+
+public class ReconnectCommand : InputCommand;
