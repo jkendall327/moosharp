@@ -132,7 +132,7 @@ public static class ServiceCollectionExtensions
 
             foreach (var typePair in formatterTypes)
             {
-                builder.Services.AddSingleton(typePair.Service, typePair.Implementation);
+                builder.Services.AddSingleton(typeof(IGameEventFormatter), typePair.Implementation);
             }
         }
 
