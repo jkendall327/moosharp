@@ -24,4 +24,6 @@ public record SelfExaminedEvent(Player Player, IReadOnlyCollection<Object> Inven
 
 public record ObjectExaminedEvent(Object Item) : IGameEvent;
 
+public record AmbiguousInputEvent(string Input, IReadOnlyCollection<Object> Candidates) : IGameEvent;
+
 public record PlayerSaidEvent(Player Player, string Message) : IGameEvent;
