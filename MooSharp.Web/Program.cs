@@ -10,41 +10,16 @@ using MooSharp.Web.Components;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddRazorComponents().AddInteractiveServerComponents();
+builder.Services.AddSignalR();
 
-builder.Services.AddSingleton<World>();
-builder.Services.AddSingleton<CommandParser>();
-builder.Services.AddSingleton<CommandExecutor>();
-builder.Services.AddSingleton<CommandReference>();
-builder.Services.AddSingleton<AgentSpawner>();
-builder.Services.AddSingleton<AgentFactory>();
-builder.Services.AddSingleton(TimeProvider.System);
-builder.Services.AddSingleton<IPlayerStore, SqlitePlayerStore>();
-
-builder.Services.AddHostedService<GameEngine>();
-builder.Services.AddHostedService<AgentBackgroundService>();
-
-var channel = Channel.CreateUnbounded<GameInput>();
-
-builder.Services.AddSingleton(channel.Writer);
-builder.Services.AddSingleton(channel.Reader);
+builder.Services.AddMooSharpServices(builder.Configuration);
+builder.Services.AddMooSharpOptions(builder.Configuration);
+builder.Services.AddMooSharpHostedServices(builder.Configuration);
+builder.Services.AddMooSharpMessaging(builder.Configuration);
 
 builder.RegisterCommandDefinitions();
 builder.RegisterCommandHandlers();
 builder.RegisterPresenters();
-
-builder.Services.AddSignalR();
-
-builder
-    .Services
-    .AddOptionsWithValidateOnStart<AppOptions>()
-    .BindConfiguration(nameof(AppOptions))
-    .ValidateDataAnnotations();
-
-builder
-    .Services
-    .AddOptionsWithValidateOnStart<AgentOptions>()
-    .BindConfiguration(AgentOptions.SectionName)
-    .ValidateDataAnnotations();
 
 var app = builder.Build();
 

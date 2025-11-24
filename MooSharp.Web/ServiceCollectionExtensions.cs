@@ -1,10 +1,59 @@
 using System.Reflection;
+using System.Threading.Channels;
+using MooSharp.Agents;
 using MooSharp.Messaging;
+using MooSharp.Persistence;
 
 namespace MooSharp.Web;
 
 public static class ServiceCollectionExtensions
 {
+    public static void AddMooSharpServices(this IServiceCollection services, IConfiguration config)
+    {
+        services.AddSingleton<World>();
+        services.AddSingleton<CommandParser>();
+        services.AddSingleton<CommandExecutor>();
+        services.AddSingleton<CommandReference>();
+        services.AddSingleton<AgentSpawner>();
+        services.AddSingleton<AgentFactory>();
+        services.AddSingleton(TimeProvider.System);
+        services.AddSingleton<IPlayerStore, SqlitePlayerStore>();
+    }
+    
+    public static void AddMooSharpMessaging(this IServiceCollection services, IConfiguration config)
+    {
+        var channel = Channel.CreateUnbounded<GameInput>();
+
+        services.AddSingleton(channel.Writer);
+        services.AddSingleton(channel.Reader);
+    }
+    
+    public static void AddMooSharpHostedServices(this IServiceCollection services, IConfiguration config)
+    {
+        services.AddHostedService<GameEngine>();
+        services.AddHostedService<AgentBackgroundService>();
+    }
+    
+    public static void AddMooSharpOptions(this IServiceCollection services, IConfiguration config)
+    {
+        services
+            .AddOptionsWithValidateOnStart<AppOptions>()
+            .BindConfiguration(nameof(AppOptions))
+            .ValidateDataAnnotations();
+
+        services
+            .AddOptionsWithValidateOnStart<AgentOptions>()
+            .BindConfiguration(AgentOptions.SectionName)
+            .ValidateDataAnnotations();
+
+        services.Configure<ServiceProviderOptions>(s =>
+        {
+            s.ValidateOnBuild = true;
+            s.ValidateScopes = true;
+        });
+    }
+
+    
     /// <summary>
     /// Register all ICommandHandler<T>s via reflection.
     /// </summary>
