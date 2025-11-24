@@ -1,6 +1,7 @@
 using Anthropic.SDK;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.ChatCompletion;
@@ -17,6 +18,8 @@ public sealed class AgentBrain : IAsyncDisposable
     private readonly AgentPlayerConnection _connection;
     private readonly ChannelWriter<GameInput> _gameInputWriter;
     private readonly ChatHistory _history;
+    private readonly ILogger _logger;
+    private readonly string _name;
     private readonly IOptions<AgentOptions> _options;
     private readonly TimeProvider _clock;
     private readonly AgentSource _source;
@@ -37,11 +40,14 @@ public sealed class AgentBrain : IAsyncDisposable
         ChannelWriter<GameInput> gameInputWriter,
         IOptions<AgentOptions> options,
         TimeProvider clock,
+        ILogger logger,
         TimeSpan? actionCooldown = null,
         CancellationToken cancellationToken = default)
     {
+        _name = name;
         _source = source;
         _gameInputWriter = gameInputWriter;
+        _logger = logger;
         _options = options;
         _clock = clock;
 
@@ -76,11 +82,14 @@ public sealed class AgentBrain : IAsyncDisposable
 
     public void Start(CancellationToken ct = default)
     {
+        _logger.LogInformation("Starting agent brain for {AgentName} (source: {AgentSource})", _name, _source);
         _processingTask = Task.Run(() => ProcessIncomingMessagesAsync(_cts.Token), ct);
     }
 
     private Task EnqueueIncomingMessageAsync(string message)
     {
+        _logger.LogDebug("Queuing incoming message for {AgentName}: {Message}", _name, message);
+
         if (!_incomingMessages.Writer.TryWrite(message))
         {
             return _incomingMessages
@@ -112,9 +121,9 @@ public sealed class AgentBrain : IAsyncDisposable
                     {
                         throw;
                     }
-                    catch
+                    catch (Exception ex)
                     {
-                        // Swallow exceptions to keep the processing loop alive
+                        _logger.LogError(ex, "Error processing message for {AgentName}", _name);
                     }
                 }
             }
@@ -138,6 +147,11 @@ public sealed class AgentBrain : IAsyncDisposable
             if (now < _nextAllowedActionTime)
             {
                 // Still on cooldown - no action
+                _logger.LogDebug(
+                    "Agent {AgentName} is on cooldown until {NextAllowedActionTime} (current: {CurrentTime})",
+                    _name,
+                    _nextAllowedActionTime,
+                    now);
                 return false;
             }
 
@@ -155,12 +169,14 @@ public sealed class AgentBrain : IAsyncDisposable
     private async Task HandleIncomingGameMessageAsync(string message)
     {
         // Always record history.
+        _logger.LogInformation("Processing incoming game message for {AgentName}", _name);
         _history.AddUserMessage(message);
         TrimHistory();
 
         // Only sometimes actually act, based on cooldown
         if (!await ShouldActAsync())
         {
+            _logger.LogDebug("Cooldown active; skipping action for {AgentName}", _name);
             return;
         }
 
@@ -169,6 +185,7 @@ public sealed class AgentBrain : IAsyncDisposable
 
         if (string.IsNullOrEmpty(commandText))
         {
+            _logger.LogWarning("No command returned for {AgentName}");
             return;
         }
 
@@ -182,6 +199,7 @@ public sealed class AgentBrain : IAsyncDisposable
             Command = commandText
         };
 
+        _logger.LogInformation("Sending command for {AgentName}: {Command}", _name, commandText);
         await _gameInputWriter.WriteAsync(new(id, command));
     }
 
@@ -199,6 +217,8 @@ public sealed class AgentBrain : IAsyncDisposable
          */
 
         var o = _options.Value;
+
+        _logger.LogDebug("Requesting response for {AgentName} using {Source}", _name, _source);
 
         return _source switch
         {
@@ -307,6 +327,7 @@ public sealed class AgentBrain : IAsyncDisposable
 
     public async ValueTask DisposeAsync()
     {
+        _logger.LogInformation("Disposing agent brain for {AgentName}", _name);
         await _cts.CancelAsync();
         _incomingMessages.Writer.TryComplete();
 
