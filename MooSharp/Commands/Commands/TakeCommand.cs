@@ -32,6 +32,14 @@ public class TakeHandler(World world) : IHandler<TakeCommand>
         var result = new CommandResult();
         var player = cmd.Player;
 
+        var ownedItem = player.Inventory.FirstOrDefault(o => MatchesTarget(o, cmd.Target));
+
+        if (ownedItem is not null)
+        {
+            result.Add(player, new ItemAlreadyInPossessionEvent(ownedItem));
+            return Task.FromResult(result);
+        }
+
         var currentLocation = world.GetPlayerLocation(player)
             ?? throw new InvalidOperationException("Player has no known current location.");
 
@@ -40,7 +48,16 @@ public class TakeHandler(World world) : IHandler<TakeCommand>
         switch (search.Status)
         {
             case SearchStatus.NotFound:
-                result.Add(player, new ItemNotFoundEvent(cmd.Target));
+                var otherOwned = FindOtherOwnedItem(currentLocation, cmd.Target, player);
+
+                if (otherOwned is not null)
+                {
+                    result.Add(player, new ItemOwnedByOtherEvent(otherOwned.Value.Item, otherOwned.Value.Owner));
+                }
+                else
+                {
+                    result.Add(player, new ItemNotFoundEvent(cmd.Target));
+                }
                 break;
 
             case SearchStatus.IndexOutOfRange:
@@ -71,5 +88,27 @@ public class TakeHandler(World world) : IHandler<TakeCommand>
         }
 
         return Task.FromResult(result);
+    }
+
+    private static bool MatchesTarget(Object item, string target)
+    {
+        return item.Name.Equals(target, StringComparison.OrdinalIgnoreCase)
+               || item.Keywords.Contains(target, StringComparer.OrdinalIgnoreCase)
+               || item.Name.Contains(target, StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static (Object Item, Player Owner)? FindOtherOwnedItem(Room room, string target, Player actor)
+    {
+        foreach (var occupant in room.PlayersInRoom.Where(p => p != actor))
+        {
+            var match = occupant.Inventory.FirstOrDefault(item => MatchesTarget(item, target));
+
+            if (match is not null)
+            {
+                return (match, occupant);
+            }
+        }
+
+        return null;
     }
 }
