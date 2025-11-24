@@ -66,7 +66,21 @@ else
         && !string.IsNullOrWhiteSpace(_username)
         && !string.IsNullOrWhiteSpace(_password);
 
-    protected override async Task OnInitializedAsync()
+    private bool _initialized;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender || _initialized)
+        {
+            return;
+        }
+
+        _initialized = true;
+
+        await InitializeAsync();
+    }
+
+    private async Task InitializeAsync()
     {
         _sessionId = await GetOrCreateSessionIdAsync();
 
@@ -130,6 +144,8 @@ else
         {
             _gameOutput.AppendLine($"Starting hub failed: {ex.Message}");
         }
+
+        await InvokeAsync(StateHasChanged);
     }
 
     private async Task HandleKeyDown(KeyboardEventArgs e)
