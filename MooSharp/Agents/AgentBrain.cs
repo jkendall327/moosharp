@@ -1,5 +1,4 @@
 using Anthropic.SDK;
-using Anthropic.SDK.Messaging;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
@@ -9,12 +8,11 @@ using Microsoft.SemanticKernel.Connectors.Google;
 using Microsoft.SemanticKernel.Connectors.OpenAI;
 using MooSharp.Messaging;
 using System.Text;
-using System.Threading;
 using System.Threading.Channels;
 
 namespace MooSharp.Agents;
 
-public class AgentBrain : IAsyncDisposable
+public sealed class AgentBrain : IAsyncDisposable
 {
     private readonly AgentPlayerConnection _connection;
     private readonly ChannelWriter<GameInput> _gameInputWriter;
@@ -23,7 +21,6 @@ public class AgentBrain : IAsyncDisposable
     private readonly TimeProvider _clock;
     private readonly string _persona;
     private readonly AgentSource _source;
-    private readonly string _availableCommands;
 
     private readonly Channel<string> _incomingMessages;
     private readonly CancellationTokenSource _cts;
@@ -46,7 +43,6 @@ public class AgentBrain : IAsyncDisposable
     {
         _persona = persona;
         _source = source;
-        _availableCommands = availableCommands;
         _gameInputWriter = gameInputWriter;
         _options = options;
         _clock = clock;
@@ -67,13 +63,13 @@ public class AgentBrain : IAsyncDisposable
             OnMessageReceived = EnqueueIncomingMessageAsync
         };
 
-        _processingTask = Task.Run(() => ProcessIncomingMessagesAsync(_cts.Token));
+        _processingTask = Task.Run(() => ProcessIncomingMessagesAsync(_cts.Token), cancellationToken);
 
         var systemPrompt = new StringBuilder()
             .AppendLine($"You are a player in a text-based adventure game. Your name is {name}.")
             .AppendLine(persona)
             .AppendLine("Use only the commands listed below, and respond with a single command starting with the command verb.")
-            .AppendLine(_availableCommands)
+            .AppendLine(availableCommands)
             .ToString();
 
         _history = new(systemPrompt);
@@ -286,7 +282,7 @@ public class AgentBrain : IAsyncDisposable
 
     public async ValueTask DisposeAsync()
     {
-        _cts.Cancel();
+        await _cts.CancelAsync();
         _incomingMessages.Writer.TryComplete();
 
         try
