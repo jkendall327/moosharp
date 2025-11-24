@@ -1,6 +1,7 @@
 @page "/game"
 @inject NavigationManager Navigation
 @inject ILogger<Game> Logger
+@inject IJSRuntime JS
 @using System.Text
 @using Microsoft.AspNetCore.SignalR.Client
 @implements IAsyncDisposable
@@ -58,6 +59,7 @@ else
     private string _password = string.Empty;
     private string _loginStatus = string.Empty;
     private bool _isLoggedIn;
+    private string _sessionId = string.Empty;
 
     private bool CanSubmitCredentials =>
         _hubConnection?.State == HubConnectionState.Connected
@@ -66,8 +68,13 @@ else
 
     protected override async Task OnInitializedAsync()
     {
+        _sessionId = await GetOrCreateSessionIdAsync();
+
         _hubConnection = new HubConnectionBuilder()
-            .WithUrl(Navigation.ToAbsoluteUri("/moohub"))
+            .WithUrl(Navigation.ToAbsoluteUri("/moohub"), options =>
+            {
+                options.AccessTokenProvider = () => Task.FromResult<string?>(_sessionId);
+            })
             .Build();
 
         _hubConnection.On<string>("ReceiveMessage",
@@ -196,6 +203,24 @@ else
             _loginStatus = $"Failed to send {commandName.ToLowerInvariant()} request.";
             throw;
         }
+    }
+
+    private async Task<string> GetOrCreateSessionIdAsync()
+    {
+        const string sessionStorageKey = "mooSharpSession";
+
+        var existingSessionId = await JS.InvokeAsync<string?>("localStorage.getItem", sessionStorageKey);
+
+        if (!string.IsNullOrWhiteSpace(existingSessionId))
+        {
+            return existingSessionId;
+        }
+
+        var newSessionId = Guid.NewGuid().ToString();
+
+        await JS.InvokeVoidAsync("localStorage.setItem", sessionStorageKey, newSessionId);
+
+        return newSessionId;
     }
 
     public async ValueTask DisposeAsync()
