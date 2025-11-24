@@ -63,6 +63,15 @@ public class ItemTakenEventFormatter : IGameEventFormatter<ItemTakenEvent>
     public string FormatForObserver(ItemTakenEvent gameEvent) => $"Someone takes the {gameEvent.Item.Name}.";
 }
 
+public class ItemAlreadyInPossessionEventFormatter : IGameEventFormatter<ItemAlreadyInPossessionEvent>
+{
+    public string FormatForActor(ItemAlreadyInPossessionEvent gameEvent) =>
+        $"You already have the {gameEvent.Item.Name}.";
+
+    public string FormatForObserver(ItemAlreadyInPossessionEvent gameEvent) =>
+        $"Someone already has the {gameEvent.Item.Name}.";
+}
+
 public class ItemOwnedByOtherEventFormatter : IGameEventFormatter<ItemOwnedByOtherEvent>
 {
     public string FormatForActor(ItemOwnedByOtherEvent gameEvent) =>

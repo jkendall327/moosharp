@@ -13,38 +13,26 @@ public class Object
     public ObjectId Id { get; init; } = ObjectId.New();
     public required string Name { get; init; }
     public required string Description { get; init; }
-    public IReadOnlyCollection<string> Keywords { get; } = new HashSet<string>(StringComparer.OrdinalIgnoreCase).ToFrozenSet(); 
+    public IReadOnlyCollection<string> Keywords { get; } = new HashSet<string>(StringComparer.OrdinalIgnoreCase).ToFrozenSet();
 
-    private Player? _owner;
+    public IContainer? Container { get; private set; }
 
-    public Player? Owner
+    public Player? Owner => Container as Player;
+    public Room? Location => Container as Room;
+
+    public void MoveTo(IContainer destination)
     {
-        get => _owner;
-        set
+        ArgumentNullException.ThrowIfNull(destination);
+
+        if (ReferenceEquals(Container, destination))
         {
-            _owner = value;
-
-            if (value is not null)
-            {
-                Location = null;
-            }
+            return;
         }
-    }
 
-    private Room? _location;
+        Container?.RemoveFromContents(this);
 
-    public Room? Location
-    {
-        get => _location;
-        set
-        {
-            _location = value;
-
-            if (value is not null)
-            {
-                Owner = null;
-            }
-        }
+        destination.AddToContents(this);
+        Container = destination;
     }
 
     public override string ToString() => Name;

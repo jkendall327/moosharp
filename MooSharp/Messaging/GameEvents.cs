@@ -16,6 +16,8 @@ public record ItemNotFoundEvent(string ItemName) : IGameEvent;
 
 public record ItemTakenEvent(Object Item) : IGameEvent;
 
+public record ItemAlreadyInPossessionEvent(Object Item) : IGameEvent;
+
 public record ItemOwnedByOtherEvent(Object Item, Player Owner) : IGameEvent;
 
 public record SelfExaminedEvent(Player Player, IReadOnlyCollection<Object> Inventory) : IGameEvent;
