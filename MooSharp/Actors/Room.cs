@@ -42,6 +42,7 @@ public class Room : IContainer
     public Object? FindObject(string keyword)
     {
         var search = FindObjects(keyword);
+
         return search.Status == SearchStatus.Found ? search.Match : null;
     }
 
@@ -51,9 +52,19 @@ public class Room : IContainer
 
         sb.AppendLine(useLongDescription ? LongDescription : Description);
 
-        var otherPlayers = PlayersInRoom.Select(s => s.Username).Except([player.Username]);
+        var otherPlayers = PlayersInRoom
+            .Select(s => s.Username)
+            .Except([player.Username])
+            .ToList();
 
-        sb.AppendLine($"{string.Join(", ", otherPlayers)} are here.");
+        if (otherPlayers.Count is 1)
+        {
+            sb.AppendLine($"{otherPlayers.Single()} is here.");
+        }
+        if (otherPlayers.Count > 1)
+        {
+            sb.AppendLine($"{string.Join(", ", otherPlayers)} are here.");
+        }
 
         var availableExits = Exits.Select(s => s.Key);
         var availableExitsMessage = $"Available exits: {string.Join(", ", availableExits)}";
