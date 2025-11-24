@@ -37,9 +37,5 @@ app.MapRazorComponents<App>().AddInteractiveServerRenderMode();
 
 app.MapHub<MooHub>("/moohub");
 
-var world = app.Services.GetRequiredService<World>();
-
-await world.InitializeAsync();
-
 await app.RunAsync();
 

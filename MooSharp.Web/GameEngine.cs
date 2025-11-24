@@ -104,7 +104,7 @@ public class GameEngine(
         }
 
         await playerStore.SavePlayer(player, location);
-        location.PlayersInRoom.Remove(player);
+        world.RemovePlayer(player);
 
         world.Players.Remove(connectionId.Value);
 
