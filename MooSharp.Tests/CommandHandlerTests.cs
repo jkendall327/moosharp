@@ -1,8 +1,7 @@
 using Microsoft.Extensions.Logging.Abstractions;
-using Microsoft.Extensions.Options;
 using MooSharp;
 using MooSharp.Messaging;
-using MooSharp.Persistence;
+using MooSharp.Tests.TestDoubles;
 
 namespace MooSharp.Tests;
 
@@ -346,33 +345,14 @@ public class CommandHandlerTests
         Assert.False(string.IsNullOrWhiteSpace(evt.Message));
     }
 
-    private static WorldFactory CreateWorldFactory(InMemoryWorldStore? store = null)
-    {
-        var options = Options.Create(new AppOptions
-        {
-            WorldDataFilepath = "world.json",
-            DatabaseFilepath = "game.db"
-        });
-
-        return new WorldFactory(options, NullLogger<WorldFactory>.Instance, store ?? new InMemoryWorldStore(),
-            NullLogger<World>.Instance);
-    }
-
-    private static Task<World> CreateWorld(params Room[] rooms) => CreateWorld(null, rooms);
-
-    private static async Task<World> CreateWorld(InMemoryWorldStore? store, params Room[] rooms)
-    {
-        var factory = CreateWorldFactory(store);
-
-        return await factory.CreateWorldAsync(rooms.ToList());
-    }
-
-    private static async Task<(World world, InMemoryWorldStore store)> CreateWorldWithStore(params Room[] rooms)
+    private static Task<World> CreateWorld(params Room[] rooms)
     {
         var store = new InMemoryWorldStore();
-        var world = await CreateWorld(store, rooms);
+        var world = new World(store, NullLogger<World>.Instance);
 
-        return (world, store);
+        world.Initialize(rooms);
+
+        return Task.FromResult(world);
     }
 
     private static Room CreateRoom(string slug)
@@ -395,85 +375,5 @@ public class CommandHandlerTests
             Username = username ?? "Player",
             Connection = new TestPlayerConnection()
         };
-    }
-
-    private sealed class InMemoryWorldStore : IWorldStore
-    {
-        private readonly List<Room> _rooms = new();
-        private readonly List<(RoomId From, RoomId To, string Direction)> _exits = new();
-
-        public Task<bool> HasRoomsAsync(CancellationToken cancellationToken = default)
-            => Task.FromResult(_rooms.Any());
-
-        public Task<IReadOnlyCollection<Room>> LoadRoomsAsync(CancellationToken cancellationToken = default)
-        {
-            var rooms = _rooms.Select(CloneRoom).ToList();
-
-            foreach (var exit in _exits)
-            {
-                var origin = rooms.SingleOrDefault(r => r.Id == exit.From);
-                if (origin is null)
-                {
-                    continue;
-                }
-
-                origin.Exits[exit.Direction] = exit.To;
-            }
-
-            return Task.FromResult<IReadOnlyCollection<Room>>(rooms);
-        }
-
-        public Task SaveRoomAsync(Room room, CancellationToken cancellationToken = default)
-        {
-            _rooms.RemoveAll(r => r.Id == room.Id);
-            _rooms.Add(CloneRoom(room));
-            return Task.CompletedTask;
-        }
-
-        public Task SaveExitAsync(RoomId fromRoomId, RoomId toRoomId, string direction,
-            CancellationToken cancellationToken = default)
-        {
-            _exits.RemoveAll(e => e.From == fromRoomId && string.Equals(e.Direction, direction, StringComparison.OrdinalIgnoreCase));
-            _exits.Add((fromRoomId, toRoomId, direction));
-            return Task.CompletedTask;
-        }
-
-        public Task SaveRoomsAsync(IEnumerable<Room> rooms, CancellationToken cancellationToken = default)
-        {
-            _rooms.Clear();
-            _rooms.AddRange(rooms.Select(CloneRoom));
-
-            _exits.Clear();
-
-            foreach (var room in rooms)
-            {
-                foreach (var exit in room.Exits)
-                {
-                    _exits.Add((room.Id, exit.Value, exit.Key));
-                }
-            }
-
-            return Task.CompletedTask;
-        }
-
-        private static Room CloneRoom(Room room)
-        {
-            var clone = new Room
-            {
-                Id = room.Id,
-                Name = room.Name,
-                Description = room.Description,
-                LongDescription = room.LongDescription,
-                EnterText = room.EnterText,
-                ExitText = room.ExitText
-            };
-
-            foreach (var exit in room.Exits)
-            {
-                clone.Exits[exit.Key] = exit.Value;
-            }
-
-            return clone;
-        }
     }
 }

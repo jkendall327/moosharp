@@ -10,13 +10,9 @@ public static class ServiceCollectionExtensions
 {
     public static void AddMooSharpServices(this IServiceCollection services, IConfiguration config)
     {
-        services.AddSingleton<WorldFactory>();
-        services.AddSingleton(sp =>
-        {
-            var factory = sp.GetRequiredService<WorldFactory>();
-
-            return factory.CreateWorldAsync().Result;
-        });
+        services.AddSingleton<IWorldSeeder, WorldSeeder>();
+        services.AddSingleton<WorldInitializer>();
+        services.AddSingleton<World>();
         services.AddSingleton<CommandParser>();
         services.AddSingleton<CommandExecutor>();
         services.AddSingleton<CommandReference>();
