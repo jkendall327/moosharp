@@ -1,7 +1,131 @@
-﻿@page "/"
+@page "/"
+@rendermode InteractiveServer
+@using System.Net.Http.Json
+@implements IAsyncDisposable
+@inject IHttpClientFactory HttpClientFactory
+@inject NavigationManager Navigation
 
 <PageTitle>Home</PageTitle>
 
-<h1>Hello, world!</h1>
+<div class="home-page">
+    <section class="hero">
+        <div class="hero__content">
+            <p class="eyebrow">Welcome to MooSharp</p>
+            <h1>Step into a living, text-driven world.</h1>
+            <p class="lede">
+                Explore rooms, meet other players, and uncover the secrets of the realm—all from your terminal-style command
+                line. Log in, register, and start adventuring in moments.
+            </p>
+            <div class="hero__actions">
+                <button class="primary" @onclick="NavigateToGame">Play the game</button>
+                <a class="ghost" href="/game">See the interface</a>
+            </div>
+            <div class="stat-card">
+                <p class="stat-label">Players online right now</p>
+                <p class="stat-value">@(_playerCount?.ToString() ?? "—")</p>
+                <p class="stat-hint">@_statusMessage</p>
+            </div>
+        </div>
+        <div class="hero__panel">
+            <div class="panel__header">Why MooSharp?</div>
+            <ul class="panel__list">
+                <li>
+                    <strong>Persistent characters</strong>
+                    <span>Pick up where you left off with session-based reconnects.</span>
+                </li>
+                <li>
+                    <strong>Realtime multiplayer</strong>
+                    <span>Chat with others and explore together in a shared world.</span>
+                </li>
+                <li>
+                    <strong>Agent-powered world</strong>
+                    <span>Background agents keep the realm lively even when you're away.</span>
+                </li>
+            </ul>
+        </div>
+    </section>
 
-Welcome to your new app.
+    <section class="info-grid">
+        <div class="info-card">
+            <p class="eyebrow">Get started fast</p>
+            <h2>Jump straight into the adventure</h2>
+            <p>
+                Head to the game page, choose a username and password, and you're ready to explore. Your commands, inventory,
+                and discoveries all persist between sessions.
+            </p>
+            <a class="inline-link" href="/game">Go to the game page →</a>
+        </div>
+        <div class="info-card">
+            <p class="eyebrow">Live activity</p>
+            <h2>See who's online</h2>
+            <button class="secondary" @onclick="NavigateToGame">Start playing</button>
+        </div>
+    </section>
+</div>
+
+@code {
+    private int? _playerCount;
+    private string _statusMessage = "Loading...";
+    private CancellationTokenSource? _pollingCts;
+    private static readonly TimeSpan PlayerCountInterval = TimeSpan.FromSeconds(5);
+
+    protected override async Task OnInitializedAsync()
+    {
+        _pollingCts = new CancellationTokenSource();
+
+        await RefreshPlayerCountAsync(_pollingCts.Token);
+        _ = PollPlayerCountAsync(_pollingCts.Token);
+    }
+
+    private async Task RefreshPlayerCountAsync(CancellationToken cancellationToken)
+    {
+        try
+        {
+            var client = HttpClientFactory.CreateClient();
+
+            client.BaseAddress ??= new Uri(Navigation.BaseUri);
+
+            var response = await client.GetFromJsonAsync<PlayerCountResponse>("api/player-count", cancellationToken);
+
+            _playerCount = response?.Count ?? 0;
+            _statusMessage = "Live players connected";
+        }
+        catch (OperationCanceledException)
+        {
+            // Ignore cancellations during disposal.
+        }
+        catch (Exception)
+        {
+            _statusMessage = "Unable to load player count right now.";
+        }
+    }
+
+    private async Task PollPlayerCountAsync(CancellationToken cancellationToken)
+    {
+        try
+        {
+            while (!cancellationToken.IsCancellationRequested)
+            {
+                await Task.Delay(PlayerCountInterval, cancellationToken);
+                await RefreshPlayerCountAsync(cancellationToken);
+                await InvokeAsync(StateHasChanged);
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            // Expected during teardown.
+        }
+    }
+
+    private void NavigateToGame() => Navigation.NavigateTo("/game");
+
+    public ValueTask DisposeAsync()
+    {
+        _pollingCts?.Cancel();
+        _pollingCts?.Dispose();
+
+        return ValueTask.CompletedTask;
+    }
+
+    private sealed record PlayerCountResponse(int Count);
+}
