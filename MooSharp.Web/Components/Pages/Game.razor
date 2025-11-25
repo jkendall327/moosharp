@@ -7,49 +7,65 @@
 @implements IAsyncDisposable
 @rendermode InteractiveServer
 
-<h3>MooSharp</h3>
-
 @if (_hubConnection is null || _hubConnection.State != HubConnectionState.Connected)
 {
-    <p><em>Connecting to server...</em></p>
+    <div class="page-shell">
+        <div class="terminal-card" data-label="/status">
+            <p class="tag">connecting</p>
+            <p><em>Establishing SignalR connection...</em></p>
+        </div>
+    </div>
 }
 else
 {
-    <div class="auth-container">
-        <h4>Register or Log In</h4>
-        <div class="auth-fields">
-            <input @bind="_username" placeholder="Username" />
-            <input type="password" @bind="_password" placeholder="Password" />
+    <div class="page-shell game-shell">
+        <div class="game-header">
+            <div>
+                <p class="tag">/game</p>
+                <h2 class="panel-heading">MooSharp terminal client</h2>
+            </div>
+            <span class="status-message">@(_isLoggedIn ? "Session active" : "Awaiting authentication")</span>
         </div>
-        <div class="auth-actions">
-            <button @onclick="LoginAsync" disabled="@(!CanSubmitCredentials)">Log In</button>
-            <button @onclick="RegisterAsync" disabled="@(!CanSubmitCredentials)">Register</button>
-            <button @onclick="LogoutAsync" disabled="@(!_isLoggedIn)">Log Out</button>
+
+        <div class="game-grid">
+            <div class="terminal-card auth-panel" data-label="/auth">
+                <h2 class="panel-heading">Credentials</h2>
+                <input @bind="_username" placeholder="Username" />
+                <input type="password" @bind="_password" placeholder="Password" />
+                <div class="auth-actions">
+                    <button class="btn btn-accent" @onclick="LoginAsync" disabled="@(!CanSubmitCredentials)">Log In</button>
+                    <button class="btn btn-ghost" @onclick="RegisterAsync" disabled="@(!CanSubmitCredentials)">Register</button>
+                    <button class="btn" @onclick="LogoutAsync" disabled="@(!_isLoggedIn)">Log Out</button>
+                </div>
+                @if (!string.IsNullOrWhiteSpace(_loginStatus))
+                {
+                    <p class="status-message">@_loginStatus</p>
+                }
+            </div>
+
+            <fieldset disabled="@(!_isLoggedIn)">
+                <div class="terminal-card" data-label="/world-feed">
+                    <h2 class="panel-heading">World output</h2>
+                    <pre class="terminal-output">@_gameOutput</pre>
+
+                    <div class="command-input">
+                        <input @bind="_commandInput"
+                               @bind:event="oninput"
+                               @onkeydown="HandleKeyDown"
+                               placeholder="Type a command..." />
+                        <div class="command-actions">
+                            <button class="btn btn-accent" @onclick="SendCommandAsync">Send</button>
+                        </div>
+                    </div>
+
+                    @if (!_isLoggedIn)
+                    {
+                        <p class="status-message">Log in or register to start playing.</p>
+                    }
+                </div>
+            </fieldset>
         </div>
-        @if (!string.IsNullOrWhiteSpace(_loginStatus))
-        {
-            <p class="status-message">@_loginStatus</p>
-        }
     </div>
-
-    <fieldset disabled="@(!_isLoggedIn)">
-        <div class="game-output-container">
-            <pre>@_gameOutput</pre>
-        </div>
-
-        <div class="input-container">
-            <input @bind="_commandInput"
-                   @bind:event="oninput"
-                   @onkeydown="HandleKeyDown"
-                   placeholder="Type a command..." />
-            <button @onclick="SendCommandAsync">Send</button>
-        </div>
-
-        @if (!_isLoggedIn)
-        {
-            <p class="status-message">Log in or register to start playing.</p>
-        }
-    </fieldset>
 }
 
 @code {
