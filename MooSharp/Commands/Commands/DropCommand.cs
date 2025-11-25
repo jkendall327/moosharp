@@ -68,3 +68,22 @@ public class DropHandler(World world) : IHandler<DropCommand>
         return Task.FromResult(result);
     }
 }
+
+public record ItemNotCarriedEvent(string ItemName) : IGameEvent;
+
+public class ItemNotCarriedEventFormatter : IGameEventFormatter<ItemNotCarriedEvent>
+{
+    public string FormatForActor(ItemNotCarriedEvent gameEvent) => $"You aren't carrying a {gameEvent.ItemName}.";
+
+    public string FormatForObserver(ItemNotCarriedEvent gameEvent) => FormatForActor(gameEvent);
+}
+
+public record ItemDroppedEvent(Object Item, Player Player) : IGameEvent;
+
+public class ItemDroppedEventFormatter : IGameEventFormatter<ItemDroppedEvent>
+{
+    public string FormatForActor(ItemDroppedEvent gameEvent) => $"You drop the {gameEvent.Item.Name}.";
+
+    public string FormatForObserver(ItemDroppedEvent gameEvent) =>
+        $"{gameEvent.Player.Username} drops the {gameEvent.Item.Name}.";
+}

@@ -1,3 +1,4 @@
+using System.Text;
 using MooSharp.Messaging;
 
 namespace MooSharp;
@@ -76,4 +77,70 @@ public class ExamineHandler(World world) : IHandler<ExamineCommand>
 
         return Task.FromResult(result);
     }
+}
+
+public record SelfExaminedEvent(Player Player, IReadOnlyCollection<Object> Inventory) : IGameEvent;
+
+public class SelfExaminedEventFormatter : IGameEventFormatter<SelfExaminedEvent>
+{
+    public string FormatForActor(SelfExaminedEvent gameEvent)
+    {
+        var sb = new StringBuilder();
+
+        sb.AppendLine("You took a look at yourself. You're looking pretty good.");
+
+        if (gameEvent.Inventory.Count > 0)
+        {
+            sb.AppendLine("You have:");
+
+            foreach (var item in gameEvent.Inventory)
+            {
+                sb.AppendLine(item.Description);
+            }
+        }
+
+        return sb.ToString().TrimEnd();
+    }
+
+    public string FormatForObserver(SelfExaminedEvent gameEvent) => "Someone seems to be checking themselves out.";
+}
+
+public record ObjectExaminedEvent(Object Item) : IGameEvent;
+
+public class ObjectExaminedEventFormatter : IGameEventFormatter<ObjectExaminedEvent>
+{
+    public string FormatForActor(ObjectExaminedEvent gameEvent) => gameEvent.Item.Description;
+
+    public string FormatForObserver(ObjectExaminedEvent gameEvent) => gameEvent.Item.Description;
+}
+
+public record AmbiguousInputEvent(string Input, IReadOnlyCollection<Object> Candidates) : IGameEvent;
+
+public class AmbiguousInputEventFormatter : IGameEventFormatter<AmbiguousInputEvent>
+{
+    public string FormatForActor(AmbiguousInputEvent evt)
+    {
+        var sb = new StringBuilder();
+        sb.AppendLine($"Which '{evt.Input}' do you mean?");
+
+        var i = 1;
+        foreach (var candidate in evt.Candidates)
+        {
+            sb.AppendLine($"{i++}. {candidate.Name}");
+        }
+
+        sb.Append("Type the name and the number (e.g., 'sword 2').");
+        return sb.ToString();
+    }
+
+    public string? FormatForObserver(AmbiguousInputEvent evt) => null;
+}
+
+public record ItemNotFoundEvent(string ItemName) : IGameEvent;
+
+public class ItemNotFoundEventFormatter : IGameEventFormatter<ItemNotFoundEvent>
+{
+    public string FormatForActor(ItemNotFoundEvent gameEvent) => $"There is no {gameEvent.ItemName} here.";
+
+    public string FormatForObserver(ItemNotFoundEvent gameEvent) => FormatForActor(gameEvent);
 }

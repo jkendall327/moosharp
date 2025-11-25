@@ -60,3 +60,14 @@ public class WhisperHandler(World world) : IHandler<WhisperCommand>
         return Task.FromResult(result);
     }
 }
+
+public record WhisperEvent(Player Sender, Player Recipient, string Message) : IGameEvent;
+
+public class WhisperEventFormatter : IGameEventFormatter<WhisperEvent>
+{
+    public string FormatForActor(WhisperEvent gameEvent) =>
+        $"You whisper to {gameEvent.Recipient.Username}, \"{gameEvent.Message}\"";
+
+    public string FormatForObserver(WhisperEvent gameEvent) =>
+        $"{gameEvent.Sender.Username} whispers to you, \"{gameEvent.Message}\"";
+}

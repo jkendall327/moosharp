@@ -88,3 +88,25 @@ public class GiveHandler(World world) : IHandler<GiveCommand>
         return Task.FromResult(result);
     }
 }
+
+public record ItemGivenEvent(Player Sender, Player Recipient, Object Item) : IGameEvent;
+
+public class ItemGivenEventFormatter : IGameEventFormatter<ItemGivenEvent>
+{
+    public string FormatForActor(ItemGivenEvent gameEvent) =>
+        $"You give the {gameEvent.Item.Name} to {gameEvent.Recipient.Username}.";
+
+    public string FormatForObserver(ItemGivenEvent gameEvent) =>
+        $"{gameEvent.Sender.Username} gives the {gameEvent.Item.Name} to {gameEvent.Recipient.Username}.";
+}
+
+public record ItemReceivedEvent(Player Sender, Player Recipient, Object Item) : IGameEvent;
+
+public class ItemReceivedEventFormatter : IGameEventFormatter<ItemReceivedEvent>
+{
+    public string FormatForActor(ItemReceivedEvent gameEvent) =>
+        $"{gameEvent.Sender.Username} gives you the {gameEvent.Item.Name}.";
+
+    public string FormatForObserver(ItemReceivedEvent gameEvent) =>
+        $"{gameEvent.Sender.Username} gives the {gameEvent.Item.Name} to {gameEvent.Recipient.Username}.";
+}
