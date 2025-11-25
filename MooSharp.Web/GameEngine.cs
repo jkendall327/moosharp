@@ -336,7 +336,7 @@ public class GameEngine(
         var tasks = messages
             .Select(msg => (msg.Player, Content: presenter.Present(msg)))
             .Where(msg => !string.IsNullOrWhiteSpace(msg.Content))
-            .Select(msg => msg.Player.Connection.SendMessageAsync(msg.Content));
+            .Select(msg => msg.Player.Connection.SendMessageAsync(msg.Content!));
 
         try
         {
