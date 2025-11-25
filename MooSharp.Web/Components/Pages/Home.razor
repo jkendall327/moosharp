@@ -7,60 +7,60 @@
 
 <PageTitle>Home</PageTitle>
 
-<div class="home-page">
-    <section class="hero">
-        <div class="hero__content">
-            <p class="eyebrow">Welcome to MooSharp</p>
-            <h1>Step into a living, text-driven world.</h1>
+<div class="page-shell">
+    <div class="terminal-hero">
+        <div class="terminal-card" data-label="/landing">
+            <p class="tag">welcome</p>
+            <h1 class="hero-title">MooSharp is a living terminal world.</h1>
             <p class="lede">
-                Explore rooms, meet other players, and uncover the secrets of the realm—all from your terminal-style command
-                line. Log in, register, and start adventuring in moments.
+                Connect, register, and roam a multiplayer text realm. Keep your session alive, chat with others, and let the
+                agents keep the world humming even when you're offline.
             </p>
-            <div class="hero__actions">
-                <button class="primary" @onclick="NavigateToGame">Play the game</button>
-                <a class="ghost" href="/game">See the interface</a>
+            <div class="actions">
+                <button class="btn btn-accent" @onclick="NavigateToGame">Launch client</button>
+                <a class="btn btn-ghost" href="/game">Preview interface</a>
             </div>
-            <div class="stat-card">
-                <p class="stat-label">Players online right now</p>
-                <p class="stat-value">@(_playerCount?.ToString() ?? "—")</p>
-                <p class="stat-hint">@_statusMessage</p>
+            <div class="stat-line">
+                <span>Players online: @_playerCount?.ToString() ?? "—"</span>
+                <span>@_statusMessage</span>
             </div>
         </div>
-        <div class="hero__panel">
-            <div class="panel__header">Why MooSharp?</div>
-            <ul class="panel__list">
+
+        <div class="terminal-card" data-label="/system-log">
+            <ul class="list-reset">
                 <li>
-                    <strong>Persistent characters</strong>
-                    <span>Pick up where you left off with session-based reconnects.</span>
+                    <strong>Persistent sessions</strong>
+                    <span>Reconnect with your stored session ID and pick up right where you left off.</span>
                 </li>
                 <li>
-                    <strong>Realtime multiplayer</strong>
-                    <span>Chat with others and explore together in a shared world.</span>
+                    <strong>Realtime SignalR</strong>
+                    <span>Chat, explore, and receive updates instantly through the hub.</span>
                 </li>
                 <li>
-                    <strong>Agent-powered world</strong>
-                    <span>Background agents keep the realm lively even when you're away.</span>
+                    <strong>Agents in the loop</strong>
+                    <span>Background agents keep the world reactive without manual babysitting.</span>
                 </li>
             </ul>
         </div>
-    </section>
+    </div>
 
-    <section class="info-grid">
+    <div class="info-grid">
         <div class="info-card">
-            <p class="eyebrow">Get started fast</p>
-            <h2>Jump straight into the adventure</h2>
+            <p class="tag">quickstart</p>
+            <h2>Join a room in seconds</h2>
             <p>
-                Head to the game page, choose a username and password, and you're ready to explore. Your commands, inventory,
-                and discoveries all persist between sessions.
+                Head to the game page, choose a username and password, then issue commands. Your inventory and discoveries
+                persist between logins.
             </p>
-            <a class="inline-link" href="/game">Go to the game page →</a>
+            <a class="inline-link" href="/game">Open the /game terminal →</a>
         </div>
         <div class="info-card">
-            <p class="eyebrow">Live activity</p>
-            <h2>See who's online</h2>
-            <button class="secondary" @onclick="NavigateToGame">Start playing</button>
+            <p class="tag">activity</p>
+            <h2>Who's online?</h2>
+            <p>Check the live connection count, then step in to say hello.</p>
+            <button class="btn btn-ghost" @onclick="NavigateToGame">Start playing</button>
         </div>
-    </section>
+    </div>
 </div>
 
 @code {
