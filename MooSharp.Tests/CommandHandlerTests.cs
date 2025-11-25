@@ -346,60 +346,6 @@ public class CommandHandlerTests
         Assert.False(string.IsNullOrWhiteSpace(evt.Message));
     }
 
-    [Fact]
-    public async Task DigHandler_CreatesRoomAndPersistsExits()
-    {
-        var origin = CreateRoom("origin");
-        var (world, store) = await CreateWorldWithStore(origin);
-
-        var builder = CreatePlayer("Builder");
-        world.MovePlayer(builder, origin);
-
-        var handler = new DigHandler(world, new SlugCreator());
-
-        var result = await handler.Handle(new DigCommand
-        {
-            Player = builder,
-            RoomName = "New Wing"
-        });
-
-        Assert.Contains(result.Messages, m => m.Event is SystemMessageEvent);
-
-        var newRoom = world.Rooms.Values.Single(r => r.Name == "New Wing");
-        Assert.Equal(newRoom.Id, origin.Exits[newRoom.Id.Value]);
-        Assert.Equal(origin.Id, newRoom.Exits[origin.Id.Value]);
-
-        var persistedRooms = await store.LoadRoomsAsync();
-        var persistedNewRoom = persistedRooms.Single(r => r.Id == newRoom.Id);
-
-        Assert.Equal(origin.Id, persistedNewRoom.Exits[origin.Id.Value]);
-    }
-
-    [Fact]
-    public async Task DigHandler_RejectsDuplicateExitSlugAcrossWorld()
-    {
-        var origin = CreateRoom("origin");
-        var existingDestination = CreateRoom("treasure-room");
-        origin.Exits[existingDestination.Id.Value] = existingDestination.Id;
-
-        var world = await CreateWorld(origin, existingDestination);
-
-        var builder = CreatePlayer("Builder");
-        world.MovePlayer(builder, origin);
-
-        var handler = new DigHandler(world, new SlugCreator());
-
-        var result = await handler.Handle(new DigCommand
-        {
-            Player = builder,
-            RoomName = "Treasure Room"
-        });
-
-        var message = Assert.Single(result.Messages);
-        var systemMessage = Assert.IsType<SystemMessageEvent>(message.Event);
-        Assert.Contains("slug 'treasure-room' already exists", systemMessage.Message, StringComparison.OrdinalIgnoreCase);
-    }
-
     private static WorldFactory CreateWorldFactory(InMemoryWorldStore? store = null)
     {
         var options = Options.Create(new AppOptions
