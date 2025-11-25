@@ -8,3 +8,4 @@
 - Do not write tests that make assertions based on raw strings (game message outputs, for example).
 - Use NSubstitute for mocking purposes.
 - If you make any test doubles, or general test-helper code, try to make it general and put it somewhere in the test project that other tests can make use of.
+- Always run dotnet builds/dotnet test with elevated sandbox permissions; you will have to ask for permission.
