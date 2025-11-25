@@ -15,7 +15,7 @@ public static class ServiceCollectionExtensions
         {
             var factory = sp.GetRequiredService<WorldFactory>();
 
-            return factory.CreateWorld();
+            return factory.CreateWorldAsync().Result;
         });
         services.AddSingleton<CommandParser>();
         services.AddSingleton<CommandExecutor>();
@@ -25,6 +25,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<AgentFactory>();
         services.AddSingleton(TimeProvider.System);
         services.AddSingleton<IPlayerStore, SqlitePlayerStore>();
+        services.AddSingleton<IWorldStore, SqliteWorldStore>();
     }
     
     public static void AddMooSharpMessaging(this IServiceCollection services, IConfiguration config)

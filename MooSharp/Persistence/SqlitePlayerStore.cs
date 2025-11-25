@@ -10,12 +10,10 @@ namespace MooSharp.Persistence;
 public class SqlitePlayerStore : IPlayerStore
 {
     private readonly string _connectionString;
-    private static bool _roomIdHandlerConfigured;
-
     public SqlitePlayerStore(IOptions<AppOptions> options)
     {
-        var databasePath = options.Value.PlayerDatabaseFilepath
-            ?? throw new InvalidOperationException("PlayerDatabaseFilepath is not set.");
+        var databasePath = options.Value.DatabaseFilepath
+            ?? throw new InvalidOperationException("DatabaseFilepath is not set.");
 
         _connectionString = new SqliteConnectionStringBuilder
         {
@@ -23,7 +21,7 @@ public class SqlitePlayerStore : IPlayerStore
             Mode = SqliteOpenMode.ReadWriteCreate
         }.ToString();
 
-        ConfigureTypeHandlers();
+        DapperTypeHandlerConfiguration.ConfigureRoomIdHandler();
         InitializeDatabase(databasePath);
     }
 
@@ -97,17 +95,6 @@ public class SqlitePlayerStore : IPlayerStore
         await connection.ExecuteAsync(sql, player);
     }
 
-    private static void ConfigureTypeHandlers()
-    {
-        if (_roomIdHandlerConfigured)
-        {
-            return;
-        }
-
-        SqlMapper.AddTypeHandler(new RoomIdTypeHandler());
-        _roomIdHandlerConfigured = true;
-    }
-
     private static void InitializeDatabase(string databasePath)
     {
         var directory = Path.GetDirectoryName(databasePath);
@@ -148,16 +135,6 @@ public class SqlitePlayerStore : IPlayerStore
             """);
 
         connection.Execute("CREATE INDEX IF NOT EXISTS IX_PlayerInventory_Username ON PlayerInventory (Username);");
-    }
-
-    private class RoomIdTypeHandler : SqlMapper.TypeHandler<RoomId>
-    {
-        public override RoomId Parse(object value) => new(Convert.ToString(value) ?? string.Empty);
-
-        public override void SetValue(IDbDataParameter parameter, RoomId value)
-        {
-            parameter.Value = value.Value;
-        }
     }
 
     private async Task ReplaceInventoryAsync(Player player)

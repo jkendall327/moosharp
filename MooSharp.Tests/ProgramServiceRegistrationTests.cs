@@ -43,7 +43,7 @@ public class ProgramServiceRegistrationTests
     private static Dictionary<string, string?> CreateRequiredConfiguration() => new()
     {
         ["AppOptions:WorldDataFilepath"] = "world.json",
-        ["AppOptions:PlayerDatabaseFilepath"] = "players.db",
+        ["AppOptions:DatabaseFilepath"] = "game.db",
         ["Agents:Enabled"] = "false",
         ["Agents:MaxRecentMessages"] = "10",
         ["Agents:OpenAIModelId"] = "test-openai-model",
