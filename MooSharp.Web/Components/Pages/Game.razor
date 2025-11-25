@@ -31,7 +31,7 @@ else
             <div class="terminal-card auth-panel" data-label="/auth">
                 <h2 class="panel-heading">Credentials</h2>
                 <input @bind="_username" placeholder="Username" />
-                <input type="password" @bind="_password" placeholder="Password" />
+                <input type="password" @bind="_password" @onkeydown="HandlePasswordKeyDown" placeholder="Password" />
                 <div class="auth-actions">
                     <button class="btn btn-accent" @onclick="LoginAsync" disabled="@(!CanSubmitCredentials)">Log In</button>
                     <button class="btn btn-ghost" @onclick="RegisterAsync" disabled="@(!CanSubmitCredentials)">Register</button>
@@ -177,6 +177,14 @@ else
         if (e.Key == "Enter")
         {
             await SendCommandAsync();
+        }
+    }
+
+    private async Task HandlePasswordKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            await LoginAsync();
         }
     }
 

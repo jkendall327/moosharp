@@ -33,3 +33,5 @@ public class WorldCommand : InputCommand
 public class DisconnectCommand : InputCommand;
 
 public class ReconnectCommand : InputCommand;
+
+public class AgentThinkingCommand : InputCommand;

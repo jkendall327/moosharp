@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using Microsoft.AspNetCore.SignalR;
 using MooSharp.Messaging;
+using MooSharp.Agents;
 using MooSharp.Persistence;
 
 namespace MooSharp;
@@ -40,6 +41,7 @@ public class GameEngine(
             case RegisterCommand rc: await CreateNewPlayer(input.ConnectionId, rc, input.SessionToken); break;
             case LoginCommand lc: await Login(input.ConnectionId, lc, input.SessionToken); break;
             case RegisterAgentCommand ra: await RegisterAgent(input.ConnectionId, ra); break;
+            case AgentThinkingCommand: await HandleAgentThinkingAsync(input.ConnectionId, ct); break;
             case WorldCommand wc:
                 if (!world.Players.TryGetValue(input.ConnectionId.Value, out var player))
                 {
@@ -334,7 +336,7 @@ public class GameEngine(
         var tasks = messages
             .Select(msg => (msg.Player, Content: presenter.Present(msg)))
             .Where(msg => !string.IsNullOrWhiteSpace(msg.Content))
-            .Select(msg => msg.Player.Connection.SendMessageAsync(msg.Content));
+            .Select(msg => msg.Player.Connection.SendMessageAsync(msg.Content!));
 
         try
         {
@@ -384,5 +386,30 @@ public class GameEngine(
         logger.LogInformation("Agent {AgentName} registered", player.Username);
 
         return Task.CompletedTask;
+    }
+
+    private async Task HandleAgentThinkingAsync(ConnectionId connectionId, CancellationToken ct)
+    {
+        if (!world.Players.TryGetValue(connectionId.Value, out var player))
+        {
+            logger.LogWarning("Could not find player for agent thinking indicator. ConnectionId={ConnectionId}", connectionId.Value);
+            return;
+        }
+
+        var room = world.GetPlayerLocation(player);
+
+        if (room is null)
+        {
+            logger.LogWarning("Player {Player} has no known location when sending thinking indicator", player.Username);
+            return;
+        }
+
+        var gameEvent = new AgentThinkingEvent(player);
+
+        var result = new CommandResult();
+        result.Add(player, gameEvent);
+        result.BroadcastToAllButPlayer(room, player, gameEvent);
+
+        await SendMessagesAsync(result.Messages);
     }
 }

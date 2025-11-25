@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Logging.Abstractions;
+using NSubstitute;
 using MooSharp;
 
 namespace MooSharp.Tests;
@@ -19,33 +20,33 @@ public class CommandParserTests
     [Fact]
     public async Task ParseAsync_ReturnsNullForUnknownVerbEvenWhenDefinitionsExist()
     {
-        var definition = new RecordingDefinition("known");
+        var definition = CreateDefinition("known");
         var parser = new CommandParser(NullLogger<CommandParser>.Instance, new[] { definition });
         var player = CreatePlayer();
 
         var result = await parser.ParseAsync(player, "unknown args");
 
         Assert.Null(result);
-        Assert.Null(definition.LastArgs);
+        definition.DidNotReceiveWithAnyArgs().Create(default!, default!);
     }
 
     [Fact]
     public async Task ParseAsync_DoesNotMatchMultiWordVerbs()
     {
-        var definition = new RecordingDefinition("look at");
+        var definition = CreateDefinition("look at");
         var parser = new CommandParser(NullLogger<CommandParser>.Instance, new[] { definition });
         var player = CreatePlayer();
 
         var result = await parser.ParseAsync(player, "look at shiny sword");
 
         Assert.Null(result);
-        Assert.Null(definition.LastArgs);
+        definition.DidNotReceiveWithAnyArgs().Create(default!, default!);
     }
 
     [Fact]
     public async Task ParseAsync_MatchesVerbCaseInsensitivelyAndPassesNormalizedArgs()
     {
-        var definition = new RecordingDefinition("say");
+        var definition = CreateDefinition("say");
         var parser = new CommandParser(NullLogger<CommandParser>.Instance, new[] { definition });
         var player = CreatePlayer();
 
@@ -53,8 +54,7 @@ public class CommandParserTests
 
         var command = Assert.IsType<StubCommand>(result);
         Assert.Equal("spaced words", command.Args);
-        Assert.Equal(player, definition.LastPlayer);
-        Assert.Equal("spaced words", definition.LastArgs);
+        definition.Received(1).Create(player, "spaced words");
     }
 
     private static Player CreatePlayer()
@@ -64,5 +64,16 @@ public class CommandParserTests
             Username = "Player",
             Connection = new TestPlayerConnection()
         };
+    }
+
+    private static ICommandDefinition CreateDefinition(string verb)
+    {
+        var definition = Substitute.For<ICommandDefinition>();
+        definition.Verbs.Returns(new[] { verb });
+        definition.Description.Returns("test command");
+        definition.Create(Arg.Any<Player>(), Arg.Any<string>())
+            .Returns(call => new StubCommand(call.ArgAt<string>(1)));
+
+        return definition;
     }
 }

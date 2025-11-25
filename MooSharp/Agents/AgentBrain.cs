@@ -8,6 +8,7 @@ using Microsoft.SemanticKernel.ChatCompletion;
 using Microsoft.SemanticKernel.Connectors.Google;
 using Microsoft.SemanticKernel.Connectors.OpenAI;
 using MooSharp.Messaging;
+using System.Diagnostics;
 using System.Threading.Channels;
 
 namespace MooSharp.Agents;
@@ -176,6 +177,24 @@ public sealed class AgentBrain : IAsyncDisposable
         }
     }
 
+    private async Task PublishThinkingAsync(CancellationToken cancellationToken)
+    {
+        try
+        {
+            await _gameInputWriter
+                .WriteAsync(new(new ConnectionId(_connection.Id), new AgentThinkingCommand()), cancellationToken)
+                .ConfigureAwait(false);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            // Shutdown in progress; no-op
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to publish thinking indicator for {AgentName}", _name);
+        }
+    }
+
     private async Task HandleIncomingGameMessageAsync(string message)
     {
         // Always record history.
@@ -190,7 +209,18 @@ public sealed class AgentBrain : IAsyncDisposable
             return;
         }
 
-        var kernel = await GetResponse();
+        await PublishThinkingAsync(_cts.Token).ConfigureAwait(false);
+
+        _logger.LogInformation("Agent {AgentName} starting LLM call via {Source}", _name, _source);
+
+        var stopwatch = Stopwatch.StartNew();
+
+        var kernel = await GetResponse().ConfigureAwait(false);
+
+        stopwatch.Stop();
+
+        _logger.LogInformation("Agent {AgentName} completed LLM call in {ElapsedMilliseconds} ms", _name, stopwatch.ElapsedMilliseconds);
+
         var commandText = kernel.Content?.Trim();
 
         if (string.IsNullOrEmpty(commandText))
