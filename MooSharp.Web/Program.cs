@@ -6,11 +6,13 @@ using MooSharp.Agents;
 using MooSharp.Persistence;
 using MooSharp.Web;
 using MooSharp.Web.Components;
+using MooSharp.Web.Endpoints;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddRazorComponents().AddInteractiveServerComponents();
 builder.Services.AddSignalR();
+builder.Services.AddHttpClient();
 
 builder.Services.AddMooSharpServices(builder.Configuration);
 builder.Services.AddMooSharpOptions(builder.Configuration);
@@ -34,6 +36,8 @@ app.UseAntiforgery();
 
 app.MapStaticAssets();
 app.MapRazorComponents<App>().AddInteractiveServerRenderMode();
+
+app.MapPlayerCountEndpoint();
 
 app.MapHub<MooHub>("/moohub");
 

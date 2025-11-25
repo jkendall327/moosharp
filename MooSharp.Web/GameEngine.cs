@@ -106,7 +106,7 @@ public class GameEngine(
         await playerStore.SavePlayer(player, location);
         world.RemovePlayer(player);
 
-        world.Players.Remove(connectionId.Value);
+        world.Players.TryRemove(connectionId.Value, out _);
 
         if (sessionToken is not null)
         {
@@ -144,7 +144,7 @@ public class GameEngine(
 
         if (!string.IsNullOrEmpty(oldConnectionId))
         {
-            world.Players.Remove(oldConnectionId);
+            world.Players.TryRemove(oldConnectionId, out _);
         }
 
         player.Connection = new SignalRPlayerConnection(newConnectionId, hubContext);
@@ -242,7 +242,7 @@ public class GameEngine(
 
         await playerStore.SaveNewPlayer(player, defaultRoom, rc.Password);
 
-        world.Players.Add(connectionId.Value, player);
+        world.Players[connectionId.Value] = player;
         TrackSession(sessionToken, player, connectionId);
 
         var description = BuildCurrentRoomDescription(player);
@@ -295,7 +295,7 @@ public class GameEngine(
 
         world.MovePlayer(player, startingRoom);
 
-        world.Players.Add(connectionId.Value, player);
+        world.Players[connectionId.Value] = player;
         TrackSession(sessionToken, player, connectionId);
 
         var description = BuildCurrentRoomDescription(player);
@@ -379,7 +379,7 @@ public class GameEngine(
 
         world.MovePlayer(player, defaultRoom);
 
-        world.Players.Add(connectionId.Value, player);
+        world.Players[connectionId.Value] = player;
 
         logger.LogInformation("Agent {AgentName} registered", player.Username);
 

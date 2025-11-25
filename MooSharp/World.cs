@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using MooSharp.Persistence;
 using Microsoft.Extensions.Logging;
 
@@ -5,7 +6,7 @@ namespace MooSharp;
 
 public class World(IWorldStore worldStore, ILogger<World> logger)
 {
-    public Dictionary<string, Player> Players { get; } = [];
+    public ConcurrentDictionary<string, Player> Players { get; } = new();
     public IReadOnlyDictionary<RoomId, Room> Rooms => _rooms;
     private readonly Dictionary<RoomId, Room> _rooms = new();
 
