@@ -8,5 +8,5 @@ public class AppOptions
     public required string WorldDataFilepath { get; init; }
 
     [Required]
-    public required string PlayerDatabaseFilepath { get; init; }
+    public required string DatabaseFilepath { get; init; }
 }

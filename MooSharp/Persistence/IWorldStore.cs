@@ -1,0 +1,16 @@
+using MooSharp;
+
+namespace MooSharp.Persistence;
+
+public interface IWorldStore
+{
+    Task<bool> HasRoomsAsync(CancellationToken cancellationToken = default);
+
+    Task<IReadOnlyCollection<Room>> LoadRoomsAsync(CancellationToken cancellationToken = default);
+
+    Task SaveRoomAsync(Room room, CancellationToken cancellationToken = default);
+
+    Task SaveExitAsync(RoomId fromRoomId, RoomId toRoomId, string direction, CancellationToken cancellationToken = default);
+
+    Task SaveRoomsAsync(IEnumerable<Room> rooms, CancellationToken cancellationToken = default);
+}

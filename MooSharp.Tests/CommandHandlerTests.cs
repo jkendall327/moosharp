@@ -2,6 +2,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using MooSharp;
 using MooSharp.Messaging;
+using MooSharp.Persistence;
 
 namespace MooSharp.Tests;
 
@@ -14,7 +15,7 @@ public class CommandHandlerTests
         var destination = CreateRoom("destination");
         origin.Exits.Add("north", destination.Id);
 
-        var world = CreateWorld(origin, destination);
+        var world = await CreateWorld(origin, destination);
 
         var player = CreatePlayer("Alice");
         world.MovePlayer(player, origin);
@@ -45,7 +46,7 @@ public class CommandHandlerTests
     public async Task MoveHandler_ReturnsExitNotFoundWhenMissing()
     {
         var origin = CreateRoom("origin");
-        var world = CreateWorld(origin);
+        var world = await CreateWorld(origin);
 
         var player = CreatePlayer();
         world.MovePlayer(player, origin);
@@ -70,7 +71,7 @@ public class CommandHandlerTests
         var destination = CreateRoom("destination");
         origin.Exits.Add("north", destination.Id);
 
-        var world = CreateWorld(origin, destination);
+        var world = await CreateWorld(origin, destination);
 
         var actor = CreatePlayer("Actor");
         var originObserver = CreatePlayer("OriginObserver");
@@ -101,7 +102,7 @@ public class CommandHandlerTests
     public async Task TakeHandler_MovesUnownedItemToPlayer()
     {
         var room = CreateRoom("room");
-        var world = CreateWorld(room);
+        var world = await CreateWorld(room);
 
         var player = CreatePlayer();
         world.MovePlayer(player, room);
@@ -133,7 +134,7 @@ public class CommandHandlerTests
     public async Task TakeHandler_ReturnsNotFoundEventWhenMissing()
     {
         var room = CreateRoom("room");
-        var world = CreateWorld(room);
+        var world = await CreateWorld(room);
 
         var player = CreatePlayer();
         world.MovePlayer(player, room);
@@ -155,7 +156,7 @@ public class CommandHandlerTests
     public async Task TakeHandler_ReturnsOwnershipConflictWhenItemOwned()
     {
         var room = CreateRoom("room");
-        var world = CreateWorld(room);
+        var world = await CreateWorld(room);
 
         var owner = CreatePlayer("Owner");
         var seeker = CreatePlayer("Seeker");
@@ -188,7 +189,7 @@ public class CommandHandlerTests
     public async Task TakeHandler_ReturnsAlreadyOwnedWhenItemInInventory()
     {
         var room = CreateRoom("room");
-        var world = CreateWorld(room);
+        var world = await CreateWorld(room);
 
         var player = CreatePlayer();
         world.MovePlayer(player, room);
@@ -217,7 +218,7 @@ public class CommandHandlerTests
     public async Task ExamineHandler_ReturnsRoomDescriptionWhenNoTarget()
     {
         var room = CreateRoom("room");
-        var world = CreateWorld(room);
+        var world = await CreateWorld(room);
 
         var player = CreatePlayer();
         world.MovePlayer(player, room);
@@ -239,7 +240,7 @@ public class CommandHandlerTests
     public async Task ExamineHandler_ReturnsSelfInventoryWhenTargetIsMe()
     {
         var room = CreateRoom("room");
-        var world = CreateWorld(room);
+        var world = await CreateWorld(room);
 
         var player = CreatePlayer();
         world.MovePlayer(player, room);
@@ -269,7 +270,7 @@ public class CommandHandlerTests
     public async Task ExamineHandler_ReturnsObjectDetailsWhenFound()
     {
         var room = CreateRoom("room");
-        var world = CreateWorld(room);
+        var world = await CreateWorld(room);
 
         var player = CreatePlayer();
         world.MovePlayer(player, room);
@@ -299,7 +300,7 @@ public class CommandHandlerTests
     public async Task SayHandler_BroadcastsToRoom()
     {
         var room = CreateRoom("room");
-        var world = CreateWorld(room);
+        var world = await CreateWorld(room);
 
         var speaker = CreatePlayer("Speaker");
         var listener = CreatePlayer("Listener");
@@ -327,7 +328,7 @@ public class CommandHandlerTests
     public async Task SayHandler_ReturnsSystemMessageForEmptyContent()
     {
         var room = CreateRoom("room");
-        var world = CreateWorld(room);
+        var world = await CreateWorld(room);
 
         var speaker = CreatePlayer();
         world.MovePlayer(speaker, room);
@@ -345,22 +346,87 @@ public class CommandHandlerTests
         Assert.False(string.IsNullOrWhiteSpace(evt.Message));
     }
 
-    private static World CreateWorld(params Room[] rooms)
+    [Fact]
+    public async Task DigHandler_CreatesRoomAndPersistsExits()
     {
-        var factory = CreateWorldFactory();
+        var origin = CreateRoom("origin");
+        var (world, store) = await CreateWorldWithStore(origin);
 
-        return factory.CreateWorld(rooms.ToList());
+        var builder = CreatePlayer("Builder");
+        world.MovePlayer(builder, origin);
+
+        var handler = new DigHandler(world);
+
+        var result = await handler.Handle(new DigCommand
+        {
+            Player = builder,
+            RoomName = "New Wing"
+        });
+
+        Assert.Contains(result.Messages, m => m.Event is SystemMessageEvent);
+
+        var newRoom = world.Rooms.Values.Single(r => r.Name == "New Wing");
+        Assert.Equal(newRoom.Id, origin.Exits[newRoom.Id.Value]);
+        Assert.Equal(origin.Id, newRoom.Exits[origin.Id.Value]);
+
+        var persistedRooms = await store.LoadRoomsAsync();
+        var persistedNewRoom = persistedRooms.Single(r => r.Id == newRoom.Id);
+
+        Assert.Equal(origin.Id, persistedNewRoom.Exits[origin.Id.Value]);
     }
 
-    private static WorldFactory CreateWorldFactory()
+    [Fact]
+    public async Task DigHandler_RejectsDuplicateExitSlugAcrossWorld()
+    {
+        var origin = CreateRoom("origin");
+        var existingDestination = CreateRoom("treasure-room");
+        origin.Exits[existingDestination.Id.Value] = existingDestination.Id;
+
+        var world = await CreateWorld(origin, existingDestination);
+
+        var builder = CreatePlayer("Builder");
+        world.MovePlayer(builder, origin);
+
+        var handler = new DigHandler(world);
+
+        var result = await handler.Handle(new DigCommand
+        {
+            Player = builder,
+            RoomName = "Treasure Room"
+        });
+
+        var message = Assert.Single(result.Messages);
+        var systemMessage = Assert.IsType<SystemMessageEvent>(message.Event);
+        Assert.Contains("slug 'treasure-room' already exists", systemMessage.Message, StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static WorldFactory CreateWorldFactory(InMemoryWorldStore? store = null)
     {
         var options = Options.Create(new AppOptions
         {
-            PlayerDatabaseFilepath = "players.db",
-            WorldDataFilepath = "world.json"
+            WorldDataFilepath = "world.json",
+            DatabaseFilepath = "game.db"
         });
 
-        return new WorldFactory(options, NullLogger<WorldFactory>.Instance);
+        return new WorldFactory(options, NullLogger<WorldFactory>.Instance, store ?? new InMemoryWorldStore(),
+            NullLogger<World>.Instance);
+    }
+
+    private static Task<World> CreateWorld(params Room[] rooms) => CreateWorld(null, rooms);
+
+    private static async Task<World> CreateWorld(InMemoryWorldStore? store, params Room[] rooms)
+    {
+        var factory = CreateWorldFactory(store);
+
+        return await factory.CreateWorldAsync(rooms.ToList());
+    }
+
+    private static async Task<(World world, InMemoryWorldStore store)> CreateWorldWithStore(params Room[] rooms)
+    {
+        var store = new InMemoryWorldStore();
+        var world = await CreateWorld(store, rooms);
+
+        return (world, store);
     }
 
     private static Room CreateRoom(string slug)
@@ -390,5 +456,85 @@ public class CommandHandlerTests
         public string Id { get; } = Guid.NewGuid().ToString();
 
         public Task SendMessageAsync(string message) => Task.CompletedTask;
+    }
+
+    private sealed class InMemoryWorldStore : IWorldStore
+    {
+        private readonly List<Room> _rooms = new();
+        private readonly List<(RoomId From, RoomId To, string Direction)> _exits = new();
+
+        public Task<bool> HasRoomsAsync(CancellationToken cancellationToken = default)
+            => Task.FromResult(_rooms.Any());
+
+        public Task<IReadOnlyCollection<Room>> LoadRoomsAsync(CancellationToken cancellationToken = default)
+        {
+            var rooms = _rooms.Select(CloneRoom).ToList();
+
+            foreach (var exit in _exits)
+            {
+                var origin = rooms.SingleOrDefault(r => r.Id == exit.From);
+                if (origin is null)
+                {
+                    continue;
+                }
+
+                origin.Exits[exit.Direction] = exit.To;
+            }
+
+            return Task.FromResult<IReadOnlyCollection<Room>>(rooms);
+        }
+
+        public Task SaveRoomAsync(Room room, CancellationToken cancellationToken = default)
+        {
+            _rooms.RemoveAll(r => r.Id == room.Id);
+            _rooms.Add(CloneRoom(room));
+            return Task.CompletedTask;
+        }
+
+        public Task SaveExitAsync(RoomId fromRoomId, RoomId toRoomId, string direction,
+            CancellationToken cancellationToken = default)
+        {
+            _exits.RemoveAll(e => e.From == fromRoomId && string.Equals(e.Direction, direction, StringComparison.OrdinalIgnoreCase));
+            _exits.Add((fromRoomId, toRoomId, direction));
+            return Task.CompletedTask;
+        }
+
+        public Task SaveRoomsAsync(IEnumerable<Room> rooms, CancellationToken cancellationToken = default)
+        {
+            _rooms.Clear();
+            _rooms.AddRange(rooms.Select(CloneRoom));
+
+            _exits.Clear();
+
+            foreach (var room in rooms)
+            {
+                foreach (var exit in room.Exits)
+                {
+                    _exits.Add((room.Id, exit.Value, exit.Key));
+                }
+            }
+
+            return Task.CompletedTask;
+        }
+
+        private static Room CloneRoom(Room room)
+        {
+            var clone = new Room
+            {
+                Id = room.Id,
+                Name = room.Name,
+                Description = room.Description,
+                LongDescription = room.LongDescription,
+                EnterText = room.EnterText,
+                ExitText = room.ExitText
+            };
+
+            foreach (var exit in room.Exits)
+            {
+                clone.Exits[exit.Key] = exit.Value;
+            }
+
+            return clone;
+        }
     }
 }

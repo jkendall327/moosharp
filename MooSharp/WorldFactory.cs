@@ -1,26 +1,48 @@
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using MooSharp.Persistence;
 
 namespace MooSharp;
 
-public class WorldFactory(IOptions<AppOptions> options, ILogger<WorldFactory> logger)
+public class WorldFactory(IOptions<AppOptions> options, ILogger<WorldFactory> logger, IWorldStore worldStore,
+    ILogger<World> worldLogger)
 {
-    public World CreateWorld()
+    public async Task<World> CreateWorldAsync(CancellationToken cancellationToken = default)
     {
+        var databaseRooms = await worldStore.LoadRoomsAsync(cancellationToken);
+
+        if (databaseRooms.Any())
+        {
+            var world = new World(worldStore, worldLogger);
+            world.Initialize(databaseRooms);
+
+            return world;
+        }
+
         var dto = GetWorldDto();
 
         var rooms = CreateRooms(dto);
         CreateObjects(dto, rooms);
 
-        return new World(rooms.Values);
+        await worldStore.SaveRoomsAsync(rooms.Values, cancellationToken);
+
+        var seededWorld = new World(worldStore, worldLogger);
+        seededWorld.Initialize(rooms.Values);
+
+        return seededWorld;
     }
 
-    public World CreateWorld(List<Room> rooms)
+    public async Task<World> CreateWorldAsync(List<Room> rooms, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(rooms);
 
-        return new World(rooms);
+        await worldStore.SaveRoomsAsync(rooms, cancellationToken);
+
+        var world = new World(worldStore, worldLogger);
+        world.Initialize(rooms);
+
+        return world;
     }
 
     private WorldDto GetWorldDto()
