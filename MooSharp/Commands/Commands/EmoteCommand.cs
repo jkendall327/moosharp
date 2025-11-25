@@ -45,3 +45,14 @@ public class EmoteHandler(World world) : IHandler<EmoteCommand>
         return Task.FromResult(result);
     }
 }
+
+public record PlayerEmotedEvent(Player Player, string Message) : IGameEvent;
+
+public class PlayerEmotedEventFormatter : IGameEventFormatter<PlayerEmotedEvent>
+{
+    public string FormatForActor(PlayerEmotedEvent gameEvent) =>
+        $"{gameEvent.Player.Username} {gameEvent.Message}";
+
+    public string FormatForObserver(PlayerEmotedEvent gameEvent) =>
+        $"{gameEvent.Player.Username} {gameEvent.Message}";
+}

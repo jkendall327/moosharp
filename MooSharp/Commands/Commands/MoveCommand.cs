@@ -61,3 +61,53 @@ public class MoveHandler(World world, ILogger<MoveHandler> logger) : IHandler<Mo
         return Task.FromResult(result);
     }
 }
+
+public record RoomDescriptionEvent(string Description) : IGameEvent;
+
+public class RoomDescriptionEventFormatter : IGameEventFormatter<RoomDescriptionEvent>
+{
+    public string FormatForActor(RoomDescriptionEvent gameEvent) => gameEvent.Description;
+
+    public string FormatForObserver(RoomDescriptionEvent gameEvent) => gameEvent.Description;
+}
+
+public record ExitNotFoundEvent(string ExitName) : IGameEvent;
+
+public class ExitNotFoundEventFormatter : IGameEventFormatter<ExitNotFoundEvent>
+{
+    public string FormatForActor(ExitNotFoundEvent gameEvent) => "That exit doesn't exist.";
+
+    public string FormatForObserver(ExitNotFoundEvent gameEvent) => "That exit doesn't exist.";
+}
+
+public record PlayerMovedEvent(Player Player, Room Destination) : IGameEvent;
+
+public class PlayerMovedEventFormatter : IGameEventFormatter<PlayerMovedEvent>
+{
+    public string FormatForActor(PlayerMovedEvent gameEvent) => gameEvent.Destination.EnterText;
+
+    public string FormatForObserver(PlayerMovedEvent gameEvent) =>
+        $"{gameEvent.Player.Username} arrives.";
+}
+
+public record PlayerDepartedEvent(Player Player, Room Origin, string ExitName) : IGameEvent;
+
+public class PlayerDepartedEventFormatter : IGameEventFormatter<PlayerDepartedEvent>
+{
+    public string FormatForActor(PlayerDepartedEvent gameEvent) =>
+        gameEvent.Origin.ExitText;
+
+    public string FormatForObserver(PlayerDepartedEvent gameEvent) =>
+        $"{gameEvent.Player.Username} leaves.";
+}
+
+public record PlayerArrivedEvent(Player Player, Room Destination) : IGameEvent;
+
+public class PlayerArrivedEventFormatter : IGameEventFormatter<PlayerArrivedEvent>
+{
+    public string FormatForActor(PlayerArrivedEvent gameEvent) =>
+        gameEvent.Destination.EnterText;
+
+    public string FormatForObserver(PlayerArrivedEvent gameEvent) =>
+        $"{gameEvent.Player.Username} arrives.";
+}

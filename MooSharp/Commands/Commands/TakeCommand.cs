@@ -112,3 +112,34 @@ public class TakeHandler(World world) : IHandler<TakeCommand>
         return null;
     }
 }
+
+public record ItemTakenEvent(Object Item) : IGameEvent;
+
+public class ItemTakenEventFormatter : IGameEventFormatter<ItemTakenEvent>
+{
+    public string FormatForActor(ItemTakenEvent gameEvent) => $"You take the {gameEvent.Item.Name}.";
+
+    public string FormatForObserver(ItemTakenEvent gameEvent) => $"Someone takes the {gameEvent.Item.Name}.";
+}
+
+public record ItemAlreadyInPossessionEvent(Object Item) : IGameEvent;
+
+public class ItemAlreadyInPossessionEventFormatter : IGameEventFormatter<ItemAlreadyInPossessionEvent>
+{
+    public string FormatForActor(ItemAlreadyInPossessionEvent gameEvent) =>
+        $"You already have the {gameEvent.Item.Name}.";
+
+    public string FormatForObserver(ItemAlreadyInPossessionEvent gameEvent) =>
+        $"Someone already has the {gameEvent.Item.Name}.";
+}
+
+public record ItemOwnedByOtherEvent(Object Item, Player Owner) : IGameEvent;
+
+public class ItemOwnedByOtherEventFormatter : IGameEventFormatter<ItemOwnedByOtherEvent>
+{
+    public string FormatForActor(ItemOwnedByOtherEvent gameEvent) =>
+        $"{gameEvent.Owner.Username} already has the {gameEvent.Item.Name}!";
+
+    public string FormatForObserver(ItemOwnedByOtherEvent gameEvent) =>
+        $"{gameEvent.Owner.Username} already has the {gameEvent.Item.Name}!";
+}

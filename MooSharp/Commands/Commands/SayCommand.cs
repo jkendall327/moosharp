@@ -49,3 +49,11 @@ public class SayHandler(World world) : IHandler<SayCommand>
         return Task.FromResult(result);
     }
 }
+
+public record PlayerSaidEvent(Player Player, string Message) : IGameEvent;
+
+public class PlayerSaidEventFormatter : IGameEventFormatter<PlayerSaidEvent>
+{
+    public string FormatForActor(PlayerSaidEvent gameEvent) => $"[{gameEvent.Player.Username}]: \"{gameEvent.Message}\"";
+    public string FormatForObserver(PlayerSaidEvent gameEvent) => FormatForActor(gameEvent);
+}
