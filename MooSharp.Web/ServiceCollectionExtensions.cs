@@ -23,6 +23,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IAgentPromptProvider, AgentPromptProvider>();
         services.AddSingleton<AgentSpawner>();
         services.AddSingleton<AgentFactory>();
+        services.AddSingleton<SlugCreator>();
         services.AddSingleton(TimeProvider.System);
         services.AddSingleton<IPlayerStore, SqlitePlayerStore>();
         services.AddSingleton<IWorldStore, SqliteWorldStore>();

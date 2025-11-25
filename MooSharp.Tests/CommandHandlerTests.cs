@@ -355,7 +355,7 @@ public class CommandHandlerTests
         var builder = CreatePlayer("Builder");
         world.MovePlayer(builder, origin);
 
-        var handler = new DigHandler(world);
+        var handler = new DigHandler(world, new SlugCreator());
 
         var result = await handler.Handle(new DigCommand
         {
@@ -387,7 +387,7 @@ public class CommandHandlerTests
         var builder = CreatePlayer("Builder");
         world.MovePlayer(builder, origin);
 
-        var handler = new DigHandler(world);
+        var handler = new DigHandler(world, new SlugCreator());
 
         var result = await handler.Handle(new DigCommand
         {

@@ -36,7 +36,16 @@ public class DigCommandDefinition : ICommandDefinition
     }
 }
 
-public class DigHandler(World world) : IHandler<DigCommand>
+public record RoomCreatedEvent(Player Player, Room Room) : IGameEvent;
+
+public class RoomCreatedEventFormatter : IGameEventFormatter<RoomCreatedEvent>
+{
+    public string FormatForActor(RoomCreatedEvent gameEvent) => $"You dig a passage to '{gameEvent.Room.Name}'.";
+
+    public string FormatForObserver(RoomCreatedEvent gameEvent) => $"{gameEvent.Player.Username} digs a passage to '{gameEvent.Room.Name}'.";
+}
+
+public class DigHandler(World world, SlugCreator slugCreator) : IHandler<DigCommand>
 {
     private const string DefaultEnterText = "You step inside.";
     private const string DefaultExitText = "You leave the room.";
@@ -60,7 +69,7 @@ public class DigHandler(World world) : IHandler<DigCommand>
             return result;
         }
 
-        var slug = CreateSlug(cmd.RoomName);
+        var slug = slugCreator.CreateSlug(cmd.RoomName);
 
         if (string.IsNullOrWhiteSpace(slug))
         {
@@ -96,31 +105,8 @@ public class DigHandler(World world) : IHandler<DigCommand>
         await world.AddExitAsync(currentRoom, newRoom, slug, cancellationToken);
         await world.AddExitAsync(newRoom, currentRoom, currentRoom.Id.Value, cancellationToken);
 
-        result.Add(player, new SystemMessageEvent($"You dig a passage to '{newRoom.Name}' (slug: {slug})."));
+        result.Add(player, new RoomCreatedEvent(player, newRoom));
 
         return result;
-    }
-
-    private static string CreateSlug(string roomName)
-    {
-        var normalized = roomName.Trim().ToLowerInvariant();
-        var builder = new StringBuilder(normalized.Length);
-        var wroteDash = false;
-
-        foreach (var c in normalized)
-        {
-            if (char.IsLetterOrDigit(c))
-            {
-                builder.Append(c);
-                wroteDash = false;
-            }
-            else if (!wroteDash && (char.IsWhiteSpace(c) || c is '-' or '_'))
-            {
-                builder.Append('-');
-                wroteDash = true;
-            }
-        }
-
-        return builder.ToString().Trim('-');
     }
 }
