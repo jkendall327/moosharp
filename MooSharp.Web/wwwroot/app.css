@@ -47,7 +47,7 @@ input:focus-visible {
 }
 
 .page-shell {
-    max-width: 1100px;
+    max-width: 1300px;
     margin: 0 auto;
     padding: 2.5rem 1.5rem 4rem;
     display: flex;
@@ -231,7 +231,7 @@ input:focus-visible {
 
 .game-grid {
     display: grid;
-    grid-template-columns: 0.9fr 1.1fr;
+    grid-template-columns: minmax(280px, 0.85fr) minmax(0, 1.15fr);
     gap: 1rem;
 }
 
@@ -264,6 +264,9 @@ input:focus-visible {
     padding: 1rem;
     height: 360px;
     overflow-y: auto;
+    overflow-x: auto;
+    width: 100%;
+    max-width: 100%;
     font-size: 0.95rem;
     line-height: 1.4;
 }
