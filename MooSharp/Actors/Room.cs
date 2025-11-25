@@ -38,14 +38,7 @@ public class Room : IContainer
     public IReadOnlyCollection<Player> PlayersInRoom => _playersInRoom;
 
     public SearchResult FindObjects(string query) => _contents.FindObjects(query);
-
-    public Object? FindObject(string keyword)
-    {
-        var search = FindObjects(keyword);
-
-        return search.Status == SearchStatus.Found ? search.Match : null;
-    }
-
+    
     public string DescribeFor(Player player, bool useLongDescription = false)
     {
         var sb = new StringBuilder();

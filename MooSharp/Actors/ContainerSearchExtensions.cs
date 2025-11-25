@@ -5,10 +5,7 @@ namespace MooSharp;
 public static class ContainerSearchExtensions
 {
     private static readonly Regex SearchRegex = new(@"^(\d+)\.(.+)|(.+)\s+(\d+)$", RegexOptions.Compiled);
-
-    public static SearchResult FindObjects(this IContainer container, string query)
-        => container.Contents.FindObjects(query);
-
+    
     public static SearchResult FindObjects(this IReadOnlyCollection<Object> contents, string query)
     {
         ArgumentNullException.ThrowIfNull(query);
