@@ -3,29 +3,6 @@ using MooSharp.Messaging;
 
 namespace MooSharp.Tests;
 
-public sealed class RecordingDefinition : ICommandDefinition
-{
-    public RecordingDefinition(params string[] verbs)
-    {
-        Verbs = verbs;
-    }
-
-    public IReadOnlyCollection<string> Verbs { get; }
-
-    public string Description => "test";
-
-    public Player? LastPlayer { get; private set; }
-
-    public string? LastArgs { get; private set; }
-
-    public ICommand Create(Player player, string args)
-    {
-        LastPlayer = player;
-        LastArgs = args;
-        return new StubCommand(args);
-    }
-}
-
 public sealed class StubCommand : ICommand
 {
     public StubCommand(string args)

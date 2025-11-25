@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Logging.Abstractions;
 using MooSharp.Tests.TestDoubles;
+using NSubstitute;
 
 namespace MooSharp.Tests;
 
@@ -8,34 +9,29 @@ public class WorldInitializerTests
     [Fact]
     public async Task InitializeAsync_LoadsExistingRooms()
     {
-        var store = new InMemoryWorldStore();
         var existingRoom = CreateRoom("existing");
-        await store.SaveRoomsAsync([existingRoom]);
-
-        var seeder = new TestWorldSeeder([CreateRoom("seed")]);
-        var world = new World(store, NullLogger<World>.Instance);
-        var initializer = new WorldInitializer(world, store, seeder, NullLogger<WorldInitializer>.Instance);
+        var (initializer, store, seeder, world) = await CreateInitializerAsync(existingRoomToPersist: existingRoom);
 
         await initializer.InitializeAsync();
 
         Assert.Equal(existingRoom.Id, Assert.Single(world.Rooms).Key);
-        Assert.False(seeder.WasCalled);
+        seeder.DidNotReceiveWithAnyArgs().GetSeedRooms();
     }
 
     [Fact]
     public async Task InitializeAsync_SeedsAndPersistsWhenStoreEmpty()
     {
-        var store = new InMemoryWorldStore();
         var seedRoom = CreateRoom("seed");
-        var seeder = new TestWorldSeeder([seedRoom]);
-        var world = new World(store, NullLogger<World>.Instance);
-        var initializer = new WorldInitializer(world, store, seeder, NullLogger<WorldInitializer>.Instance);
+        var seeder = Substitute.For<IWorldSeeder>();
+        seeder.GetSeedRooms().Returns([seedRoom]);
+
+        var (initializer, store, _, world) = await CreateInitializerAsync(seeder: seeder);
 
         await initializer.InitializeAsync();
 
         var room = Assert.Single(world.Rooms).Value;
         Assert.Equal(seedRoom.Id, room.Id);
-        Assert.True(seeder.WasCalled);
+        seeder.Received(1).GetSeedRooms();
 
         var persisted = await store.LoadRoomsAsync();
         Assert.Equal(seedRoom.Id, Assert.Single(persisted).Id);
@@ -44,11 +40,11 @@ public class WorldInitializerTests
     [Fact]
     public async Task InitializeAsync_WithProvidedRoomsPersists()
     {
-        var store = new InMemoryWorldStore();
         var providedRoom = CreateRoom("provided");
-        var seeder = new TestWorldSeeder(Array.Empty<Room>());
-        var world = new World(store, NullLogger<World>.Instance);
-        var initializer = new WorldInitializer(world, store, seeder, NullLogger<WorldInitializer>.Instance);
+        var seeder = Substitute.For<IWorldSeeder>();
+        seeder.GetSeedRooms().Returns(Array.Empty<Room>());
+
+        var (initializer, store, _, world) = await CreateInitializerAsync(seeder: seeder);
 
         await initializer.InitializeAsync([providedRoom]);
 
@@ -56,6 +52,7 @@ public class WorldInitializerTests
 
         var persisted = await store.LoadRoomsAsync();
         Assert.Equal(providedRoom.Id, Assert.Single(persisted).Id);
+        seeder.DidNotReceiveWithAnyArgs().GetSeedRooms();
     }
 
     private static Room CreateRoom(string slug)
@@ -71,14 +68,21 @@ public class WorldInitializerTests
         };
     }
 
-    private sealed class TestWorldSeeder(IReadOnlyCollection<Room> rooms) : IWorldSeeder
+    private static async Task<(WorldInitializer Initializer, InMemoryWorldStore Store, IWorldSeeder Seeder, World World)> CreateInitializerAsync(
+        IWorldSeeder? seeder = null,
+        Room? existingRoomToPersist = null)
     {
-        public bool WasCalled { get; private set; }
+        var store = new InMemoryWorldStore();
 
-        public IReadOnlyCollection<Room> GetSeedRooms()
+        if (existingRoomToPersist is not null)
         {
-            WasCalled = true;
-            return rooms;
+            await store.SaveRoomsAsync([existingRoomToPersist]);
         }
+
+        var worldSeeder = seeder ?? Substitute.For<IWorldSeeder>();
+        var world = new World(store, NullLogger<World>.Instance);
+        var initializer = new WorldInitializer(world, store, worldSeeder, NullLogger<WorldInitializer>.Instance);
+
+        return (initializer, store, worldSeeder, world);
     }
 }
