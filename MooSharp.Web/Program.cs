@@ -1,9 +1,5 @@
-using System.Reflection;
-using System.Threading.Channels;
-using Microsoft.SemanticKernel;
+using Microsoft.Extensions.DependencyInjection;
 using MooSharp;
-using MooSharp.Agents;
-using MooSharp.Persistence;
 using MooSharp.Web;
 using MooSharp.Web.Components;
 using MooSharp.Web.Endpoints;
@@ -25,6 +21,8 @@ builder.RegisterPresenters();
 
 var app = builder.Build();
 
+await InitializeWorldAsync(app.Services);
+
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Error", createScopeForErrors: true);
@@ -42,4 +40,12 @@ app.MapPlayerCountEndpoint();
 app.MapHub<MooHub>("/moohub");
 
 await app.RunAsync();
+
+static async Task InitializeWorldAsync(IServiceProvider serviceProvider)
+{
+    using var scope = serviceProvider.CreateScope();
+    var initializer = scope.ServiceProvider.GetRequiredService<WorldInitializer>();
+
+    await initializer.InitializeAsync();
+}
 

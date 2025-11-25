@@ -17,6 +17,7 @@ public class World(IWorldStore worldStore, ILogger<World> logger)
         ArgumentNullException.ThrowIfNull(rooms);
 
         _rooms.Clear();
+        _playerLocations.Clear();
 
         foreach (var room in rooms)
         {
