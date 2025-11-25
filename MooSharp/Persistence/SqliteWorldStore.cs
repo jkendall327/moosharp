@@ -17,7 +17,9 @@ public class SqliteWorldStore : IWorldStore
         _connectionString = new SqliteConnectionStringBuilder
         {
             DataSource = databasePath,
-            Mode = SqliteOpenMode.ReadWriteCreate
+            Mode = SqliteOpenMode.ReadWriteCreate,
+            // Ensure Foreign Keys are enforced
+            ForeignKeys = true
         }.ToString();
 
         DapperTypeHandlerConfiguration.ConfigureRoomIdHandler();
@@ -52,8 +54,9 @@ public class SqliteWorldStore : IWorldStore
                 ExitText = r.ExitText
             });
 
+        // We no longer load 'Direction'. We simply load the connections.
         var exits = await connection.QueryAsync<ExitRecord>(
-            "SELECT FromRoomId, Direction, ToRoomId FROM Exits");
+            "SELECT FromRoomId, ToRoomId FROM Exits");
 
         foreach (var exit in exits)
         {
@@ -67,7 +70,9 @@ public class SqliteWorldStore : IWorldStore
                 continue;
             }
 
-            fromRoom.Exits[exit.Direction] = exit.ToRoomId;
+            // In a node graph, the "Direction" (command) to get to a room is usually just the target room's ID/Slug.
+            // e.g. "move side-room"
+            fromRoom.Exits[exit.ToRoomId.Value] = exit.ToRoomId;
         }
 
         return roomDictionary.Values.ToList();
@@ -93,16 +98,18 @@ public class SqliteWorldStore : IWorldStore
 
     public async Task SaveExitAsync(RoomId fromRoomId, RoomId toRoomId, string direction, CancellationToken cancellationToken = default)
     {
+        // Note: We ignore the 'direction' string parameter here because the schema 
+        // now treats the relationship purely as From->To. 
+        
         await using var connection = new SqliteConnection(_connectionString);
 
         const string sql = """
-            INSERT INTO Exits (FromRoomId, Direction, ToRoomId)
-            VALUES (@FromRoomId, @Direction, @ToRoomId)
-            ON CONFLICT(FromRoomId, Direction) DO UPDATE SET
-                ToRoomId = excluded.ToRoomId;
+            INSERT INTO Exits (FromRoomId, ToRoomId)
+            VALUES (@FromRoomId, @ToRoomId)
+            ON CONFLICT(FromRoomId, ToRoomId) DO NOTHING;
             """;
 
-        await connection.ExecuteAsync(sql, new { FromRoomId = fromRoomId, Direction = direction, ToRoomId = toRoomId });
+        await connection.ExecuteAsync(sql, new { FromRoomId = fromRoomId, ToRoomId = toRoomId });
     }
 
     public async Task SaveRoomsAsync(IEnumerable<Room> rooms, CancellationToken cancellationToken = default)
@@ -124,20 +131,28 @@ public class SqliteWorldStore : IWorldStore
             """;
 
         const string insertExitSql = """
-            INSERT INTO Exits (FromRoomId, Direction, ToRoomId)
-            VALUES (@FromRoomId, @Direction, @ToRoomId)
-            ON CONFLICT(FromRoomId, Direction) DO UPDATE SET
-                ToRoomId = excluded.ToRoomId;
+            INSERT INTO Exits (FromRoomId, ToRoomId)
+            VALUES (@FromRoomId, @ToRoomId)
+            ON CONFLICT(FromRoomId, ToRoomId) DO NOTHING;
             """;
 
+        // IMPORTANT FIX:
+        // We must save ALL rooms first. 
+        // If we save Room A and its exits immediately, Room A might point to Room B 
+        // which hasn't been inserted yet, triggering a Foreign Key violation.
+        
+        // 1. Save all Rooms
         foreach (var room in rooms)
         {
             await connection.ExecuteAsync(insertRoomSql, room, transaction);
+        }
 
+        // 2. Save all Exits
+        foreach (var room in rooms)
+        {
             var exits = room.Exits.Select(exit => new
             {
                 FromRoomId = room.Id,
-                Direction = exit.Key,
                 ToRoomId = exit.Value
             });
 
@@ -180,21 +195,22 @@ public class SqliteWorldStore : IWorldStore
             );
             """);
 
+        // Schema changed: Removed 'Direction'. PK is now composite of From/To.
         connection.Execute(
             """
             CREATE TABLE IF NOT EXISTS Exits
             (
                 FromRoomId TEXT NOT NULL,
-                Direction TEXT NOT NULL,
                 ToRoomId TEXT NOT NULL,
-                PRIMARY KEY (FromRoomId, Direction),
-                FOREIGN KEY (FromRoomId) REFERENCES Rooms(Id),
-                FOREIGN KEY (ToRoomId) REFERENCES Rooms(Id)
+                PRIMARY KEY (FromRoomId, ToRoomId),
+                FOREIGN KEY (FromRoomId) REFERENCES Rooms(Id) ON DELETE CASCADE,
+                FOREIGN KEY (ToRoomId) REFERENCES Rooms(Id) ON DELETE CASCADE
             );
             """);
     }
 
     private record RoomRecord(RoomId Id, string Name, string Description, string LongDescription, string EnterText, string ExitText);
 
-    private record ExitRecord(RoomId FromRoomId, string Direction, RoomId ToRoomId);
+    // Removed Direction from record
+    private record ExitRecord(RoomId FromRoomId, RoomId ToRoomId);
 }
