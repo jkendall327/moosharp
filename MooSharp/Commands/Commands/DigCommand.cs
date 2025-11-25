@@ -45,6 +45,14 @@ public class RoomCreatedEventFormatter : IGameEventFormatter<RoomCreatedEvent>
     public string FormatForObserver(RoomCreatedEvent gameEvent) => $"{gameEvent.Player.Username} digs a passage to '{gameEvent.Room.Name}'.";
 }
 
+public record RoomAlreadyExistsEvent(string Slug) : IGameEvent;
+
+public class RoomAlreadyExistsEventFormatter : IGameEventFormatter<RoomAlreadyExistsEvent>
+{
+    public string FormatForActor(RoomAlreadyExistsEvent gameEvent) => $"A room with the slug '{gameEvent.Slug}' already exists.";
+    public string? FormatForObserver(RoomAlreadyExistsEvent gameEvent) => null;
+}
+
 public class DigHandler(World world, SlugCreator slugCreator) : IHandler<DigCommand>
 {
     private const string DefaultEnterText = "You step inside.";
@@ -79,13 +87,13 @@ public class DigHandler(World world, SlugCreator slugCreator) : IHandler<DigComm
 
         if (world.Rooms.ContainsKey(slug))
         {
-            result.Add(player, new SystemMessageEvent($"A room with the slug '{slug}' already exists."));
+            result.Add(player, new RoomAlreadyExistsEvent(slug));
             return result;
         }
 
         if (world.Rooms.Values.SelectMany(r => r.Exits.Keys).Any(e => string.Equals(e, slug, StringComparison.OrdinalIgnoreCase)))
         {
-            result.Add(player, new SystemMessageEvent($"An exit named '{slug}' already exists somewhere in the world."));
+            result.Add(player, new RoomAlreadyExistsEvent(slug));
             return result;
         }
 
