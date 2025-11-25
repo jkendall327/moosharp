@@ -167,10 +167,8 @@ public class AmbiguousInputEventFormatter : IGameEventFormatter<AmbiguousInputEv
 
 public class PlayerSaidEventFormatter : IGameEventFormatter<PlayerSaidEvent>
 {
-    public string FormatForActor(PlayerSaidEvent gameEvent) => $"You say, \"{gameEvent.Message}\"";
-
-    public string FormatForObserver(PlayerSaidEvent gameEvent) =>
-        $"{gameEvent.Player.Username} says, \"{gameEvent.Message}\"";
+    public string FormatForActor(PlayerSaidEvent gameEvent) => $"[{gameEvent.Player.Username}]: \"{gameEvent.Message}\"";
+    public string FormatForObserver(PlayerSaidEvent gameEvent) => FormatForActor(gameEvent);
 }
 
 public class PlayerEmotedEventFormatter : IGameEventFormatter<PlayerEmotedEvent>
