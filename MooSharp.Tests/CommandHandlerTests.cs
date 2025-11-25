@@ -397,13 +397,6 @@ public class CommandHandlerTests
         };
     }
 
-    private sealed class TestPlayerConnection : IPlayerConnection
-    {
-        public string Id { get; } = Guid.NewGuid().ToString();
-
-        public Task SendMessageAsync(string message) => Task.CompletedTask;
-    }
-
     private sealed class InMemoryWorldStore : IWorldStore
     {
         private readonly List<Room> _rooms = new();
