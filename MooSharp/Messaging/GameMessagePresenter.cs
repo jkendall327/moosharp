@@ -5,12 +5,12 @@ namespace MooSharp.Messaging;
 
 public interface IGameMessagePresenter
 {
-    string Present(GameMessage message);
+    string? Present(GameMessage message);
 }
 
 public class GameMessagePresenter(IEnumerable<IGameEventFormatter> formatters, ILogger<GameMessagePresenter> logger) : IGameMessagePresenter
 {
-    public string Present(GameMessage message)
+    public string? Present(GameMessage message)
     {
         var formatter = formatters.FirstOrDefault(f => f.CanFormat(message.Event));
 
@@ -24,7 +24,7 @@ public class GameMessagePresenter(IEnumerable<IGameEventFormatter> formatters, I
         {
             MessageAudience.Actor => formatter.FormatForActor(message.Event),
             MessageAudience.Observer => formatter.FormatForObserver(message.Event),
-            _ => string.Empty
+            var _ => throw new InvalidOperationException($"Invalid audience supplied for message: {message.Audience}")
         };
     }
 }

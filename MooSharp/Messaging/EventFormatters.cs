@@ -162,7 +162,7 @@ public class AmbiguousInputEventFormatter : IGameEventFormatter<AmbiguousInputEv
         return sb.ToString();
     }
 
-    public string FormatForObserver(AmbiguousInputEvent evt) => null!;
+    public string? FormatForObserver(AmbiguousInputEvent evt) => null;
 }
 
 public class PlayerSaidEventFormatter : IGameEventFormatter<PlayerSaidEvent>
