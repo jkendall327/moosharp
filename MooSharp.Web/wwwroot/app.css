@@ -264,11 +264,14 @@ input:focus-visible {
     padding: 1rem;
     height: 360px;
     overflow-y: auto;
-    overflow-x: auto;
     width: 100%;
     max-width: 100%;
     font-size: 0.95rem;
     line-height: 1.4;
+
+    white-space: pre-wrap;       /* Preserves formatting but wraps text */
+    word-wrap: break-word;       /* breaks long words to prevent overflow */
+    overflow-wrap: break-word;   /* Standard syntax for word-wrap */
 }
 
 .status-message {
