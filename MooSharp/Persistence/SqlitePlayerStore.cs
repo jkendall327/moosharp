@@ -72,7 +72,7 @@ public class SqlitePlayerStore : IPlayerStore
         }
 
         var inventory = await connection.QueryAsync<InventoryItemDto>(
-            "SELECT ItemId as Id, Name, Description FROM PlayerInventory WHERE Username = @Username",
+            "SELECT ItemId as Id, Name, Description, TextContent FROM PlayerInventory WHERE Username = @Username",
             new { command.Username });
 
         player.Inventory = inventory.ToList();
@@ -130,11 +130,14 @@ public class SqlitePlayerStore : IPlayerStore
                 Username TEXT NOT NULL,
                 Name TEXT NOT NULL,
                 Description TEXT NOT NULL,
+                TextContent TEXT,
                 FOREIGN KEY (Username) REFERENCES Players (Username) ON DELETE CASCADE
             );
             """);
 
         connection.Execute("CREATE INDEX IF NOT EXISTS IX_PlayerInventory_Username ON PlayerInventory (Username);");
+
+        EnsureTextContentColumn(connection);
     }
 
     private async Task ReplaceInventoryAsync(Player player)
@@ -154,8 +157,8 @@ public class SqlitePlayerStore : IPlayerStore
         const string deleteSql = "DELETE FROM PlayerInventory WHERE Username = @Username";
         const string insertSql =
             """
-            INSERT INTO PlayerInventory (ItemId, Username, Name, Description)
-            VALUES (@ItemId, @Username, @Name, @Description);
+            INSERT INTO PlayerInventory (ItemId, Username, Name, Description, TextContent)
+            VALUES (@ItemId, @Username, @Name, @Description, @TextContent);
             """;
 
         await connection.ExecuteAsync(deleteSql, new { player.Username }, transaction);
@@ -166,8 +169,25 @@ public class SqlitePlayerStore : IPlayerStore
         }
 
         var items = player.Inventory
-            .Select(o => new { ItemId = o.Id.Value.ToString(), player.Username, o.Name, o.Description });
+            .Select(o => new { ItemId = o.Id.Value.ToString(), player.Username, o.Name, o.Description, o.TextContent });
 
         await connection.ExecuteAsync(insertSql, items, transaction);
     }
+
+    private static void EnsureTextContentColumn(SqliteConnection connection)
+    {
+        var columns = connection
+            .Query<TableInfo>("PRAGMA table_info(PlayerInventory);")
+            .Select(info => info.name)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        if (columns.Contains("TextContent"))
+        {
+            return;
+        }
+
+        connection.Execute("ALTER TABLE PlayerInventory ADD COLUMN TextContent TEXT;");
+    }
+
+    private sealed record TableInfo(string name);
 }
