@@ -11,6 +11,7 @@ public class World(IWorldStore worldStore, ILogger<World> logger)
     private readonly Dictionary<RoomId, Room> _rooms = new();
 
     private readonly Dictionary<Player, Room> _playerLocations = [];
+    private readonly object _locationLock = new();
 
     public void Initialize(IEnumerable<Room> rooms)
     {
@@ -27,34 +28,43 @@ public class World(IWorldStore worldStore, ILogger<World> logger)
 
     public Room? GetPlayerLocation(Player player)
     {
-        _ = _playerLocations.TryGetValue(player, out var room);
+        lock (_locationLock)
+        {
+            _ = _playerLocations.TryGetValue(player, out var room);
 
-        return room;
+            return room;
+        }
     }
 
     public void MovePlayer(Player player, Room destination)
     {
         ArgumentNullException.ThrowIfNull(destination);
 
-        var origin = GetPlayerLocation(player);
-
-        if (origin == destination)
+        lock (_locationLock)
         {
-            return;
+            _playerLocations.TryGetValue(player, out var origin);
+
+            if (origin == destination)
+            {
+                return;
+            }
+
+            origin?.RemovePlayer(player);
+
+            destination.AddPlayer(player);
+
+            _playerLocations[player] = destination;
         }
-
-        origin?.RemovePlayer(player);
-
-        destination.AddPlayer(player);
-
-        _playerLocations[player] = destination;
     }
 
     public void RemovePlayer(Player player)
     {
-        if (_playerLocations.Remove(player, out var location))
+        lock (_locationLock)
         {
-            location.RemovePlayer(player);
+            if (_playerLocations.Remove(player, out var location))
+            {
+                location.RemovePlayer(player);
+            }
         }
     }
 

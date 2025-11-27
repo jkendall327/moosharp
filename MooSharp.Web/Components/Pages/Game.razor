@@ -2,8 +2,12 @@
 @inject NavigationManager Navigation
 @inject ILogger<Game> Logger
 @inject IJSRuntime JS
+@using MooSharp
+@using System.Linq
 @using System.Text
+@using System.Text.Json
 @using Microsoft.AspNetCore.SignalR.Client
+@using Microsoft.AspNetCore.Components
 @using MooSharp.Messaging
 @implements IAsyncDisposable
 @rendermode InteractiveServer
@@ -53,6 +57,7 @@ else
                         <input @bind="_commandInput"
                                @bind:event="oninput"
                                @onkeydown="HandleKeyDown"
+                               @ref="_commandInputRef"
                                placeholder="Type a command..." />
                         <div class="command-actions">
                             <button class="btn btn-accent" @onclick="SendCommandAsync">Send</button>
@@ -90,6 +95,8 @@ else
 
 @code {
     private const string SessionStorageKey = "mooSharpSession";
+    private const string CommandHistoryStorageKey = "mooSharpCommandHistory";
+    private const int CommandHistoryLimit = 20;
 
     private HubConnection? _hubConnection;
     private readonly StringBuilder _gameOutput = new();
@@ -99,6 +106,10 @@ else
     private string _loginStatus = string.Empty;
     private bool _isLoggedIn;
     private string _sessionId = string.Empty;
+    private ElementReference _commandInputRef;
+    private readonly List<string> _commandHistory = new();
+    private int _historyIndex = -1;
+    private string _commandDraft = string.Empty;
     private readonly string[] _channels = [ChatChannels.Global, ChatChannels.Newbie, ChatChannels.Trade];
     private readonly Dictionary<string, bool> _channelMuteState = new(StringComparer.OrdinalIgnoreCase);
 
@@ -117,6 +128,8 @@ else
         }
 
         _initialized = true;
+
+        await LoadCommandHistoryAsync();
 
         await InitializeAsync();
     }
@@ -198,10 +211,27 @@ else
 
     private async Task HandleKeyDown(KeyboardEventArgs e)
     {
-        if (e.Key == "Enter")
+        switch (e.Key)
         {
-            await SendCommandAsync();
+            case "Enter":
+                await SendCommandAsync();
+                break;
+            case "ArrowUp":
+                NavigateHistory(-1);
+                break;
+            case "ArrowDown":
+                NavigateHistory(1);
+                break;
+            case "Tab":
+                await HandleAutocompleteAsync();
+                break;
+            default:
+                _historyIndex = -1;
+                _commandDraft = string.Empty;
+                break;
         }
+
+        await FocusCommandInputAsync();
     }
 
     private async Task HandlePasswordKeyDown(KeyboardEventArgs e)
@@ -230,7 +260,12 @@ else
             throw;
         }
 
+        AddCommandToHistory(_commandInput);
+        await SaveCommandHistoryAsync();
+
         _commandInput = string.Empty;
+        _historyIndex = -1;
+        _commandDraft = string.Empty;
     }
 
     private async Task LoginAsync()
@@ -381,6 +416,174 @@ else
         }
     }
 
+    private void NavigateHistory(int delta)
+    {
+        if (_commandHistory.Count == 0)
+        {
+            return;
+        }
+
+        if (_historyIndex == -1)
+        {
+            _commandDraft = _commandInput;
+            _historyIndex = _commandHistory.Count;
+        }
+
+        var nextIndex = Math.Clamp(_historyIndex + delta, 0, _commandHistory.Count);
+
+        if (nextIndex == _commandHistory.Count)
+        {
+            _historyIndex = -1;
+            _commandInput = _commandDraft;
+            return;
+        }
+
+        _historyIndex = nextIndex;
+        _commandInput = _commandHistory[_historyIndex];
+    }
+
+    private async Task HandleAutocompleteAsync()
+    {
+        if (_hubConnection is null || !_isLoggedIn)
+        {
+            return;
+        }
+
+        var options = await _hubConnection.InvokeAsync<AutocompleteOptions>(nameof(MooHub.GetAutocompleteOptions));
+
+        var candidates = options.Exits
+            .Concat(options.InventoryItems)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        if (candidates.Count == 0)
+        {
+            return;
+        }
+
+        var (prefix, fragment) = SplitCommandInput();
+
+        if (string.IsNullOrWhiteSpace(fragment))
+        {
+            return;
+        }
+
+        var matches = candidates
+            .Where(c => c.StartsWith(fragment, StringComparison.OrdinalIgnoreCase))
+            .ToList();
+
+        if (matches.Count == 0)
+        {
+            return;
+        }
+
+        var completion = matches.Count == 1
+            ? matches[0]
+            : FindCommonPrefix(matches, fragment);
+
+        _commandInput = $"{prefix}{completion}";
+    }
+
+    private (string Prefix, string Fragment) SplitCommandInput()
+    {
+        var trimmedInput = _commandInput;
+        var lastSpaceIndex = trimmedInput.LastIndexOf(' ');
+
+        if (lastSpaceIndex == -1)
+        {
+            return (string.Empty, trimmedInput);
+        }
+
+        var prefix = trimmedInput[..(lastSpaceIndex + 1)];
+        var fragment = trimmedInput[(lastSpaceIndex + 1)..];
+
+        return (prefix, fragment);
+    }
+
+    private static string FindCommonPrefix(List<string> options, string seed)
+    {
+        if (options.Count == 0)
+        {
+            return seed;
+        }
+
+        var comparison = StringComparison.OrdinalIgnoreCase;
+        var prefix = seed;
+        var reference = options[0];
+
+        for (var i = seed.Length; i < reference.Length; i++)
+        {
+            var candidate = reference[..(i + 1)];
+
+            if (options.Any(option => !option.StartsWith(candidate, comparison)))
+            {
+                break;
+            }
+
+            prefix = candidate;
+        }
+
+        return prefix;
+    }
+
+    private async Task LoadCommandHistoryAsync()
+    {
+        var historyJson = await JS.InvokeAsync<string?>("localStorage.getItem", CommandHistoryStorageKey);
+
+        if (string.IsNullOrWhiteSpace(historyJson))
+        {
+            return;
+        }
+
+        var history = JsonSerializer.Deserialize<List<string>>(historyJson);
+
+        if (history is null)
+        {
+            return;
+        }
+
+        foreach (var command in history.TakeLast(CommandHistoryLimit))
+        {
+            AddCommandToHistory(command);
+        }
+    }
+
+    private async Task SaveCommandHistoryAsync()
+    {
+        var historyJson = JsonSerializer.Serialize(_commandHistory.TakeLast(CommandHistoryLimit).ToList());
+
+        await JS.InvokeVoidAsync("localStorage.setItem", CommandHistoryStorageKey, historyJson);
+    }
+
+    private void AddCommandToHistory(string command)
+    {
+        var trimmed = command.Trim();
+
+        if (string.IsNullOrWhiteSpace(trimmed))
+        {
+            return;
+        }
+
+        _commandHistory.Remove(trimmed);
+        _commandHistory.Add(trimmed);
+
+        if (_commandHistory.Count > CommandHistoryLimit)
+        {
+            _commandHistory.RemoveAt(0);
+        }
+    }
+
+    private async Task FocusCommandInputAsync()
+    {
+        if (_commandInputRef.Context is null)
+        {
+            return;
+        }
+
+        await Task.Yield();
+        await _commandInputRef.FocusAsync();
+    }
+
     public async ValueTask DisposeAsync()
     {
         if (_hubConnection is not null)
@@ -389,5 +592,4 @@ else
             await _hubConnection.DisposeAsync();
         }
     }
-
 }
