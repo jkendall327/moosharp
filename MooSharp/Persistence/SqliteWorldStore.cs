@@ -165,6 +165,21 @@ public class SqliteWorldStore : IWorldStore
         await transaction.CommitAsync(cancellationToken);
     }
 
+    public async Task UpdateRoomDescriptionAsync(RoomId roomId, string description, string longDescription,
+        CancellationToken cancellationToken = default)
+    {
+        await using var connection = new SqliteConnection(_connectionString);
+
+        const string sql = """
+            UPDATE Rooms
+            SET Description = @Description,
+                LongDescription = @LongDescription
+            WHERE Id = @Id;
+            """;
+
+        await connection.ExecuteAsync(sql, new { Id = roomId, Description = description, LongDescription = longDescription });
+    }
+
     private static void InitializeDatabase(string databasePath)
     {
         var directory = Path.GetDirectoryName(databasePath);

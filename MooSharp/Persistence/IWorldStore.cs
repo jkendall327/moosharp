@@ -13,4 +13,7 @@ public interface IWorldStore
     Task SaveExitAsync(RoomId fromRoomId, RoomId toRoomId, string direction, CancellationToken cancellationToken = default);
 
     Task SaveRoomsAsync(IEnumerable<Room> rooms, CancellationToken cancellationToken = default);
+
+    Task UpdateRoomDescriptionAsync(RoomId roomId, string description, string longDescription,
+        CancellationToken cancellationToken = default);
 }

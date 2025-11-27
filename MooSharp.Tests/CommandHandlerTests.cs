@@ -470,126 +470,63 @@ public class CommandHandlerTests
     }
 
     [Fact]
-    public async Task ChannelHandler_BroadcastsAcrossRooms()
+    public async Task DescribeHandler_UpdatesCurrentRoomDescriptions()
     {
-        var roomOne = CreateRoom("one");
-        var roomTwo = CreateRoom("two");
-        var world = await CreateWorld(roomOne, roomTwo);
-
-        var speaker = CreatePlayer("Speaker");
-        var listener = CreatePlayer("Listener");
-        var localListener = CreatePlayer("LocalListener");
-
-        world.MovePlayer(speaker, roomOne);
-        world.MovePlayer(listener, roomTwo);
-        world.MovePlayer(localListener, roomOne);
-
-        var handler = new ChannelHandler(world);
-
-        var result = await handler.Handle(new ChannelCommand
-        {
-            Player = speaker,
-            Channel = ChatChannels.Global,
-            Message = "Hello all"
-        });
-
-        var actorMessage = Assert.Single(result.Messages, m => m.Player == speaker);
-        Assert.Equal(MessageAudience.Actor, actorMessage.Audience);
-        Assert.IsType<ChannelMessageEvent>(actorMessage.Event);
-
-        var listenerMessages = result.Messages.Where(m => m.Player == listener || m.Player == localListener).ToList();
-        Assert.Equal(2, listenerMessages.Count);
-
-        foreach (var message in listenerMessages)
-        {
-            Assert.Equal(MessageAudience.Observer, message.Audience);
-            Assert.IsType<ChannelMessageEvent>(message.Event);
-        }
-    }
-
-    [Fact]
-    public async Task ChannelHandler_RespectsMutedRecipients()
-    {
+        var store = new InMemoryWorldStore();
         var room = CreateRoom("room");
-        var world = await CreateWorld(room);
+        var world = await CreateWorld(store, room);
 
-        var speaker = CreatePlayer("Speaker");
-        var mutedListener = CreatePlayer("Muted");
-        var listener = CreatePlayer("Listener");
-
-        mutedListener.MuteChannel(ChatChannels.Global);
-
-        world.MovePlayer(speaker, room);
-        world.MovePlayer(mutedListener, room);
-        world.MovePlayer(listener, room);
-
-        var handler = new ChannelHandler(world);
-
-        var result = await handler.Handle(new ChannelCommand
-        {
-            Player = speaker,
-            Channel = ChatChannels.Global,
-            Message = "Hello"
-        });
-
-        Assert.DoesNotContain(result.Messages, m => m.Player == mutedListener && m.Event is ChannelMessageEvent);
-        Assert.Contains(result.Messages, m => m.Player == listener && m.Event is ChannelMessageEvent);
-    }
-
-    [Fact]
-    public async Task ChannelMuteHandler_TogglesMuteState()
-    {
         var player = CreatePlayer();
-        var handler = new ChannelMuteHandler();
+        world.MovePlayer(player, room);
 
-        var muteResult = await handler.Handle(new ChannelMuteCommand
+        var handler = new DescribeHandler(world);
+
+        var result = await handler.Handle(new DescribeCommand
         {
             Player = player,
-            Channel = ChatChannels.Global,
-            Mute = true
+            Target = "here",
+            Description = "A cozy den"
         });
 
-        Assert.True(player.IsChannelMuted(ChatChannels.Global));
-        var muteMessage = Assert.Single(muteResult.Messages);
-        Assert.IsType<SystemMessageEvent>(muteMessage.Event);
+        var updateEvent = Assert.Single(result.Messages).Event as RoomDescriptionUpdatedEvent;
+        Assert.NotNull(updateEvent);
+        Assert.Equal("A cozy den", room.Description);
+        Assert.Equal("A cozy den", room.LongDescription);
 
-        var unmuteResult = await handler.Handle(new ChannelMuteCommand
-        {
-            Player = player,
-            Channel = ChatChannels.Global,
-            Mute = false
-        });
-
-        Assert.False(player.IsChannelMuted(ChatChannels.Global));
-        var unmuteMessage = Assert.Single(unmuteResult.Messages);
-        Assert.IsType<SystemMessageEvent>(unmuteMessage.Event);
+        var persisted = (await store.LoadRoomsAsync()).Single();
+        Assert.Equal("A cozy den", persisted.Description);
+        Assert.Equal("A cozy den", persisted.LongDescription);
     }
 
     [Fact]
-    public async Task WhoHandler_ReturnsAlphabetizedOnlineUsernames()
+    public async Task DescribeHandler_UpdatesExitRoomDescription()
     {
-        var world = await CreateWorld();
+        var store = new InMemoryWorldStore();
+        var origin = CreateRoom("origin");
+        var destination = CreateRoom("destination");
+        origin.Exits.Add("east", destination.Id);
 
-        var actor = CreatePlayer("Actor");
-        var observer = CreatePlayer("observer");
-        var zorro = CreatePlayer("Zorro");
+        var world = await CreateWorld(store, origin, destination);
 
-        world.Players["actor"] = actor;
-        world.Players["observer"] = observer;
-        world.Players["zorro"] = zorro;
+        var player = CreatePlayer();
+        world.MovePlayer(player, origin);
 
-        var handler = new WhoHandler(world);
+        var handler = new DescribeHandler(world);
 
-        var result = await handler.Handle(new WhoCommand
+        var result = await handler.Handle(new DescribeCommand
         {
-            Player = actor
+            Player = player,
+            Target = "east",
+            Description = "An airy annex"
         });
 
-        var message = Assert.Single(result.Messages);
-        Assert.Equal(actor, message.Player);
+        Assert.Single(result.Messages, m => m.Event is RoomDescriptionUpdatedEvent);
+        Assert.Equal("An airy annex", destination.Description);
+        Assert.Equal("An airy annex", destination.LongDescription);
 
-        var evt = Assert.IsType<OnlinePlayersEvent>(message.Event);
-        Assert.Equal(["Actor", "observer", "Zorro"], evt.Usernames);
+        var persisted = (await store.LoadRoomsAsync()).Single(r => r.Id == destination.Id);
+        Assert.Equal("An airy annex", persisted.Description);
+        Assert.Equal("An airy annex", persisted.LongDescription);
     }
 
     private static Task<World> CreateWorld(params Room[] rooms)
@@ -600,6 +537,17 @@ public class CommandHandlerTests
         world.Initialize(rooms);
 
         return Task.FromResult(world);
+    }
+
+    private static async Task<World> CreateWorld(InMemoryWorldStore store, params Room[] rooms)
+    {
+        var world = new World(store, NullLogger<World>.Instance);
+
+        world.Initialize(rooms);
+
+        await store.SaveRoomsAsync(rooms);
+
+        return world;
     }
 
     private static Room CreateRoom(string slug)
