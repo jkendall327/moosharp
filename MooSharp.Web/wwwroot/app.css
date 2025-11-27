@@ -279,6 +279,39 @@ input:focus-visible {
     color: var(--muted);
 }
 
+.channel-panel {
+    margin-top: 1rem;
+}
+
+.channel-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.65rem;
+}
+
+.channel-toggle {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.65rem 0.75rem;
+    border: 2px solid var(--border);
+    background: #050505;
+}
+
+.channel-toggle input {
+    width: 1.1rem;
+    height: 1.1rem;
+}
+
+.channel-label strong {
+    display: block;
+}
+
+.channel-label span {
+    color: var(--muted);
+    font-size: 0.9rem;
+}
+
 fieldset {
     border: none;
     padding: 0;

@@ -61,7 +61,7 @@ public class DropHandler(World world) : IHandler<DropCommand>
 
                 var dropEvent = new ItemDroppedEvent(item, player);
                 result.Add(player, dropEvent);
-                result.Broadcast(room, dropEvent, MessageAudience.Observer, player);
+                result.Broadcast(room.PlayersInRoom, dropEvent, MessageAudience.Observer, player);
                 break;
         }
 

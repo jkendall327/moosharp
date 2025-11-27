@@ -14,6 +14,7 @@ public class Object
     public required string Name { get; init; }
     public required string Description { get; init; }
     public IReadOnlyCollection<string> Keywords { get; } = new HashSet<string>(StringComparer.OrdinalIgnoreCase).ToFrozenSet();
+    public string? TextContent { get; private set; }
 
     public IContainer? Container { get; private set; }
 
@@ -33,6 +34,13 @@ public class Object
 
         destination.AddToContents(this);
         Container = destination;
+    }
+
+    public void WriteText(string text)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(text);
+
+        TextContent = text.Trim();
     }
 
     public override string ToString() => Name;

@@ -40,7 +40,7 @@ public class EmoteHandler(World world) : IHandler<EmoteCommand>
 
         var gameEvent = new PlayerEmotedEvent(cmd.Player, content);
 
-        result.Broadcast(room, gameEvent);
+        result.Broadcast(room.PlayersInRoom, gameEvent);
 
         return Task.FromResult(result);
     }

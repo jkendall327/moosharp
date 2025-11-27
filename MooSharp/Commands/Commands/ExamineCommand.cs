@@ -109,9 +109,25 @@ public record ObjectExaminedEvent(Object Item) : IGameEvent;
 
 public class ObjectExaminedEventFormatter : IGameEventFormatter<ObjectExaminedEvent>
 {
-    public string FormatForActor(ObjectExaminedEvent gameEvent) => gameEvent.Item.Description;
+    public string FormatForActor(ObjectExaminedEvent gameEvent)
+        => FormatDescription(gameEvent.Item);
 
-    public string FormatForObserver(ObjectExaminedEvent gameEvent) => gameEvent.Item.Description;
+    public string FormatForObserver(ObjectExaminedEvent gameEvent)
+        => FormatDescription(gameEvent.Item);
+
+    private static string FormatDescription(Object item)
+    {
+        var sb = new StringBuilder();
+
+        sb.AppendLine(item.Description);
+
+        if (!string.IsNullOrWhiteSpace(item.TextContent))
+        {
+            sb.AppendLine("There is something written on it.");
+        }
+
+        return sb.ToString().TrimEnd();
+    }
 }
 
 public record AmbiguousInputEvent(string Input, IReadOnlyCollection<Object> Candidates) : IGameEvent;
