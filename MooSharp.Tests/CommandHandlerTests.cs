@@ -321,6 +321,105 @@ public class CommandHandlerTests
     }
 
     [Fact]
+    public async Task WriteHandler_WritesOnRoomObjectAndBroadcasts()
+    {
+        var room = CreateRoom("room");
+        var world = await CreateWorld(room);
+
+        var writer = CreatePlayer("Writer");
+        var observer = CreatePlayer("Observer");
+        world.MovePlayer(writer, room);
+        world.MovePlayer(observer, room);
+
+        var item = new Object
+        {
+            Name = "Sign",
+            Description = "A wooden sign"
+        };
+
+        item.MoveTo(room);
+
+        var handler = new WriteHandler(world);
+
+        var result = await handler.Handle(new WriteCommand
+        {
+            Player = writer,
+            Target = "Sign",
+            Text = "welcome"
+        });
+
+        Assert.Equal("welcome", item.TextContent);
+
+        var actorMessage = Assert.Single(result.Messages, m => m.Player == writer);
+        Assert.IsType<ObjectWrittenOnEvent>(actorMessage.Event);
+
+        var observerMessage = Assert.Single(result.Messages, m => m.Player == observer);
+        Assert.Equal(MessageAudience.Observer, observerMessage.Audience);
+        Assert.IsType<ObjectWrittenOnEvent>(observerMessage.Event);
+    }
+
+    [Fact]
+    public async Task ReadHandler_ReturnsObjectReadEventWhenTextPresent()
+    {
+        var room = CreateRoom("room");
+        var world = await CreateWorld(room);
+
+        var player = CreatePlayer();
+        world.MovePlayer(player, room);
+
+        var item = new Object
+        {
+            Name = "Note",
+            Description = "A folded note"
+        };
+
+        item.WriteText("Meet me later");
+
+        item.MoveTo(room);
+
+        var handler = new ReadHandler(world);
+
+        var result = await handler.Handle(new ReadCommand
+        {
+            Player = player,
+            Target = "Note"
+        });
+
+        var message = Assert.Single(result.Messages);
+        var evt = Assert.IsType<ObjectReadEvent>(message.Event);
+        Assert.Same(item, evt.Item);
+    }
+
+    [Fact]
+    public async Task ReadHandler_ReturnsSystemMessageWhenNoText()
+    {
+        var room = CreateRoom("room");
+        var world = await CreateWorld(room);
+
+        var player = CreatePlayer();
+        world.MovePlayer(player, room);
+
+        var item = new Object
+        {
+            Name = "Note",
+            Description = "A folded note"
+        };
+
+        item.MoveTo(room);
+
+        var handler = new ReadHandler(world);
+
+        var result = await handler.Handle(new ReadCommand
+        {
+            Player = player,
+            Target = "Note"
+        });
+
+        var message = Assert.Single(result.Messages);
+        Assert.IsType<SystemMessageEvent>(message.Event);
+    }
+
+    [Fact]
     public async Task SayHandler_BroadcastsToRoom()
     {
         var room = CreateRoom("room");

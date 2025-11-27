@@ -124,6 +124,11 @@ public class WorldSeeder(IOptions<AppOptions> options, ILogger<WorldSeeder> logg
                 Name = objectDto.Name
             };
 
+            if (!string.IsNullOrWhiteSpace(objectDto.TextContent))
+            {
+                obj.WriteText(objectDto.TextContent);
+            }
+
             obj.MoveTo(room);
         }
     }

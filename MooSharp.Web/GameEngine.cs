@@ -284,13 +284,18 @@ public class GameEngine(
         };
 
         foreach (var item in dto.Inventory)
-        {
-            var obj = new Object
             {
-                Id = new ObjectId(Guid.Parse(item.Id)),
-                Name = item.Name,
-                Description = item.Description
-            };
+                var obj = new Object
+                {
+                    Id = new ObjectId(Guid.Parse(item.Id)),
+                    Name = item.Name,
+                    Description = item.Description
+                };
+
+                if (!string.IsNullOrWhiteSpace(item.TextContent))
+                {
+                    obj.WriteText(item.TextContent);
+                }
 
             obj.MoveTo(player);
         }
