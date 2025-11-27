@@ -21,12 +21,14 @@ public class CommandResult
         Messages.Add(new GameMessage(player, @event, audience));
     }
 
-    // Helper to broadcast to a room (excluding specific people usually)
-    public void Broadcast(Room room, IGameEvent @event, MessageAudience audience = MessageAudience.Observer, params Player[] exclude)
+    public void Broadcast(IEnumerable<Player> players, IGameEvent @event, MessageAudience audience = MessageAudience.Observer,
+        params Player[] exclude)
     {
-        foreach (var player in room.PlayersInRoom)
+        var excluded = exclude.ToHashSet();
+
+        foreach (var player in players)
         {
-            if (!exclude.Contains(player))
+            if (!excluded.Contains(player))
             {
                 Messages.Add(new (player, @event, audience));
             }
@@ -35,6 +37,12 @@ public class CommandResult
 
     public void BroadcastToAllButPlayer(Room room, Player player, IGameEvent @event, MessageAudience audience = MessageAudience.Observer)
     {
-        Broadcast(room, @event, audience, exclude: player);
+        Broadcast(room.PlayersInRoom, @event, audience, exclude: player);
+    }
+
+    public void BroadcastToAll(World world, IGameEvent @event, MessageAudience audience = MessageAudience.Observer,
+        params Player[] exclude)
+    {
+        Broadcast(world.Players.Values, @event, audience, exclude);
     }
 }
