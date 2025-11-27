@@ -1,11 +1,12 @@
 using System.Threading.Channels;
+using System.Linq;
 
 namespace MooSharp;
 
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Primitives;
 
-public class MooHub(ChannelWriter<GameInput> writer, ILogger<MooHub> logger) : Hub
+public class MooHub(ChannelWriter<GameInput> writer, ILogger<MooHub> logger, World world) : Hub
 {
     public override async Task OnConnectedAsync()
     {
@@ -48,6 +49,23 @@ public class MooHub(ChannelWriter<GameInput> writer, ILogger<MooHub> logger) : H
         }, GetSessionId()));
 
         return Task.CompletedTask;
+    }
+
+    public Task<AutocompleteOptions> GetAutocompleteOptions()
+    {
+        if (!world.Players.TryGetValue(Context.ConnectionId, out var player))
+        {
+            return Task.FromResult(new AutocompleteOptions([], []));
+        }
+
+        var room = world.GetPlayerLocation(player);
+
+        var exits = room?.Exits.Keys ?? Enumerable.Empty<string>();
+        var inventory = player.Inventory.Select(item => item.Name);
+
+        var options = new AutocompleteOptions(exits.ToList(), inventory.ToList());
+
+        return Task.FromResult(options);
     }
 
     public override async Task OnDisconnectedAsync(Exception? exception)
