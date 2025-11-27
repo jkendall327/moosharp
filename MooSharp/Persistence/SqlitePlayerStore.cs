@@ -136,8 +136,6 @@ public class SqlitePlayerStore : IPlayerStore
             """);
 
         connection.Execute("CREATE INDEX IF NOT EXISTS IX_PlayerInventory_Username ON PlayerInventory (Username);");
-
-        EnsureTextContentColumn(connection);
     }
 
     private async Task ReplaceInventoryAsync(Player player)
@@ -172,21 +170,6 @@ public class SqlitePlayerStore : IPlayerStore
             .Select(o => new { ItemId = o.Id.Value.ToString(), player.Username, o.Name, o.Description, o.TextContent });
 
         await connection.ExecuteAsync(insertSql, items, transaction);
-    }
-
-    private static void EnsureTextContentColumn(SqliteConnection connection)
-    {
-        var columns = connection
-            .Query<TableInfo>("PRAGMA table_info(PlayerInventory);")
-            .Select(info => info.name)
-            .ToHashSet(StringComparer.OrdinalIgnoreCase);
-
-        if (columns.Contains("TextContent"))
-        {
-            return;
-        }
-
-        connection.Execute("ALTER TABLE PlayerInventory ADD COLUMN TextContent TEXT;");
     }
 
     private sealed record TableInfo(string name);
