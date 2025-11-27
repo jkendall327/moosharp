@@ -62,6 +62,22 @@ internal sealed class InMemoryWorldStore : IWorldStore
         return Task.CompletedTask;
     }
 
+    public Task UpdateRoomDescriptionAsync(RoomId roomId, string description, string longDescription,
+        CancellationToken cancellationToken = default)
+    {
+        var existing = _rooms.SingleOrDefault(r => r.Id == roomId);
+
+        if (existing is null)
+        {
+            return Task.CompletedTask;
+        }
+
+        existing.Description = description;
+        existing.LongDescription = longDescription;
+
+        return Task.CompletedTask;
+    }
+
     private static Room CloneRoom(Room room)
     {
         var clone = new Room

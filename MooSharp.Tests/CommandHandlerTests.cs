@@ -345,6 +345,66 @@ public class CommandHandlerTests
         Assert.False(string.IsNullOrWhiteSpace(evt.Message));
     }
 
+    [Fact]
+    public async Task DescribeHandler_UpdatesCurrentRoomDescriptions()
+    {
+        var store = new InMemoryWorldStore();
+        var room = CreateRoom("room");
+        var world = await CreateWorld(store, room);
+
+        var player = CreatePlayer();
+        world.MovePlayer(player, room);
+
+        var handler = new DescribeHandler(world);
+
+        var result = await handler.Handle(new DescribeCommand
+        {
+            Player = player,
+            Target = "here",
+            Description = "A cozy den"
+        });
+
+        var updateEvent = Assert.Single(result.Messages).Event as RoomDescriptionUpdatedEvent;
+        Assert.NotNull(updateEvent);
+        Assert.Equal("A cozy den", room.Description);
+        Assert.Equal("A cozy den", room.LongDescription);
+
+        var persisted = (await store.LoadRoomsAsync()).Single();
+        Assert.Equal("A cozy den", persisted.Description);
+        Assert.Equal("A cozy den", persisted.LongDescription);
+    }
+
+    [Fact]
+    public async Task DescribeHandler_UpdatesExitRoomDescription()
+    {
+        var store = new InMemoryWorldStore();
+        var origin = CreateRoom("origin");
+        var destination = CreateRoom("destination");
+        origin.Exits.Add("east", destination.Id);
+
+        var world = await CreateWorld(store, origin, destination);
+
+        var player = CreatePlayer();
+        world.MovePlayer(player, origin);
+
+        var handler = new DescribeHandler(world);
+
+        var result = await handler.Handle(new DescribeCommand
+        {
+            Player = player,
+            Target = "east",
+            Description = "An airy annex"
+        });
+
+        Assert.Single(result.Messages, m => m.Event is RoomDescriptionUpdatedEvent);
+        Assert.Equal("An airy annex", destination.Description);
+        Assert.Equal("An airy annex", destination.LongDescription);
+
+        var persisted = (await store.LoadRoomsAsync()).Single(r => r.Id == destination.Id);
+        Assert.Equal("An airy annex", persisted.Description);
+        Assert.Equal("An airy annex", persisted.LongDescription);
+    }
+
     private static Task<World> CreateWorld(params Room[] rooms)
     {
         var store = new InMemoryWorldStore();
@@ -353,6 +413,17 @@ public class CommandHandlerTests
         world.Initialize(rooms);
 
         return Task.FromResult(world);
+    }
+
+    private static async Task<World> CreateWorld(InMemoryWorldStore store, params Room[] rooms)
+    {
+        var world = new World(store, NullLogger<World>.Instance);
+
+        world.Initialize(rooms);
+
+        await store.SaveRoomsAsync(rooms);
+
+        return world;
     }
 
     private static Room CreateRoom(string slug)

@@ -27,8 +27,8 @@ public class Room : IContainer
 {
     public RoomId Id { get; init; }
     public required string Name { get; init; }
-    public required string Description { get; init; }
-    public required string LongDescription { get; init; }
+    public required string Description { get; set; }
+    public required string LongDescription { get; set; }
     public required string EnterText { get; init; }
     public required string ExitText { get; init; }
     private readonly List<Object> _contents = new();

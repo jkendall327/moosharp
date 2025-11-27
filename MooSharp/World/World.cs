@@ -92,4 +92,18 @@ public class World(IWorldStore worldStore, ILogger<World> logger)
 
         await worldStore.SaveExitAsync(origin.Id, destination.Id, direction, cancellationToken);
     }
+
+    public async Task UpdateRoomDescriptionAsync(Room room, string description,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(room);
+        ArgumentException.ThrowIfNullOrWhiteSpace(description);
+
+        room.Description = description;
+        room.LongDescription = description;
+
+        await worldStore.UpdateRoomDescriptionAsync(room.Id, description, description, cancellationToken);
+
+        logger.LogInformation("Room {RoomName} ({RoomId}) description updated", room.Name, room.Id);
+    }
 }
