@@ -23,6 +23,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton(TimeProvider.System);
         services.AddSingleton<IPlayerStore, SqlitePlayerStore>();
         services.AddSingleton<IWorldStore, SqliteWorldStore>();
+        services.AddSingleton<IWorldClock, WorldClock>();
     }
     
     public static void AddMooSharpMessaging(this IServiceCollection services, IConfiguration config)
@@ -37,6 +38,7 @@ public static class ServiceCollectionExtensions
     {
         services.AddHostedService<GameEngine>();
         services.AddHostedService<AgentBackgroundService>();
+        services.AddHostedService<WorldClockService>();
     }
     
     public static void AddMooSharpOptions(this IServiceCollection services, IConfiguration config)
@@ -49,6 +51,11 @@ public static class ServiceCollectionExtensions
         services
             .AddOptionsWithValidateOnStart<AgentOptions>()
             .BindConfiguration(AgentOptions.SectionName)
+            .ValidateDataAnnotations();
+
+        services
+            .AddOptionsWithValidateOnStart<WorldClockOptions>()
+            .BindConfiguration(WorldClockOptions.SectionName)
             .ValidateDataAnnotations();
 
         services.Configure<ServiceProviderOptions>(s =>
