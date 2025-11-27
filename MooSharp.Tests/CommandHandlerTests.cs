@@ -345,6 +345,102 @@ public class CommandHandlerTests
         Assert.False(string.IsNullOrWhiteSpace(evt.Message));
     }
 
+    [Fact]
+    public async Task ChannelHandler_BroadcastsAcrossRooms()
+    {
+        var roomOne = CreateRoom("one");
+        var roomTwo = CreateRoom("two");
+        var world = await CreateWorld(roomOne, roomTwo);
+
+        var speaker = CreatePlayer("Speaker");
+        var listener = CreatePlayer("Listener");
+        var localListener = CreatePlayer("LocalListener");
+
+        world.MovePlayer(speaker, roomOne);
+        world.MovePlayer(listener, roomTwo);
+        world.MovePlayer(localListener, roomOne);
+
+        var handler = new ChannelHandler(world);
+
+        var result = await handler.Handle(new ChannelCommand
+        {
+            Player = speaker,
+            Channel = ChatChannels.Global,
+            Message = "Hello all"
+        });
+
+        var actorMessage = Assert.Single(result.Messages, m => m.Player == speaker);
+        Assert.Equal(MessageAudience.Actor, actorMessage.Audience);
+        Assert.IsType<ChannelMessageEvent>(actorMessage.Event);
+
+        var listenerMessages = result.Messages.Where(m => m.Player == listener || m.Player == localListener).ToList();
+        Assert.Equal(2, listenerMessages.Count);
+
+        foreach (var message in listenerMessages)
+        {
+            Assert.Equal(MessageAudience.Observer, message.Audience);
+            Assert.IsType<ChannelMessageEvent>(message.Event);
+        }
+    }
+
+    [Fact]
+    public async Task ChannelHandler_RespectsMutedRecipients()
+    {
+        var room = CreateRoom("room");
+        var world = await CreateWorld(room);
+
+        var speaker = CreatePlayer("Speaker");
+        var mutedListener = CreatePlayer("Muted");
+        var listener = CreatePlayer("Listener");
+
+        mutedListener.MuteChannel(ChatChannels.Global);
+
+        world.MovePlayer(speaker, room);
+        world.MovePlayer(mutedListener, room);
+        world.MovePlayer(listener, room);
+
+        var handler = new ChannelHandler(world);
+
+        var result = await handler.Handle(new ChannelCommand
+        {
+            Player = speaker,
+            Channel = ChatChannels.Global,
+            Message = "Hello"
+        });
+
+        Assert.DoesNotContain(result.Messages, m => m.Player == mutedListener && m.Event is ChannelMessageEvent);
+        Assert.Contains(result.Messages, m => m.Player == listener && m.Event is ChannelMessageEvent);
+    }
+
+    [Fact]
+    public async Task ChannelMuteHandler_TogglesMuteState()
+    {
+        var player = CreatePlayer();
+        var handler = new ChannelMuteHandler();
+
+        var muteResult = await handler.Handle(new ChannelMuteCommand
+        {
+            Player = player,
+            Channel = ChatChannels.Global,
+            Mute = true
+        });
+
+        Assert.True(player.IsChannelMuted(ChatChannels.Global));
+        var muteMessage = Assert.Single(muteResult.Messages);
+        Assert.IsType<SystemMessageEvent>(muteMessage.Event);
+
+        var unmuteResult = await handler.Handle(new ChannelMuteCommand
+        {
+            Player = player,
+            Channel = ChatChannels.Global,
+            Mute = false
+        });
+
+        Assert.False(player.IsChannelMuted(ChatChannels.Global));
+        var unmuteMessage = Assert.Single(unmuteResult.Messages);
+        Assert.IsType<SystemMessageEvent>(unmuteMessage.Event);
+    }
+
     private static Task<World> CreateWorld(params Room[] rooms)
     {
         var store = new InMemoryWorldStore();

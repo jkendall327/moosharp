@@ -81,7 +81,7 @@ public class GiveHandler(World world) : IHandler<GiveCommand>
 
                 result.Add(player, giveEvent);
                 result.Add(recipient, receiveEvent);
-                result.Broadcast(room, giveEvent, MessageAudience.Observer, player, recipient);
+                result.Broadcast(room.PlayersInRoom, giveEvent, MessageAudience.Observer, player, recipient);
                 break;
         }
 

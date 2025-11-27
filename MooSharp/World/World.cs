@@ -58,6 +58,11 @@ public class World(IWorldStore worldStore, ILogger<World> logger)
         }
     }
 
+    public IReadOnlyCollection<Player> GetActivePlayers()
+    {
+        return _playerLocations.Keys.ToList();
+    }
+
     public async Task<Room> CreateRoomAsync(string slug, string name, string description, string longDescription,
         string enterText, string exitText, CancellationToken cancellationToken = default)
     {

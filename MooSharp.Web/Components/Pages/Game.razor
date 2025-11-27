@@ -4,6 +4,7 @@
 @inject IJSRuntime JS
 @using System.Text
 @using Microsoft.AspNetCore.SignalR.Client
+@using MooSharp.Messaging
 @implements IAsyncDisposable
 @rendermode InteractiveServer
 
@@ -63,6 +64,25 @@ else
                         <p class="status-message">Log in or register to start playing.</p>
                     }
                 </div>
+
+                <div class="terminal-card channel-panel" data-label="/channels">
+                    <h2 class="panel-heading">Channel preferences</h2>
+                    <p class="status-message">Toggle channels to mute or unmute global chatter.</p>
+                    <div class="channel-list">
+                        @foreach (var channel in _channels)
+                        {
+                            <label class="channel-toggle">
+                                <input type="checkbox"
+                                       checked="@IsChannelMuted(channel)"
+                                       @onchange="async e => await HandleChannelToggleAsync(e, channel)" />
+                                <div class="channel-label">
+                                    <strong>@channel</strong>
+                                    <span>@(IsChannelMuted(channel) ? "Muted" : "Active")</span>
+                                </div>
+                            </label>
+                        }
+                    </div>
+                </div>
             </fieldset>
         </div>
     </div>
@@ -79,6 +99,8 @@ else
     private string _loginStatus = string.Empty;
     private bool _isLoggedIn;
     private string _sessionId = string.Empty;
+    private readonly string[] _channels = [ChatChannels.Global, ChatChannels.Newbie, ChatChannels.Trade];
+    private readonly Dictionary<string, bool> _channelMuteState = new(StringComparer.OrdinalIgnoreCase);
 
     private bool CanSubmitCredentials =>
         _hubConnection?.State == HubConnectionState.Connected
@@ -102,6 +124,8 @@ else
     private async Task InitializeAsync()
     {
         await SetupHubConnectionAsync();
+
+        InitialiseChannelPreferences();
 
         await InvokeAsync(StateHasChanged);
     }
@@ -260,6 +284,11 @@ else
         _username = string.Empty;
         _password = string.Empty;
 
+        foreach (var channel in _channels)
+        {
+            _channelMuteState[channel] = false;
+        }
+
         const string logoutMessage = "Logged out. Session cleared.";
 
         _gameOutput.AppendLine(logoutMessage);
@@ -304,6 +333,52 @@ else
         await JS.InvokeVoidAsync("localStorage.setItem", SessionStorageKey, newSessionId);
 
         return newSessionId;
+    }
+
+    private void InitialiseChannelPreferences()
+    {
+        foreach (var channel in _channels)
+        {
+            _channelMuteState.TryAdd(channel, false);
+        }
+    }
+
+    private bool IsChannelMuted(string channel)
+    {
+        return _channelMuteState.TryGetValue(channel, out var muted) && muted;
+    }
+
+    private async Task HandleChannelToggleAsync(ChangeEventArgs args, string channel)
+    {
+        if (args.Value is not bool muted)
+        {
+            return;
+        }
+
+        await ToggleChannelAsync(channel, muted);
+
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task ToggleChannelAsync(string channel, bool muted)
+    {
+        if (_hubConnection is null || !_isLoggedIn)
+        {
+            _channelMuteState[channel] = muted;
+            return;
+        }
+
+        var command = muted ? $"mute {channel}" : $"unmute {channel}";
+
+        try
+        {
+            await _hubConnection.SendAsync(nameof(MooHub.SendCommand), command);
+            _channelMuteState[channel] = muted;
+        }
+        catch (Exception e)
+        {
+            Logger.LogError(e, "Error on SignalR send for channel toggle {Channel}", channel);
+        }
     }
 
     public async ValueTask DisposeAsync()
