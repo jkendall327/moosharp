@@ -266,6 +266,31 @@ public class CommandHandlerTests
     }
 
     [Fact]
+    public async Task InventoryHandler_ReturnsSelfExaminedEventWithInventory()
+    {
+        var player = CreatePlayer();
+
+        var item = new Object
+        {
+            Name = "Lantern",
+            Description = "An old lantern"
+        };
+
+        item.MoveTo(player);
+
+        var handler = new InventoryHandler();
+
+        var result = await handler.Handle(new InventoryCommand
+        {
+            Player = player
+        });
+
+        var message = Assert.Single(result.Messages);
+        var evt = Assert.IsType<SelfExaminedEvent>(message.Event);
+        Assert.Contains(item, evt.Inventory);
+    }
+
+    [Fact]
     public async Task ExamineHandler_ReturnsObjectDetailsWhenFound()
     {
         var room = CreateRoom("room");
