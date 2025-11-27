@@ -11,7 +11,7 @@ public class ChannelCommand : CommandBase<ChannelCommand>
 
 public class GlobalChannelCommandDefinition : ICommandDefinition
 {
-    public IReadOnlyCollection<string> Verbs { get; } = ["g", "global", "shout", "/g", "/global", "/shout"];
+    public IReadOnlyCollection<string> Verbs { get; } = ["/global", "/shout"];
 
     public string Description => "Send a message to the global channel. Usage: /g <message>.";
 
