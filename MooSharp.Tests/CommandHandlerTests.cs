@@ -370,6 +370,33 @@ public class CommandHandlerTests
         Assert.False(string.IsNullOrWhiteSpace(evt.Message));
     }
 
+    [Fact]
+    public async Task WhoHandler_ReturnsAlphabetizedOnlineUsernames()
+    {
+        var world = await CreateWorld();
+
+        var actor = CreatePlayer("Actor");
+        var observer = CreatePlayer("observer");
+        var zorro = CreatePlayer("Zorro");
+
+        world.Players["actor"] = actor;
+        world.Players["observer"] = observer;
+        world.Players["zorro"] = zorro;
+
+        var handler = new WhoHandler(world);
+
+        var result = await handler.Handle(new WhoCommand
+        {
+            Player = actor
+        });
+
+        var message = Assert.Single(result.Messages);
+        Assert.Equal(actor, message.Player);
+
+        var evt = Assert.IsType<OnlinePlayersEvent>(message.Event);
+        Assert.Equal(["Actor", "observer", "Zorro"], evt.Usernames);
+    }
+
     private static Task<World> CreateWorld(params Room[] rooms)
     {
         var store = new InMemoryWorldStore();
