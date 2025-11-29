@@ -4,7 +4,7 @@ namespace MooSharp.Infrastructure;
 
 using System.Collections.Concurrent;
 
-public class PlayerSessionManager(ILogger<PlayerSessionManager> logger)
+public class PlayerSessionManager(TimeProvider clock, ILogger<PlayerSessionManager> logger)
 {
     private readonly ConcurrentDictionary<string, SessionState> _sessions = new(StringComparer.Ordinal);
     private static readonly TimeSpan SessionGracePeriod = TimeSpan.FromSeconds(10);
@@ -100,9 +100,9 @@ public class PlayerSessionManager(ILogger<PlayerSessionManager> logger)
             {
                 try
                 {
-                    await Task.Delay(SessionGracePeriod, ct);
+                    await Task.Delay(SessionGracePeriod, clock, ct);
 
-                    if (_sessions.TryRemove(token, out _))
+                    if (_sessions.TryRemove(token, out var _))
                     {
                         logger.LogInformation("Session {Token} expired and was removed", token);
                     }
