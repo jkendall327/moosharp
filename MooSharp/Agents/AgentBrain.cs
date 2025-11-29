@@ -211,16 +211,16 @@ public sealed class AgentBrain : IAsyncDisposable
             .GetResponse(_bundle.Name, _bundle.Source, _history)
             .ConfigureAwait(false);
 
-        var commandText = content.Content?.Trim();
+        var response = content.Content?.Trim();
 
-        if (string.IsNullOrEmpty(commandText))
+        if (string.IsNullOrEmpty(response))
         {
             _logger.LogWarning("No command returned for {AgentName}", _bundle.Name);
 
             return;
         }
 
-        _history.AddAssistantMessage(commandText);
+        _history.AddAssistantMessage(response);
 
         TrimHistory();
 
@@ -228,10 +228,10 @@ public sealed class AgentBrain : IAsyncDisposable
 
         var command = new WorldCommand
         {
-            Command = commandText
+            Command = response
         };
 
-        _logger.LogInformation("Sending command for {AgentName}: {Command}", _bundle.Name, commandText);
+        _logger.LogInformation("Sending command for {AgentName}: {Command}", _bundle.Name, response);
         await _gameInputWriter.WriteAsync(new(id, command));
     }
 
