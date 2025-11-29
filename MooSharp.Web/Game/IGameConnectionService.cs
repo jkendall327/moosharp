@@ -20,4 +20,6 @@ public interface IGameConnectionService : IAsyncDisposable
     Task Register(string username, string password);
     Task SendCommandAsync(string command);
     Task<AutocompleteOptions> GetAutocompleteOptions();
+
+    bool IsConnected();
 }

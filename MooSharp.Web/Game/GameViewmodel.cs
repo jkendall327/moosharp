@@ -1,5 +1,4 @@
 using System.Text;
-using Microsoft.AspNetCore.SignalR.Client;
 using MooSharp;
 using MooSharp.Messaging;
 using MooSharp.Web;
@@ -31,7 +30,7 @@ public sealed class GameViewModel : IDisposable
     public bool IsLoggedIn { get; private set; }
 
     // Derived properties for UI state
-    public bool IsConnected => _connection.State == HubConnectionState.Connected;
+    public bool IsConnected => _connection.IsConnected();
 
     public bool CanSubmitCredentials =>
         IsConnected && !string.IsNullOrWhiteSpace(Username) && !string.IsNullOrWhiteSpace(Password);

@@ -98,6 +98,11 @@ public sealed class GameConnectionService : IGameConnectionService
         return await _hubConnection.InvokeAsync<AutocompleteOptions>("GetAutocompleteOptions");
     }
 
+    public bool IsConnected()
+    {
+        return State == HubConnectionState.Connected;
+    }
+
     public async ValueTask DisposeAsync()
     {
         if (_hubConnection is not null)
