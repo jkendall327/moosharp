@@ -13,7 +13,7 @@ namespace MooSharp.Agents;
 
 public interface IAgentResponseProvider
 {
-    Task<ChatMessageContent> GetResponse(string name, AgentSource source, ChatHistory history);
+    Task<ChatMessageContent> GetResponse(string name, AgentSource source, ChatHistory history, CancellationToken ct = default);
 }
 
 public class AgentResponseProvider(
@@ -21,7 +21,7 @@ public class AgentResponseProvider(
     IOptions<AgentOptions> options,
     ILogger<AgentResponseProvider> logger) : IAgentResponseProvider
 {
-    public async Task<ChatMessageContent> GetResponse(string name, AgentSource source, ChatHistory history)
+    public async Task<ChatMessageContent> GetResponse(string name, AgentSource source, ChatHistory history, CancellationToken ct = default)
     {
         /*
          * We create a new kernel in each of these branches because setting up different AI providers in
