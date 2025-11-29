@@ -59,6 +59,7 @@ public class World(IWorldStore worldStore, ILogger<World> logger)
 
     public void RemovePlayer(Player player)
     {
+        
         lock (_locationLock)
         {
             if (_playerLocations.Remove(player, out var location))
@@ -66,6 +67,8 @@ public class World(IWorldStore worldStore, ILogger<World> logger)
                 location.RemovePlayer(player);
             }
         }
+        
+        Players.TryRemove(player.Connection.Id, out _);
     }
 
     public IReadOnlyCollection<Player> GetActivePlayers()

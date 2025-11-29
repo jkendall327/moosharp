@@ -15,13 +15,9 @@ public class GameEngine(
     IRawMessageSender rawMessageSender,
     IPlayerConnectionFactory connectionFactory,
     IGameMessagePresenter presenter,
+    PlayerSessionManager sessionManager,
     ILogger<GameEngine> logger)
 {
-    private readonly Dictionary<string, Player> _sessionPlayers = new(StringComparer.Ordinal);
-    private readonly Dictionary<string, string> _sessionConnections = new(StringComparer.Ordinal);
-    private readonly Dictionary<string, CancellationTokenSource> _sessionCleanupTokens = new(StringComparer.Ordinal);
-    private static readonly TimeSpan SessionGracePeriod = TimeSpan.FromSeconds(10);
-
     public async Task ProcessInputAsync(GameInput input, CancellationToken ct = default)
     {
         switch (input.Command)
@@ -55,29 +51,25 @@ public class GameEngine(
 
     private async Task HandleDisconnectAsync(ConnectionId connectionId, string? sessionToken)
     {
-        if (sessionToken is not null && _sessionConnections.TryGetValue(sessionToken, out var trackedConnection) &&
-            !string.Equals(trackedConnection, connectionId.Value, StringComparison.Ordinal))
+        if (sessionToken is null)
         {
-            logger.LogInformation("Ignoring disconnect for stale connection {ConnectionId} (session {SessionId})",
-                connectionId,
-                sessionToken);
-
             return;
         }
 
-        if (!world.Players.TryGetValue(connectionId.Value, out var player))
-        {
-            logger.LogWarning("Player with connection {ConnectionId} not found during disconnect", connectionId);
+        // Ask manager: Is this a valid disconnect for this session?
+        var player = sessionManager.StartDisconnect(sessionToken, connectionId);
 
+        if (player is null)
+        {
+            // Stale disconnect or session already gone
             return;
         }
 
+        // Proceed with game logic (saving state, removing from world map)
         var location = world.GetPlayerLocation(player);
 
         if (location is null)
         {
-            logger.LogWarning("Player {Player} has no known location during disconnect", player.Username);
-
             location = world.Rooms.First()
                 .Value;
 
@@ -85,97 +77,47 @@ public class GameEngine(
         }
 
         await playerStore.SavePlayer(player, location);
+
         world.RemovePlayer(player);
 
-        world.Players.TryRemove(connectionId.Value, out _);
-
-        if (sessionToken is not null)
-        {
-            ScheduleSessionCleanup(sessionToken);
-        }
-
-        logger.LogInformation("Player {Player} disconnected", player.Username);
+        logger.LogInformation("Player {Player} disconnected (Session kept alive briefly)", player.Username);
     }
 
-    private Task HandleReconnectAsync(ConnectionId newConnectionId, string? sessionToken)
+    private async Task HandleReconnectAsync(ConnectionId newConnectionId, string? sessionToken)
     {
         if (string.IsNullOrWhiteSpace(sessionToken))
         {
-            logger.LogWarning("Reconnect attempted without session token for {ConnectionId}", newConnectionId);
-
-            return rawMessageSender.SendSystemMessageAsync(newConnectionId, "Session missing. Please log in again.");
+            await rawMessageSender.SendSystemMessageAsync(newConnectionId, "Session missing. Please log in.");
+            return;
         }
 
-        if (!_sessionPlayers.TryGetValue(sessionToken, out var player))
+        // Ask manager: Attempt to resurrect this session
+        var player = sessionManager.Reconnect(sessionToken, newConnectionId);
+
+        if (player is null)
         {
-            logger.LogWarning("No player found for session {SessionId} during reconnect", sessionToken);
-
-            return rawMessageSender.SendSystemMessageAsync(newConnectionId, "Session expired. Please log in again.");
+            await rawMessageSender.SendSystemMessageAsync(newConnectionId, "Session expired. Please log in again.");
+            return;
         }
 
-        CancelScheduledCleanup(sessionToken);
+        // Session restored! Update Game World state.
+        // 1. Clean up the OLD connection ID from the world map if it's still lingering
+        var oldConnection = world.Players.FirstOrDefault(x => x.Value == player)
+            .Key;
 
-        var oldConnectionId = _sessionConnections.GetValueOrDefault(sessionToken);
-
-        if (!string.IsNullOrEmpty(oldConnectionId))
+        if (oldConnection != null)
         {
-            world.Players.TryRemove(oldConnectionId, out _);
+            world.Players.TryRemove(oldConnection, out _);
         }
 
+        // 2. Refresh connection object on player
         player.Connection = connectionFactory.Create(newConnectionId);
 
+        // 3. Add back to World map
         world.Players[newConnectionId.Value] = player;
-        _sessionConnections[sessionToken] = newConnectionId.Value;
 
-        logger.LogInformation(
-            "Player {Player} reconnected. OldConnection={OldConnection} NewConnection={NewConnection}",
-            player.Username,
-            oldConnectionId,
-            newConnectionId.Value);
-
-        return player.Connection.SendMessageAsync("Reconnected to your active session.");
-    }
-
-    private void ScheduleSessionCleanup(string sessionToken)
-    {
-        CancelScheduledCleanup(sessionToken);
-
-        var cts = new CancellationTokenSource();
-        _sessionCleanupTokens[sessionToken] = cts;
-
-        _ = Task.Run(async () =>
-            {
-                try
-                {
-                    await Task.Delay(SessionGracePeriod, cts.Token);
-
-                    _sessionPlayers.Remove(sessionToken);
-                    _sessionConnections.Remove(sessionToken);
-                    _sessionCleanupTokens.Remove(sessionToken);
-
-                    logger.LogInformation("Session {SessionId} removed after disconnect grace period of {GracePeriod}",
-                        sessionToken,
-                        SessionGracePeriod);
-                }
-                catch (TaskCanceledException)
-                {
-                    logger.LogInformation("Cleanup cancelled for session {SessionId}", sessionToken);
-                }
-                finally
-                {
-                    cts.Dispose();
-                }
-            },
-            cts.Token);
-    }
-
-    private void CancelScheduledCleanup(string sessionToken)
-    {
-        if (_sessionCleanupTokens.Remove(sessionToken, out var cts))
-        {
-            cts.Cancel();
-            cts.Dispose();
-        }
+        await player.Connection.SendMessageAsync("Reconnected to your active session.");
+        logger.LogInformation("Player {Player} reconnected successfully", player.Username);
     }
 
     private async Task ProcessWorldCommand(WorldCommand command, CancellationToken ct, Player player)
@@ -300,8 +242,7 @@ public class GameEngine(
             return;
         }
 
-        _sessionPlayers[sessionToken] = player;
-        _sessionConnections[sessionToken] = connectionId.Value;
+        sessionManager.RegisterSession(sessionToken, player, connectionId);
     }
 
     private async Task SendGameMessagesAsync(List<GameMessage> messages, CancellationToken ct = default)

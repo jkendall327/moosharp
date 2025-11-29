@@ -33,6 +33,7 @@ public static class ServiceCollectionExtensions
         // Connections and message-sending
         services.AddSingleton<IPlayerConnectionFactory, SignalRPlayerConnectionFactory>();
         services.AddSingleton<IRawMessageSender, SignalRRawMessageSender>();
+        services.AddSingleton<PlayerSessionManager>();
         
         // Generic infrastructure
         services.AddSingleton<SlugCreator>();
