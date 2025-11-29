@@ -1,15 +1,14 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
-using Microsoft.AspNetCore.SignalR;
+using System.Threading.Channels;
 using MooSharp.Messaging;
 using MooSharp.Agents;
 using MooSharp.Persistence;
 using MooSharp.Web;
+using SQLitePCL;
 
 namespace MooSharp;
-
-using System.Threading.Channels;
 
 public class GameEngine(
     World world,
@@ -17,7 +16,7 @@ public class GameEngine(
     CommandExecutor executor,
     ChannelReader<GameInput> reader,
     IPlayerStore playerStore,
-    IHubContext<MooHub> hubContext,
+    IRawMessageSender rawMessageSender,
     IPlayerConnectionFactory connectionFactory,
     ILogger<GameEngine> logger,
     IGameMessagePresenter presenter) : BackgroundService
@@ -58,16 +57,7 @@ public class GameEngine(
             case WorldCommand wc:
                 if (!world.Players.TryGetValue(input.ConnectionId.Value, out var player))
                 {
-                    await hubContext
-                        .Clients
-                        .Client(input.ConnectionId.Value)
-                        .SendAsync("ReceiveMessage", "Please log in before sending commands.", cancellationToken: ct);
-
-                    await hubContext
-                        .Clients
-                        .Client(input.ConnectionId.Value)
-                        .SendAsync("LoginResult", false, "You must log in to play.", cancellationToken: ct);
-
+                    await rawMessageSender.SendLoginRequiredMessageAsync(input.ConnectionId, ct);
                     break;
                 }
 
@@ -136,20 +126,14 @@ public class GameEngine(
         {
             logger.LogWarning("Reconnect attempted without session token for {ConnectionId}", newConnectionId);
 
-            return hubContext
-                .Clients
-                .Client(newConnectionId.Value)
-                .SendAsync("ReceiveMessage", "Session missing. Please log in again.");
+            return rawMessageSender.SendSystemMessageAsync(newConnectionId, "Session missing. Please log in again.");
         }
 
         if (!_sessionPlayers.TryGetValue(sessionToken, out var player))
         {
             logger.LogWarning("No player found for session {SessionId} during reconnect", sessionToken);
 
-            return hubContext
-                .Clients
-                .Client(newConnectionId.Value)
-                .SendAsync("ReceiveMessage", "Session expired. Please log in again.");
+            return rawMessageSender.SendSystemMessageAsync(newConnectionId, "Session expired. Please log in again.");
         }
 
         CancelScheduledCleanup(sessionToken);
@@ -222,7 +206,7 @@ public class GameEngine(
 
         if (parsed is null)
         {
-            _ = SendMessagesAsync([new(player, new SystemMessageEvent("That command wasn't recognised."))]);
+            _ = SendGameMessagesAsync([new(player, new SystemMessageEvent("That command wasn't recognised."))]);
 
             return;
         }
@@ -231,12 +215,12 @@ public class GameEngine(
         {
             var result = await executor.Handle(parsed, ct);
 
-            _ = SendMessagesAsync(result.Messages);
+            _ = SendGameMessagesAsync(result.Messages);
         }
         catch (Exception ex)
         {
             logger.LogError(ex, "Error processing world command {Command}", command.Command);
-            _ = SendMessagesAsync([new(player, new SystemMessageEvent("An unexpected error occurred."))]);
+            _ = SendGameMessagesAsync([new(player, new SystemMessageEvent("An unexpected error occurred."))]);
         }
     }
 
@@ -266,8 +250,9 @@ public class GameEngine(
             new(player, new RoomDescriptionEvent(description.ToString()))
         };
 
-        await SendLoginResultAsync(connectionId, true, $"Registered and logged in as {player.Username}.");
-        _ = SendMessagesAsync(messages);
+        await rawMessageSender.SendLoginResultAsync(connectionId, true, $"Registered and logged in as {player.Username}.");
+
+        _ = SendGameMessagesAsync(messages);
     }
 
     private async Task Login(ConnectionId connectionId, LoginCommand lc, string? sessionToken)
@@ -276,14 +261,8 @@ public class GameEngine(
 
         if (dto is null)
         {
-            await hubContext
-                .Clients
-                .Client(connectionId.Value)
-                .SendAsync("ReceiveMessage", "Login failed, please try again.");
-
-            await SendLoginResultAsync(connectionId, false, "Login failed, please try again.");
-
-            return;
+            await rawMessageSender.SendSystemMessageAsync(connectionId, "Login failed, please try again.");
+            await rawMessageSender.SendLoginResultAsync(connectionId, false, "Login failed, please try again.");
         }
 
         var startingRoom = world.Rooms.TryGetValue(dto.CurrentLocation, out var r)
@@ -327,8 +306,9 @@ public class GameEngine(
             new(player, new RoomDescriptionEvent(description.ToString()))
         };
 
-        await SendLoginResultAsync(connectionId, true, $"Logged in as {player.Username}.");
-        _ = SendMessagesAsync(messages);
+        await rawMessageSender.SendLoginResultAsync(connectionId, true, $"Logged in as {player.Username}.");
+
+        _ = SendGameMessagesAsync(messages);
     }
 
     private void TrackSession(string? sessionToken, Player player, ConnectionId connectionId)
@@ -341,16 +321,8 @@ public class GameEngine(
         _sessionPlayers[sessionToken] = player;
         _sessionConnections[sessionToken] = connectionId.Value;
     }
-
-    private Task SendLoginResultAsync(ConnectionId connectionId, bool success, string message)
-    {
-        return hubContext
-            .Clients
-            .Client(connectionId.Value)
-            .SendAsync("LoginResult", success, message);
-    }
-
-    private async Task SendMessagesAsync(List<GameMessage> messages)
+    
+    private async Task SendGameMessagesAsync(List<GameMessage> messages)
     {
         var tasks = messages
             .Select(msg => (msg.Player, Content: presenter.Present(msg)))
@@ -432,6 +404,6 @@ public class GameEngine(
         result.Add(player, gameEvent);
         result.BroadcastToAllButPlayer(room, player, gameEvent);
 
-        await SendMessagesAsync(result.Messages);
+        await SendGameMessagesAsync(result.Messages);
     }
 }
