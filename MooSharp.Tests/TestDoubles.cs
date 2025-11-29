@@ -22,7 +22,7 @@ public sealed class TestPlayerConnection : IPlayerConnection
 
     public List<string> Messages { get; } = new();
 
-    public Task SendMessageAsync(string message)
+    public Task SendMessageAsync(string message, CancellationToken ct = default)
     {
         Messages.Add(message);
         return Task.CompletedTask;

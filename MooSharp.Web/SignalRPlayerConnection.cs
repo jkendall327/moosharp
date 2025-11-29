@@ -6,8 +6,8 @@ public class SignalRPlayerConnection(ConnectionId connectionId, IHubContext<MooH
 {
     public string Id => connectionId.Value;
 
-    public async Task SendMessageAsync(string message)
+    public async Task SendMessageAsync(string message, CancellationToken ct = default)
     {
-        await hubContext.Clients.Client(connectionId.Value).SendAsync("ReceiveMessage", message);
+        await hubContext.Clients.Client(connectionId.Value).SendAsync("ReceiveMessage", message, cancellationToken: ct);
     }
 }

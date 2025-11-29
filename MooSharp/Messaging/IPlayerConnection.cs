@@ -6,5 +6,5 @@ public interface IPlayerConnection
     string Id { get; } 
     
     // How the game sends text to this entity
-    Task SendMessageAsync(string message);
+    Task SendMessageAsync(string message, CancellationToken ct = default);
 }

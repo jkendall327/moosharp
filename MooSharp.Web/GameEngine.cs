@@ -1,12 +1,9 @@
-using System;
-using System.Collections.Generic;
 using System.Text;
 using System.Threading.Channels;
 using MooSharp.Messaging;
 using MooSharp.Agents;
 using MooSharp.Persistence;
 using MooSharp.Web;
-using SQLitePCL;
 
 namespace MooSharp;
 
@@ -188,7 +185,8 @@ public class GameEngine(
             {
                 cts.Dispose();
             }
-        });
+        },
+        cts.Token);
     }
 
     private void CancelScheduledCleanup(string sessionToken)
@@ -206,7 +204,7 @@ public class GameEngine(
 
         if (parsed is null)
         {
-            _ = SendGameMessagesAsync([new(player, new SystemMessageEvent("That command wasn't recognised."))]);
+            _ = SendGameMessagesAsync([new(player, new SystemMessageEvent("That command wasn't recognised."))], ct);
 
             return;
         }
@@ -215,12 +213,12 @@ public class GameEngine(
         {
             var result = await executor.Handle(parsed, ct);
 
-            _ = SendGameMessagesAsync(result.Messages);
+            _ = SendGameMessagesAsync(result.Messages, ct);
         }
         catch (Exception ex)
         {
             logger.LogError(ex, "Error processing world command {Command}", command.Command);
-            _ = SendGameMessagesAsync([new(player, new SystemMessageEvent("An unexpected error occurred."))]);
+            _ = SendGameMessagesAsync([new(player, new SystemMessageEvent("An unexpected error occurred."))], ct);
         }
     }
 
@@ -263,6 +261,8 @@ public class GameEngine(
         {
             await rawMessageSender.SendSystemMessageAsync(connectionId, "Login failed, please try again.");
             await rawMessageSender.SendLoginResultAsync(connectionId, false, "Login failed, please try again.");
+
+            return;
         }
 
         var startingRoom = world.Rooms.TryGetValue(dto.CurrentLocation, out var r)
@@ -322,12 +322,12 @@ public class GameEngine(
         _sessionConnections[sessionToken] = connectionId.Value;
     }
     
-    private async Task SendGameMessagesAsync(List<GameMessage> messages)
+    private async Task SendGameMessagesAsync(List<GameMessage> messages, CancellationToken ct = default)
     {
         var tasks = messages
             .Select(msg => (msg.Player, Content: presenter.Present(msg)))
             .Where(msg => !string.IsNullOrWhiteSpace(msg.Content))
-            .Select(msg => msg.Player.Connection.SendMessageAsync(msg.Content!));
+            .Select(msg => msg.Player.Connection.SendMessageAsync(msg.Content!, ct));
 
         try
         {
@@ -404,6 +404,6 @@ public class GameEngine(
         result.Add(player, gameEvent);
         result.BroadcastToAllButPlayer(room, player, gameEvent);
 
-        await SendGameMessagesAsync(result.Messages);
+        await SendGameMessagesAsync(result.Messages, ct);
     }
 }
