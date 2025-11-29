@@ -10,6 +10,7 @@ public class AgentFactory(
     TimeProvider clock,
     IOptions<AgentOptions> options,
     IAgentPromptProvider promptProvider,
+    IAgentResponseProvider responseProvider,
     ILoggerFactory loggerFactory)
 {
     public AgentBrain Build(AgentIdentity identity)
@@ -25,6 +26,7 @@ public class AgentFactory(
             promptProvider,
             clock,
             logger,
+            responseProvider,
             identity.Cooldown);
     }
 }

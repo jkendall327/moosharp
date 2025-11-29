@@ -34,6 +34,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IAgentPromptProvider, AgentPromptProvider>();
         services.AddSingleton<AgentSpawner>();
         services.AddSingleton<AgentFactory>();
+        services.AddSingleton<IAgentResponseProvider, AgentResponseProvider>();
         
         // Persistence
         services.AddSingleton<IPlayerStore, SqlitePlayerStore>();

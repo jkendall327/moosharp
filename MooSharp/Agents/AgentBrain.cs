@@ -26,6 +26,8 @@ public sealed class AgentBrain : IAsyncDisposable
     private readonly TimeProvider _clock;
     private readonly AgentSource _source;
 
+    private readonly IAgentResponseProvider _responseProvider;
+
     private readonly Channel<string> _incomingMessages;
     private readonly CancellationTokenSource _cts;
     private Task? _processingTask;
@@ -43,6 +45,7 @@ public sealed class AgentBrain : IAsyncDisposable
         IAgentPromptProvider promptProvider,
         TimeProvider clock,
         ILogger logger,
+        IAgentResponseProvider responseProvider,
         TimeSpan? actionCooldown = null,
         CancellationToken cancellationToken = default)
     {
@@ -51,6 +54,7 @@ public sealed class AgentBrain : IAsyncDisposable
         _source = source;
         _gameInputWriter = gameInputWriter;
         _logger = logger;
+        _responseProvider = responseProvider;
         _options = options;
         _promptProvider = promptProvider;
         _clock = clock;
@@ -79,7 +83,10 @@ public sealed class AgentBrain : IAsyncDisposable
     public async Task StartAsync(CancellationToken ct = default)
     {
         _logger.LogInformation("Starting agent brain for {AgentName} (source: {AgentSource})", _name, _source);
-        await EnsureSystemPromptAsync(ct).ConfigureAwait(false);
+
+        await EnsureSystemPromptAsync(ct)
+            .ConfigureAwait(false);
+
         _processingTask = Task.Run(() => ProcessIncomingMessagesAsync(_cts.Token), ct);
     }
 
@@ -163,6 +170,7 @@ public sealed class AgentBrain : IAsyncDisposable
                     _name,
                     _nextAllowedActionTime,
                     now);
+
                 return false;
             }
 
@@ -200,36 +208,35 @@ public sealed class AgentBrain : IAsyncDisposable
         // Always record history.
         _logger.LogInformation("Processing incoming game message for {AgentName}", _name);
         _history.AddUserMessage(message);
+
         TrimHistory();
 
         // Only sometimes actually act, based on cooldown
         if (!await ShouldActAsync())
         {
             _logger.LogDebug("Cooldown active; skipping action for {AgentName}", _name);
+
             return;
         }
 
-        await PublishThinkingAsync(_cts.Token).ConfigureAwait(false);
+        await PublishThinkingAsync(_cts.Token)
+            .ConfigureAwait(false);
 
-        _logger.LogInformation("Agent {AgentName} starting LLM call via {Source}", _name, _source);
+        var content = await _responseProvider
+            .GetResponse(_name, _source, _history)
+            .ConfigureAwait(false);
 
-        var stopwatch = Stopwatch.StartNew();
-
-        var kernel = await GetResponse().ConfigureAwait(false);
-
-        stopwatch.Stop();
-
-        _logger.LogInformation("Agent {AgentName} completed LLM call in {ElapsedMilliseconds} ms", _name, stopwatch.ElapsedMilliseconds);
-
-        var commandText = kernel.Content?.Trim();
+        var commandText = content.Content?.Trim();
 
         if (string.IsNullOrEmpty(commandText))
         {
             _logger.LogWarning("No command returned for {AgentName}", _name);
+
             return;
         }
 
         _history.AddAssistantMessage(commandText);
+
         TrimHistory();
 
         var id = new ConnectionId(_connection.Id);
@@ -241,35 +248,6 @@ public sealed class AgentBrain : IAsyncDisposable
 
         _logger.LogInformation("Sending command for {AgentName}: {Command}", _name, commandText);
         await _gameInputWriter.WriteAsync(new(id, command));
-    }
-
-    private async Task<ChatMessageContent> GetResponse()
-    {
-        /*
-         * We create a new kernel in each of these branches because setting up different AI providers in
-         * DI for Semantic Kernel is a real pain.
-         * This is fine because making new kernels is cheap.
-         * Official Microsoft statement:
-         * 'We recommend that you create a kernel as a transient service so that it is disposed of after each use because the plugin collection is mutable.
-         * The kernel is extremely lightweight (since it's just a container for services and plugins),
-         * so creating a new kernel for each use is not a performance concern.'
-         * https://learn.microsoft.com/en-us/semantic-kernel/concepts/kernel?pivots=programming-language-csharp
-         */
-
-        var o = _options.Value;
-
-        _logger.LogDebug("Requesting response for {AgentName} using {Source}", _name, _source);
-
-        return _source switch
-        {
-            AgentSource.OpenAI => await GetOpenAIResponseAsync(o.OpenAIModelId, o.OpenAIApiKey),
-            AgentSource.OpenRouter => await GetOpenAIResponseAsync(o.OpenRouterModelId,
-                o.OpenRouterApiKey,
-                o.OpenRouterEndpoint),
-            AgentSource.Gemini => await GetGeminiResponseAsync(o),
-            AgentSource.Anthropic => await GetAnthropicResponseAsync(o),
-            _ => throw new NotSupportedException($"Unknown agent source {_source}")
-        };
     }
 
     private void TrimHistory()
@@ -286,89 +264,6 @@ public sealed class AgentBrain : IAsyncDisposable
 
         var messagesToRemove = _history.Count - maxHistorySize;
         _history.RemoveRange(1, messagesToRemove);
-    }
-
-    private async Task<ChatMessageContent> GetOpenAIResponseAsync(string modelId,
-        string apiKey,
-        string? endpoint = null)
-    {
-        var builder = Kernel.CreateBuilder();
-
-        if (endpoint is null)
-        {
-            builder.AddOpenAIChatCompletion(modelId, apiKey);
-        }
-        else
-        {
-            builder.AddOpenAIChatCompletion(modelId, new Uri(endpoint), apiKey);
-        }
-
-        var kernel = builder.Build();
-
-        var chat = kernel.Services.GetRequiredService<IChatCompletionService>();
-
-        var history = await _promptProvider.PrepareHistoryAsync(_history).ConfigureAwait(false);
-
-        return await chat.GetChatMessageContentAsync(history,
-            executionSettings: new OpenAIPromptExecutionSettings
-            {
-                MaxTokens = 500
-            },
-            kernel: kernel);
-    }
-
-    private async Task<ChatMessageContent> GetGeminiResponseAsync(AgentOptions options)
-    {
-        var kernel = Kernel
-            .CreateBuilder()
-            .AddGoogleAIGeminiChatCompletion(options.GeminiModelId, options.GeminiApiKey)
-            .Build();
-
-        var chat = kernel.Services.GetRequiredService<IChatCompletionService>();
-
-        var history = await _promptProvider.PrepareHistoryAsync(_history).ConfigureAwait(false);
-
-        return await chat.GetChatMessageContentAsync(history,
-            executionSettings: new GeminiPromptExecutionSettings
-            {
-                MaxTokens = 500
-            },
-            kernel: kernel);
-    }
-
-    private async Task<ChatMessageContent> GetAnthropicResponseAsync(AgentOptions options)
-    {
-        using var client = new AnthropicClient(new APIAuthentication(apiKey: options.AnthropicApiKey));
-        var chatClient = (IChatClient) client.Messages;
-
-        var history = await _promptProvider.PrepareHistoryAsync(_history).ConfigureAwait(false);
-
-        var messages = history
-            .Select(ConvertToChatMessage)
-            .ToList();
-
-        var response = await chatClient.GetResponseAsync(messages,
-            new ChatOptions
-            {
-                ModelId = options.AnthropicModelId,
-                MaxOutputTokens = 500
-            },
-            CancellationToken.None);
-
-        return new ChatMessageContent(AuthorRole.Assistant, response.Text ?? string.Empty);
-    }
-
-    private static ChatMessage ConvertToChatMessage(ChatMessageContent message)
-    {
-        return message.Role switch
-        {
-            var role when role == AuthorRole.User => new ChatMessage(ChatRole.User, message.Content ?? string.Empty),
-            var role when role == AuthorRole.Assistant => new ChatMessage(ChatRole.Assistant,
-                message.Content ?? string.Empty),
-            var role when role == AuthorRole.System =>
-                new ChatMessage(ChatRole.System, message.Content ?? string.Empty),
-            _ => new ChatMessage(ChatRole.User, message.Content ?? string.Empty)
-        };
     }
 
     public async ValueTask DisposeAsync()
