@@ -3,7 +3,7 @@ using MooSharp.Persistence;
 
 namespace MooSharp.Tests.TestDoubles;
 
-internal sealed class InMemoryWorldStore : IWorldStore
+public sealed class InMemoryWorldStore : IWorldStore
 {
     private readonly List<Room> _rooms = new();
     private readonly List<(RoomId From, RoomId To, string Direction)> _exits = new();
