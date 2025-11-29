@@ -26,7 +26,7 @@ public class SqlitePlayerStore : IPlayerStore
         InitializeDatabase(databasePath);
     }
 
-    public async Task SaveNewPlayer(Player player, Room currentLocation, string password)
+    public async Task SaveNewPlayer(Player player, Room currentLocation, string password, CancellationToken ct = default)
     {
         var hashedPassword = BCrypt.Net.BCrypt.HashPassword(password);
 
@@ -41,13 +41,13 @@ public class SqlitePlayerStore : IPlayerStore
         await ReplaceInventoryAsync(player);
     }
 
-    public async Task SavePlayer(Player player, Room currentLocation)
+    public async Task SavePlayer(Player player, Room currentLocation, CancellationToken ct = default)
     {
         await using var connection = new SqliteConnection(_connectionString);
 
-        await connection.OpenAsync();
+        await connection.OpenAsync(ct);
 
-        await using var transaction = await connection.BeginTransactionAsync();
+        await using var transaction = await connection.BeginTransactionAsync(ct);
 
         await connection.ExecuteAsync(
             "UPDATE Players SET CurrentLocation = @CurrentLocation WHERE Username = @Username",
@@ -56,10 +56,10 @@ public class SqlitePlayerStore : IPlayerStore
 
         await ReplaceInventoryAsync(connection, player, transaction);
 
-        await transaction.CommitAsync();
+        await transaction.CommitAsync(ct);
     }
 
-    public async Task<PlayerDto?> LoadPlayer(LoginCommand command)
+    public async Task<PlayerDto?> LoadPlayer(LoginCommand command, CancellationToken ct = default)
     {
         await using var connection = new SqliteConnection(_connectionString);
 

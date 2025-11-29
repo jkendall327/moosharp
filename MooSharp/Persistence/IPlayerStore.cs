@@ -2,7 +2,7 @@ namespace MooSharp.Persistence;
 
 public interface IPlayerStore
 {
-    Task SaveNewPlayer(Player player, Room currentLocation, string password);
-    Task SavePlayer(Player player, Room currentLocation);
-    Task<PlayerDto?> LoadPlayer(LoginCommand command);
+    Task SaveNewPlayer(Player player, Room currentLocation, string password, CancellationToken ct = default);
+    Task SavePlayer(Player player, Room currentLocation, CancellationToken ct = default);
+    Task<PlayerDto?> LoadPlayer(LoginCommand command, CancellationToken ct = default);
 }
