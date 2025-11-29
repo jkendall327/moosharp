@@ -20,4 +20,5 @@ public class AgentOptions
     public required string AnthropicApiKey { get; set; }
     public required string AgentIdentitiesPath { get; set; }
     public required string SystemPromptTemplatePath { get; set; }
+    public required string VolitionPrompt { get; set; }
 }

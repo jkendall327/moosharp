@@ -31,7 +31,10 @@ public sealed class AgentBrain : IAsyncDisposable
     private readonly Channel<string> _incomingMessages;
     private readonly CancellationTokenSource _cts;
     private Task? _processingTask;
+    
+    // Volition
     private Task? _volitionTask;
+    private readonly TimeSpan _volitionCooldown;
 
     // Rate limiting
     private readonly TimeSpan _actionCooldown;
@@ -49,6 +52,7 @@ public sealed class AgentBrain : IAsyncDisposable
         TimeProvider clock,
         ILogger logger,
         IAgentResponseProvider responseProvider,
+        TimeSpan? volitionCooldown = null,
         TimeSpan? actionCooldown = null,
         CancellationToken cancellationToken = default)
     {
@@ -65,6 +69,7 @@ public sealed class AgentBrain : IAsyncDisposable
         _cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
 
         _actionCooldown = actionCooldown ?? TimeSpan.FromSeconds(10);
+        _volitionCooldown = volitionCooldown ?? TimeSpan.FromMinutes(1);
 
         _incomingMessages = Channel.CreateUnbounded<string>(new()
         {
@@ -78,7 +83,7 @@ public sealed class AgentBrain : IAsyncDisposable
             OnMessageReceived = EnqueueIncomingMessageAsync
         };
 
-        _history = new();
+        _history = [];
     }
     
     public async Task StartAsync(CancellationToken ct = default)
@@ -94,11 +99,11 @@ public sealed class AgentBrain : IAsyncDisposable
     
     private async Task HandleVolitionAsync(CancellationToken ct = default)
     {
-        using var timer = new PeriodicTimer(TimeSpan.FromMinutes(1), _clock);
+        using var timer = new PeriodicTimer(_volitionCooldown, _clock);
 
         while (await timer.WaitForNextTickAsync(ct))
         {
-            await EnqueueIncomingMessageAsync("<You've been stationary for too long - do something!>");
+            await EnqueueIncomingMessageAsync(_options.Value.VolitionPrompt);
         }
     }
 
