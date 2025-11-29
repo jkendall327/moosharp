@@ -70,8 +70,7 @@ public class GameEngine(
 
         if (location is null)
         {
-            location = world.Rooms.First()
-                .Value;
+            location = world.GetDefaultRoom();
 
             world.MovePlayer(player, location);
         }
@@ -146,8 +145,7 @@ public class GameEngine(
 
     private async Task CreateNewPlayer(ConnectionId connectionId, RegisterCommand rc, string? sessionToken)
     {
-        var defaultRoom = world.Rooms.First()
-            .Value;
+        var defaultRoom = world.GetDefaultRoom();
 
         var player = new Player
         {
@@ -191,8 +189,7 @@ public class GameEngine(
 
         var startingRoom = world.Rooms.TryGetValue(dto.CurrentLocation, out var r)
             ? r
-            : world.Rooms.First()
-                .Value;
+            : world.GetDefaultRoom();
 
         var player = new Player
         {
@@ -284,8 +281,7 @@ public class GameEngine(
 
     private Task RegisterAgent(ConnectionId connectionId, RegisterAgentCommand command)
     {
-        var defaultRoom = world.Rooms.First()
-            .Value;
+        var defaultRoom = world.GetDefaultRoom();
 
         var player = new Player
         {

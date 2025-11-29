@@ -26,6 +26,12 @@ public class World(IWorldStore worldStore, ILogger<World> logger)
         }
     }
 
+    public Room GetDefaultRoom()
+    {
+        return Rooms.First()
+            .Value;
+    }
+
     public Room? GetPlayerLocation(Player player)
     {
         lock (_locationLock)
