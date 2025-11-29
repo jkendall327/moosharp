@@ -113,7 +113,7 @@ public class AgentResponseProvider(
     private async Task<ChatMessageContent> GetAnthropicResponseAsync(ChatHistory currentHistory)
     {
         using var client = new AnthropicClient(new(apiKey: options.Value.AnthropicApiKey));
-        var chatClient = (IChatClient) client.Messages;
+        IChatClient? chatClient = client.Messages;
 
         var history = await promptProvider
             .PrepareHistoryAsync(currentHistory)

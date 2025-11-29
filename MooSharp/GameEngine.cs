@@ -87,6 +87,7 @@ public class GameEngine(
         if (string.IsNullOrWhiteSpace(sessionToken))
         {
             await rawMessageSender.SendSystemMessageAsync(newConnectionId, "Session missing. Please log in.");
+
             return;
         }
 
@@ -96,6 +97,7 @@ public class GameEngine(
         if (player is null)
         {
             await rawMessageSender.SendSystemMessageAsync(newConnectionId, "Session expired. Please log in again.");
+
             return;
         }
 
@@ -187,9 +189,7 @@ public class GameEngine(
             return;
         }
 
-        var startingRoom = world.Rooms.TryGetValue(dto.CurrentLocation, out var r)
-            ? r
-            : world.GetDefaultRoom();
+        var startingRoom = world.Rooms.TryGetValue(dto.CurrentLocation, out var r) ? r : world.GetDefaultRoom();
 
         var player = new Player
         {
@@ -281,7 +281,17 @@ public class GameEngine(
 
     private Task RegisterAgent(ConnectionId connectionId, RegisterAgentCommand command)
     {
-        var defaultRoom = world.GetDefaultRoom();
+        var startingRoom = world.GetDefaultRoom();
+
+        var slug = command.Identity.StartingRoomSlug;
+
+        if (slug is not null)
+        {
+            if (world.Rooms.TryGetValue(slug, out var found))
+            {
+                startingRoom = found;
+            }
+        }
 
         var player = new Player
         {
@@ -289,7 +299,7 @@ public class GameEngine(
             Connection = command.Connection
         };
 
-        world.MovePlayer(player, defaultRoom);
+        world.MovePlayer(player, startingRoom);
 
         world.Players[connectionId.Value] = player;
 

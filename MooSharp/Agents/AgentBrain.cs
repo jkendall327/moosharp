@@ -15,43 +15,43 @@ namespace MooSharp.Agents;
 
 public sealed class AgentBrain : IAsyncDisposable
 {
+    // State
     private readonly AgentPlayerConnection _connection;
-    private readonly ChannelWriter<GameInput> _gameInputWriter;
     private readonly ChatHistory _history;
-    private readonly ILogger _logger;
-    private readonly string _name;
-    private readonly string _persona;
+    private readonly AgentCreationBundle _bundle;
+    
+    // Services
     private readonly IAgentPromptProvider _promptProvider;
-    private readonly IOptions<AgentOptions> _options;
     private readonly TimeProvider _clock;
-    private readonly AgentSource _source;
-
     private readonly IAgentResponseProvider _responseProvider;
+    private readonly IOptions<AgentOptions> _options;
+    private readonly ILogger _logger;
 
+    // Mailbox loop processing
+    private readonly ChannelWriter<GameInput> _gameInputWriter;
     private readonly Channel<string> _incomingMessages;
     private readonly CancellationTokenSource _cts;
     private Task? _processingTask;
+    
+    // Volition
+    private Task? _volitionTask;
 
     // Rate limiting
-    private readonly TimeSpan _actionCooldown;
     private DateTimeOffset _nextAllowedActionTime = DateTimeOffset.MinValue;
     private readonly SemaphoreSlim _cooldownLock = new(1, 1);
 
-    public AgentBrain(string name,
-        string persona,
-        AgentSource source,
+    public IPlayerConnection Connection => _connection;
+    
+    public AgentBrain(AgentCreationBundle bundle,
         ChannelWriter<GameInput> gameInputWriter,
-        IOptions<AgentOptions> options,
         IAgentPromptProvider promptProvider,
         TimeProvider clock,
-        ILogger logger,
         IAgentResponseProvider responseProvider,
-        TimeSpan? actionCooldown = null,
+        IOptions<AgentOptions> options,
+        ILogger logger,
         CancellationToken cancellationToken = default)
     {
-        _name = name;
-        _persona = persona;
-        _source = source;
+        _bundle = bundle;
         _gameInputWriter = gameInputWriter;
         _logger = logger;
         _responseProvider = responseProvider;
@@ -60,9 +60,7 @@ public sealed class AgentBrain : IAsyncDisposable
         _clock = clock;
 
         _cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-
-        _actionCooldown = actionCooldown ?? TimeSpan.FromSeconds(10);
-
+        
         _incomingMessages = Channel.CreateUnbounded<string>(new()
         {
             SingleReader = true,
@@ -75,19 +73,28 @@ public sealed class AgentBrain : IAsyncDisposable
             OnMessageReceived = EnqueueIncomingMessageAsync
         };
 
-        _history = new();
+        _history = [];
     }
-
-    public IPlayerConnection Connection => _connection;
-
+    
     public async Task StartAsync(CancellationToken ct = default)
     {
-        _logger.LogInformation("Starting agent brain for {AgentName} (source: {AgentSource})", _name, _source);
+        _logger.LogInformation("Starting agent brain for {AgentName} (source: {AgentSource})", _bundle.Name, _bundle.Source);
 
         await EnsureSystemPromptAsync(ct)
             .ConfigureAwait(false);
 
         _processingTask = Task.Run(() => ProcessIncomingMessagesAsync(_cts.Token), ct);
+        _volitionTask = Task.Run(() => HandleVolitionAsync(_cts.Token), ct);
+    }
+    
+    private async Task HandleVolitionAsync(CancellationToken ct = default)
+    {
+        using var timer = new PeriodicTimer(_bundle.VolitionCooldown, _clock);
+
+        while (await timer.WaitForNextTickAsync(ct))
+        {
+            await EnqueueIncomingMessageAsync(_options.Value.VolitionPrompt);
+        }
     }
 
     private async Task EnsureSystemPromptAsync(CancellationToken cancellationToken)
@@ -98,57 +105,35 @@ public sealed class AgentBrain : IAsyncDisposable
         }
 
         var systemPrompt = await _promptProvider
-            .GetSystemPromptAsync(_name, _persona, cancellationToken)
+            .GetSystemPromptAsync(_bundle.Name, _bundle.Persona, cancellationToken)
             .ConfigureAwait(false);
 
         _history.AddSystemMessage(systemPrompt);
     }
 
-    private Task EnqueueIncomingMessageAsync(string message)
+    private async Task EnqueueIncomingMessageAsync(string message)
     {
-        _logger.LogDebug("Queuing incoming message for {AgentName}: {Message}", _name, message);
+        _logger.LogDebug("Queuing incoming message for {AgentName}: {Message}", _bundle.Name, message);
 
-        if (!_incomingMessages.Writer.TryWrite(message))
-        {
-            return _incomingMessages
-                .Writer
-                .WriteAsync(message)
-                .AsTask();
-        }
-
-        return Task.CompletedTask;
+        await _incomingMessages.Writer.WriteAsync(message).ConfigureAwait(false);
     }
 
     private async Task ProcessIncomingMessagesAsync(CancellationToken cancellationToken)
     {
         try
         {
-            while (await _incomingMessages
-                       .Reader
-                       .WaitToReadAsync(cancellationToken)
-                       .ConfigureAwait(false))
+            await foreach (var message in _incomingMessages.Reader.ReadAllAsync(cancellationToken))
             {
-                while (_incomingMessages.Reader.TryRead(out var message))
-                {
-                    try
-                    {
-                        await HandleIncomingGameMessageAsync(message)
-                            .ConfigureAwait(false);
-                    }
-                    catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
-                    {
-                        throw;
-                    }
-                    catch (Exception ex)
-                    {
-                        _logger.LogError(ex, "Error processing message for {AgentName}", _name);
-                    }
-                }
+                await HandleIncomingGameMessageAsync(message).ConfigureAwait(false);
             }
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
             // Expected during disposal
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error processing message for {AgentName}", _bundle.Name);
         }
     }
 
@@ -167,7 +152,7 @@ public sealed class AgentBrain : IAsyncDisposable
                 // Still on cooldown - no action
                 _logger.LogDebug(
                     "Agent {AgentName} is on cooldown until {NextAllowedActionTime} (current: {CurrentTime})",
-                    _name,
+                    _bundle.Name,
                     _nextAllowedActionTime,
                     now);
 
@@ -175,7 +160,7 @@ public sealed class AgentBrain : IAsyncDisposable
             }
 
             // We’re allowed to act now; set the next allowed time
-            _nextAllowedActionTime = now + _actionCooldown;
+            _nextAllowedActionTime = now + _bundle.ActionCooldown;
 
             return true;
         }
@@ -190,7 +175,7 @@ public sealed class AgentBrain : IAsyncDisposable
         try
         {
             await _gameInputWriter
-                .WriteAsync(new(new ConnectionId(_connection.Id), new AgentThinkingCommand()), cancellationToken)
+                .WriteAsync(new(new(_connection.Id), new AgentThinkingCommand()), cancellationToken)
                 .ConfigureAwait(false);
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
@@ -199,14 +184,14 @@ public sealed class AgentBrain : IAsyncDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Failed to publish thinking indicator for {AgentName}", _name);
+            _logger.LogWarning(ex, "Failed to publish thinking indicator for {AgentName}", _bundle.Name);
         }
     }
 
     private async Task HandleIncomingGameMessageAsync(string message)
     {
         // Always record history.
-        _logger.LogInformation("Processing incoming game message for {AgentName}", _name);
+        _logger.LogInformation("Processing incoming game message for {AgentName}", _bundle.Name);
         _history.AddUserMessage(message);
 
         TrimHistory();
@@ -214,7 +199,7 @@ public sealed class AgentBrain : IAsyncDisposable
         // Only sometimes actually act, based on cooldown
         if (!await ShouldActAsync())
         {
-            _logger.LogDebug("Cooldown active; skipping action for {AgentName}", _name);
+            _logger.LogDebug("Cooldown active; skipping action for {AgentName}", _bundle.Name);
 
             return;
         }
@@ -223,19 +208,19 @@ public sealed class AgentBrain : IAsyncDisposable
             .ConfigureAwait(false);
 
         var content = await _responseProvider
-            .GetResponse(_name, _source, _history)
+            .GetResponse(_bundle.Name, _bundle.Source, _history)
             .ConfigureAwait(false);
 
-        var commandText = content.Content?.Trim();
+        var response = content.Content?.Trim();
 
-        if (string.IsNullOrEmpty(commandText))
+        if (string.IsNullOrEmpty(response))
         {
-            _logger.LogWarning("No command returned for {AgentName}", _name);
+            _logger.LogWarning("No command returned for {AgentName}", _bundle.Name);
 
             return;
         }
 
-        _history.AddAssistantMessage(commandText);
+        _history.AddAssistantMessage(response);
 
         TrimHistory();
 
@@ -243,10 +228,10 @@ public sealed class AgentBrain : IAsyncDisposable
 
         var command = new WorldCommand
         {
-            Command = commandText
+            Command = response
         };
 
-        _logger.LogInformation("Sending command for {AgentName}: {Command}", _name, commandText);
+        _logger.LogInformation("Sending command for {AgentName}: {Command}", _bundle.Name, response);
         await _gameInputWriter.WriteAsync(new(id, command));
     }
 
@@ -268,7 +253,7 @@ public sealed class AgentBrain : IAsyncDisposable
 
     public async ValueTask DisposeAsync()
     {
-        _logger.LogInformation("Disposing agent brain for {AgentName}", _name);
+        _logger.LogInformation("Disposing agent brain for {AgentName}", _bundle.Name);
         await _cts.CancelAsync();
         _incomingMessages.Writer.TryComplete();
 
@@ -277,6 +262,10 @@ public sealed class AgentBrain : IAsyncDisposable
             if (_processingTask is not null)
             {
                 await _processingTask.ConfigureAwait(false);
+            }
+            if (_volitionTask is not null)
+            {
+                await _volitionTask.ConfigureAwait(false);
             }
         }
         catch (OperationCanceledException) when (_cts.IsCancellationRequested)
