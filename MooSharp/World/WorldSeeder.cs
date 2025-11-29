@@ -122,7 +122,9 @@ public class WorldSeeder(IOptions<AppOptions> options, ILogger<WorldSeeder> logg
             var obj = new Object
             {
                 Description = objectDto.Description,
-                Name = objectDto.Name
+                Name = objectDto.Name,
+                Flags = objectDto.Flags,
+                KeyId = objectDto.KeyId
             };
 
             if (!string.IsNullOrWhiteSpace(objectDto.TextContent))

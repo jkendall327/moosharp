@@ -203,7 +203,9 @@ public class GameEngine(
             {
                 Id = new ObjectId(Guid.Parse(item.Id)),
                 Name = item.Name,
-                Description = item.Description
+                Description = item.Description,
+                Flags = item.Flags,
+                KeyId = item.KeyId
             };
 
             if (!string.IsNullOrWhiteSpace(item.TextContent))

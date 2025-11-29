@@ -73,7 +73,11 @@ public class SqlitePlayerStore : IPlayerStore
         }
 
         var inventory = await connection.QueryAsync<InventoryItemDto>(
-            "SELECT ItemId as Id, Name, Description, TextContent FROM PlayerInventory WHERE Username = @Username",
+            """
+            SELECT ItemId as Id, Name, Description, TextContent, Flags, KeyId
+            FROM PlayerInventory
+            WHERE Username = @Username
+            """,
             new { command.Username });
 
         player.Inventory = inventory.ToList();
@@ -132,11 +136,15 @@ public class SqlitePlayerStore : IPlayerStore
                 Name TEXT NOT NULL,
                 Description TEXT NOT NULL,
                 TextContent TEXT,
+                Flags INTEGER NOT NULL DEFAULT 0,
+                KeyId TEXT,
                 FOREIGN KEY (Username) REFERENCES Players (Username) ON DELETE CASCADE
             );
             """);
 
         connection.Execute("CREATE INDEX IF NOT EXISTS IX_PlayerInventory_Username ON PlayerInventory (Username);");
+
+        EnsurePlayerInventoryColumns(connection);
     }
 
     private async Task ReplaceInventoryAsync(Player player)
@@ -156,8 +164,8 @@ public class SqlitePlayerStore : IPlayerStore
         const string deleteSql = "DELETE FROM PlayerInventory WHERE Username = @Username";
         const string insertSql =
             """
-            INSERT INTO PlayerInventory (ItemId, Username, Name, Description, TextContent)
-            VALUES (@ItemId, @Username, @Name, @Description, @TextContent);
+            INSERT INTO PlayerInventory (ItemId, Username, Name, Description, TextContent, Flags, KeyId)
+            VALUES (@ItemId, @Username, @Name, @Description, @TextContent, @Flags, @KeyId);
             """;
 
         await connection.ExecuteAsync(deleteSql, new { player.Username }, transaction);
@@ -168,10 +176,40 @@ public class SqlitePlayerStore : IPlayerStore
         }
 
         var items = player.Inventory
-            .Select(o => new { ItemId = o.Id.Value.ToString(), player.Username, o.Name, o.Description, o.TextContent });
+            .Select(o => new
+            {
+                ItemId = o.Id.Value.ToString(),
+                player.Username,
+                o.Name,
+                o.Description,
+                o.TextContent,
+                Flags = (int)o.Flags,
+                o.KeyId
+            });
 
         await connection.ExecuteAsync(insertSql, items, transaction);
     }
 
-    private sealed record TableInfo(string name);
+    private static void EnsurePlayerInventoryColumns(SqliteConnection connection)
+    {
+        var existingColumns = connection
+            .Query<TableInfo>("PRAGMA table_info('PlayerInventory');")
+            .Select(c => c.Name)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        if (!existingColumns.Contains("Flags"))
+        {
+            connection.Execute("ALTER TABLE PlayerInventory ADD COLUMN Flags INTEGER NOT NULL DEFAULT 0;");
+        }
+
+        if (!existingColumns.Contains("KeyId"))
+        {
+            connection.Execute("ALTER TABLE PlayerInventory ADD COLUMN KeyId TEXT;");
+        }
+    }
+
+    private sealed class TableInfo
+    {
+        public string Name { get; init; } = string.Empty;
+    }
 }

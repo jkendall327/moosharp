@@ -95,6 +95,25 @@ public sealed class InMemoryWorldStore : IWorldStore
             clone.Exits[exit.Key] = exit.Value;
         }
 
+        foreach (var item in room.Contents)
+        {
+            var clonedItem = new Object
+            {
+                Id = item.Id,
+                Name = item.Name,
+                Description = item.Description,
+                Flags = item.Flags,
+                KeyId = item.KeyId
+            };
+
+            if (!string.IsNullOrWhiteSpace(item.TextContent))
+            {
+                clonedItem.WriteText(item.TextContent);
+            }
+
+            clonedItem.MoveTo(clone);
+        }
+
         return clone;
     }
 }
