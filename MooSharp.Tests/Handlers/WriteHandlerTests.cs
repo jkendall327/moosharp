@@ -23,7 +23,7 @@ public class WriteHandlerTests
 
         item.MoveTo(room);
 
-        var handler = new WriteHandler(world);
+        var handler = new WriteHandler(world, new TargetResolver());
 
         var result = await handler.Handle(new WriteCommand
         {

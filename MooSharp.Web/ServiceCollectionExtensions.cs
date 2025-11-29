@@ -20,6 +20,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<CommandParser>();
         services.AddSingleton<CommandExecutor>();
         services.AddSingleton<CommandReference>();
+        services.AddSingleton<TargetResolver>();
         
         // Agents
         services.AddSingleton<IAgentPromptProvider, AgentPromptProvider>();

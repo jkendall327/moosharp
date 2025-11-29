@@ -36,8 +36,6 @@ public class Room : IContainer
     public IReadOnlyCollection<Object> Contents => _contents;
     public Dictionary<string, RoomId> Exits { get; } = new(StringComparer.OrdinalIgnoreCase);
     public IReadOnlyCollection<Player> PlayersInRoom => _playersInRoom;
-
-    public SearchResult FindObjects(string query) => _contents.FindObjects(query);
     
     public string DescribeFor(Player player, bool useLongDescription = false)
     {
@@ -88,21 +86,4 @@ public class Room : IContainer
     }
 
     internal bool RemovePlayer(Player player) => _playersInRoom.Remove(player);
-}
-
-public enum SearchStatus
-{
-    Found,
-    NotFound,
-    Ambiguous,
-    IndexOutOfRange
-}
-
-public class SearchResult
-{
-    public SearchStatus Status { get; init; } = SearchStatus.Found;
-
-    public Object? Match { get; init; }
-
-    public List<Object> Candidates { get; init; } = [];
 }

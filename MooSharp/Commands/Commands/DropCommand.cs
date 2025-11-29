@@ -22,7 +22,7 @@ public class DropCommandDefinition : ICommandDefinition
         };
 }
 
-public class DropHandler(World world) : IHandler<DropCommand>
+public class DropHandler(World world, TargetResolver resolver) : IHandler<DropCommand>
 {
     public Task<CommandResult> Handle(DropCommand cmd, CancellationToken cancellationToken = default)
     {
@@ -39,7 +39,7 @@ public class DropHandler(World world) : IHandler<DropCommand>
         var room = world.GetPlayerLocation(player)
             ?? throw new InvalidOperationException("Player has no known current location.");
 
-        var search = player.Inventory.FindObjects(target);
+        var search = resolver.FindObjects(player.Inventory, target);
 
         switch (search.Status)
         {

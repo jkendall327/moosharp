@@ -21,7 +21,7 @@ public class ReadCommandDefinition : ICommandDefinition
     };
 }
 
-public class ReadHandler(World world) : IHandler<ReadCommand>
+public class ReadHandler(World world, TargetResolver resolver) : IHandler<ReadCommand>
 {
     public Task<CommandResult> Handle(ReadCommand cmd, CancellationToken cancellationToken = default)
     {
@@ -37,7 +37,7 @@ public class ReadHandler(World world) : IHandler<ReadCommand>
         var room = world.GetPlayerLocation(cmd.Player)
             ?? throw new InvalidOperationException("Player has no known current location.");
 
-        var search = AccessibleObjectSearcher.FindNearbyObject(cmd.Player, room, target);
+        var search = resolver.FindNearbyObject(cmd.Player, room, target);
 
         switch (search.Status)
         {

@@ -39,7 +39,7 @@ public class WriteCommandDefinition : ICommandDefinition
     }
 }
 
-public class WriteHandler(World world) : IHandler<WriteCommand>
+public class WriteHandler(World world, TargetResolver resolver) : IHandler<WriteCommand>
 {
     public Task<CommandResult> Handle(WriteCommand cmd, CancellationToken cancellationToken = default)
     {
@@ -63,7 +63,7 @@ public class WriteHandler(World world) : IHandler<WriteCommand>
         var room = world.GetPlayerLocation(cmd.Player)
             ?? throw new InvalidOperationException("Player has no known current location.");
 
-        var search = AccessibleObjectSearcher.FindNearbyObject(cmd.Player, room, target);
+        var search = resolver.FindNearbyObject(cmd.Player, room, target);
 
         switch (search.Status)
         {
@@ -86,7 +86,7 @@ public class WriteHandler(World world) : IHandler<WriteCommand>
                 var writeEvent = new ObjectWrittenOnEvent(cmd.Player, item, text);
                 result.Add(cmd.Player, writeEvent);
 
-                if (item.Location is Room location && ReferenceEquals(location, room))
+                if (item.Location is { } location && ReferenceEquals(location, room))
                 {
                     result.BroadcastToAllButPlayer(room, cmd.Player, writeEvent);
                 }

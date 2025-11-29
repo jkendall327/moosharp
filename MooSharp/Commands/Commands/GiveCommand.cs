@@ -31,7 +31,7 @@ public class GiveCommandDefinition : ICommandDefinition
     }
 }
 
-public class GiveHandler(World world) : IHandler<GiveCommand>
+public class GiveHandler(World world, TargetResolver resolver) : IHandler<GiveCommand>
 {
     public Task<CommandResult> Handle(GiveCommand cmd, CancellationToken cancellationToken = default)
     {
@@ -56,7 +56,7 @@ public class GiveHandler(World world) : IHandler<GiveCommand>
             return Task.FromResult(result);
         }
 
-        var search = player.Inventory.FindObjects(cmd.ItemName);
+        var search = resolver.FindObjects(player.Inventory, cmd.ItemName);
 
         switch (search.Status)
         {

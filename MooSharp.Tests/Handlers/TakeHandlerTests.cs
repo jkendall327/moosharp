@@ -19,7 +19,7 @@ public class TakeHandlerTests
 
         item.MoveTo(room);
 
-        var handler = new TakeHandler(world);
+        var handler = new TakeHandler(world, new TargetResolver());
 
         var result = await handler.Handle(new TakeCommand
         {
@@ -43,7 +43,7 @@ public class TakeHandlerTests
         var player = HandlerTestHelpers.CreatePlayer();
         world.MovePlayer(player, room);
 
-        var handler = new TakeHandler(world);
+        var handler = new TakeHandler(world, new TargetResolver());
 
         var result = await handler.Handle(new TakeCommand
         {
@@ -75,7 +75,7 @@ public class TakeHandlerTests
 
         item.MoveTo(owner);
 
-        var handler = new TakeHandler(world);
+        var handler = new TakeHandler(world, new TargetResolver());
 
         var result = await handler.Handle(new TakeCommand
         {
@@ -106,7 +106,7 @@ public class TakeHandlerTests
 
         item.MoveTo(player);
 
-        var handler = new TakeHandler(world);
+        var handler = new TakeHandler(world, new TargetResolver());
 
         var result = await handler.Handle(new TakeCommand
         {

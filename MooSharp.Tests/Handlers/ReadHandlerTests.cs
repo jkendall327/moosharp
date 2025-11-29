@@ -22,7 +22,7 @@ public class ReadHandlerTests
 
         item.MoveTo(room);
 
-        var handler = new ReadHandler(world);
+        var handler = new ReadHandler(world, new TargetResolver());
 
         var result = await handler.Handle(new ReadCommand
         {
@@ -52,7 +52,7 @@ public class ReadHandlerTests
 
         item.MoveTo(room);
 
-        var handler = new ReadHandler(world);
+        var handler = new ReadHandler(world, new TargetResolver());
 
         var result = await handler.Handle(new ReadCommand
         {
