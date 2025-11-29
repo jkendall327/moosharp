@@ -61,7 +61,7 @@ public class AgentSpawner(AgentFactory factory, ChannelWriter<GameInput> writer,
         var registerAgentCommand = new RegisterAgentCommand
         {
             Identity = identity,
-            Connection = brain.
+            Connection = brain.Connection
         };
 
         var connectionId = new ConnectionId(brain.Connection.Id);

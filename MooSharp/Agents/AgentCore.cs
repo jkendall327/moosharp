@@ -53,10 +53,10 @@ public class AgentCore(
                 yield break;
             }
 
-            // 2. Yield "Thinking" immediately so the UI can update.
+            // Yield "Thinking" immediately so the UI can update.
             yield return new AgentThinkingCommand();
 
-            // 3. Perform the slow LLM call
+            // Perform the slow LLM call.
             // The shell is currently processing the Thinking command, 
             // but the lock prevents other messages from entering.
             var content = await responseProvider.GetResponse(bundle.Name, bundle.Source, _history, ct);
@@ -71,7 +71,7 @@ public class AgentCore(
             _history.AddAssistantMessage(responseText);
             TrimHistory();
 
-            // 4. Yield the actual "Response"
+            // Yield the actual response.
             yield return new WorldCommand
             {
                 Command = responseText
@@ -85,6 +85,11 @@ public class AgentCore(
         }
     }
 
+    public TimeSpan GetVolitionCooldown()
+    {
+        return bundle.VolitionCooldown;
+    }
+    
     public bool RequiresVolition()
     {
         var idle = clock

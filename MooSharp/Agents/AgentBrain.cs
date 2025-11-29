@@ -12,13 +12,14 @@ public sealed class AgentBrain(
     IOptions<AgentOptions> options) : IAsyncDisposable
 {
     private readonly Channel<string> _incomingMessages = Channel.CreateUnbounded<string>();
-    private readonly ConnectionId _myConnectionId = new(connection.Id);
     private CancellationTokenSource? _cts;
 
     // Fire-and-forget tasks
     private Task? _processingTask;
     private Task? _volitionTask;
 
+    public IPlayerConnection Connection { get; } = connection;
+    
     public async Task StartAsync(CancellationToken cancellationToken = default)
     {
         _cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
@@ -48,7 +49,7 @@ public sealed class AgentBrain(
             {
                 await foreach (var cmd in core.ProcessMessageAsync(msg, _cts.Token))
                 {
-                    await gameWriter.WriteAsync(new(_myConnectionId, cmd), _cts.Token);
+                    await gameWriter.WriteAsync(new(Connection.Id, cmd), _cts.Token);
                 }
             }
         }
@@ -60,8 +61,10 @@ public sealed class AgentBrain(
     private async Task VolitionLoopAsync()
     {
         ArgumentNullException.ThrowIfNull(_cts);
+
+        var cooldown = core.GetVolitionCooldown();
         
-        using var timer = new PeriodicTimer(TimeSpan.FromSeconds(30), clock);
+        using var timer = new PeriodicTimer(cooldown, clock);
 
         try
         {
