@@ -145,7 +145,7 @@ public class GameViewModel : IDisposable
 
         try
         {
-            await _connection.SendLoginAsync(Username, Password);
+            await _connection.Login(Username, Password);
         }
         catch (Exception ex)
         {
@@ -164,7 +164,7 @@ public class GameViewModel : IDisposable
 
         try
         {
-            await _connection.SendRegisterAsync(Username, Password);
+            await _connection.Register(Username, Password);
         }
         catch (Exception ex)
         {
@@ -248,7 +248,7 @@ public class GameViewModel : IDisposable
 
         try
         {
-            options = await _connection.GetAutocompleteOptionsAsync();
+            options = await _connection.GetAutocompleteOptions();
         }
         catch (Exception ex)
         {

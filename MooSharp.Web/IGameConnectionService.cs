@@ -1,24 +1,24 @@
-namespace MooSharp.Web;
-
 using Microsoft.AspNetCore.SignalR.Client;
+using MooSharp;
 
 public interface IGameConnectionService : IAsyncDisposable
 {
     event Action<string>? OnMessageReceived;
     event Action<bool, string>? OnLoginResult;
+    
     event Action? OnReconnecting;
     event Action? OnReconnected;
     event Action? OnClosed;
 
     HubConnectionState State { get; }
+
     Task InitializeAsync(Uri hubUrl, Func<Task<string?>> accessTokenProvider);
     Task StartAsync();
     Task StopAsync();
-    Task SendCommandAsync(string command);
-    Task SendLoginAsync(string username, string password);
-    Task SendRegisterAsync(string username, string password);
-    Task<AutocompleteOptions> GetAutocompleteOptionsAsync();
-}
 
-// Implementation details omitted for brevity, but it wraps HubConnection
-// and forwards events. See the full ViewModel integration below.
+    // These match MooHub.cs exactly
+    Task Login(string username, string password);
+    Task Register(string username, string password);
+    Task SendCommandAsync(string command);
+    Task<AutocompleteOptions> GetAutocompleteOptions();
+}

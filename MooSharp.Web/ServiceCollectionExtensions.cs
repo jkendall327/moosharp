@@ -4,7 +4,6 @@ using MooSharp.Agents;
 using MooSharp.Infrastructure;
 using MooSharp.Messaging;
 using MooSharp.Persistence;
-using MooSharp.Web.Game;
 
 namespace MooSharp.Web;
 
