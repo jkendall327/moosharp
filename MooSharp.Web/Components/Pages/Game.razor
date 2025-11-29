@@ -1,18 +1,9 @@
 @page "/game"
-@inject NavigationManager Navigation
-@inject ILogger<Game> Logger
-@inject IJSRuntime JS
-@using MooSharp
-@using System.Linq
-@using System.Text
-@using System.Text.Json
-@using Microsoft.AspNetCore.SignalR.Client
-@using Microsoft.AspNetCore.Components
-@using MooSharp.Messaging
+@inject GameViewModel Model
 @implements IAsyncDisposable
 @rendermode InteractiveServer
 
-@if (_hubConnection is null || _hubConnection.State != HubConnectionState.Connected)
+@if (!Model.IsConnected)
 {
     <div class="page-shell">
         <div class="terminal-card" data-label="/status">
@@ -29,42 +20,46 @@ else
                 <p class="tag">/game</p>
                 <h2 class="panel-heading">MooSharp terminal client</h2>
             </div>
-            <span class="status-message">@(_isLoggedIn ? "Session active" : "Awaiting authentication")</span>
+            <span class="status-message">@(Model.IsLoggedIn ? "Session active" : "Awaiting authentication")</span>
         </div>
 
         <div class="game-grid">
             <div class="terminal-card auth-panel" data-label="/auth">
                 <h2 class="panel-heading">Credentials</h2>
-                <input @bind="_username" placeholder="Username" />
-                <input type="password" @bind="_password" @onkeydown="HandlePasswordKeyDown" placeholder="Password" />
+                <input @bind="Model.Username" placeholder="Username"/>
+                <input type="password" @bind="Model.Password" @onkeydown="HandlePasswordKeyDown" placeholder="Password"/>
                 <div class="auth-actions">
-                    <button class="btn btn-accent" @onclick="LoginAsync" disabled="@(!CanSubmitCredentials)">Log In</button>
-                    <button class="btn btn-ghost" @onclick="RegisterAsync" disabled="@(!CanSubmitCredentials)">Register</button>
-                    <button class="btn" @onclick="LogoutAsync" disabled="@(!_isLoggedIn)">Log Out</button>
+                    <button class="btn btn-accent" @onclick="Model.LoginAsync" disabled="@(!Model.CanSubmitCredentials)">Log
+                        In
+                    </button>
+                    <button class="btn btn-ghost" @onclick="Model.RegisterAsync" disabled="@(!Model.CanSubmitCredentials)">
+                        Register
+                    </button>
+                    <button class="btn" @onclick="Model.LogoutAsync" disabled="@(!Model.IsLoggedIn)">Log Out</button>
                 </div>
-                @if (!string.IsNullOrWhiteSpace(_loginStatus))
+                @if (!string.IsNullOrWhiteSpace(Model.LoginStatus))
                 {
-                    <p class="status-message">@_loginStatus</p>
+                    <p class="status-message">@Model.LoginStatus</p>
                 }
             </div>
 
-            <fieldset disabled="@(!_isLoggedIn)">
+            <fieldset disabled="@(!Model.IsLoggedIn)">
                 <div class="terminal-card" data-label="/world-feed">
                     <h2 class="panel-heading">World output</h2>
-                    <pre class="terminal-output">@_gameOutput</pre>
+                    <pre class="terminal-output">@Model.GameOutput</pre>
 
                     <div class="command-input">
-                        <input @bind="_commandInput"
+                        <input @bind="Model.CommandInput"
                                @bind:event="oninput"
-                               @onkeydown="HandleKeyDown"
+                               @onkeydown="HandleCommandKeyDown"
                                @ref="_commandInputRef"
-                               placeholder="Type a command..." />
+                               placeholder="Type a command..."/>
                         <div class="command-actions">
-                            <button class="btn btn-accent" @onclick="SendCommandAsync">Send</button>
+                            <button class="btn btn-accent" @onclick="Model.SubmitCommandAsync">Send</button>
                         </div>
                     </div>
 
-                    @if (!_isLoggedIn)
+                    @if (!Model.IsLoggedIn)
                     {
                         <p class="status-message">Log in or register to start playing.</p>
                     }
@@ -74,15 +69,15 @@ else
                     <h2 class="panel-heading">Channel preferences</h2>
                     <p class="status-message">Toggle channels to mute or unmute global chatter.</p>
                     <div class="channel-list">
-                        @foreach (var channel in _channels)
+                        @foreach (var channel in Model.AvailableChannels)
                         {
                             <label class="channel-toggle">
                                 <input type="checkbox"
-                                       checked="@IsChannelMuted(channel)"
-                                       @onchange="async e => await HandleChannelToggleAsync(e, channel)" />
+                                       checked="@Model.ChannelMuteState[channel]"
+                                       @onchange="async e => await Model.ToggleChannelAsync(channel, (bool)(e.Value ?? false))"/>
                                 <div class="channel-label">
                                     <strong>@channel</strong>
-                                    <span>@(IsChannelMuted(channel) ? "Muted" : "Active")</span>
+                                    <span>@(Model.ChannelMuteState[channel] ? "Muted" : "Active")</span>
                                 </div>
                             </label>
                         }
@@ -94,502 +89,62 @@ else
 }
 
 @code {
-    private const string SessionStorageKey = "mooSharpSession";
-    private const string CommandHistoryStorageKey = "mooSharpCommandHistory";
-    private const int CommandHistoryLimit = 20;
-
-    private HubConnection? _hubConnection;
-    private readonly StringBuilder _gameOutput = new();
-    private string _commandInput = string.Empty;
-    private string _username = string.Empty;
-    private string _password = string.Empty;
-    private string _loginStatus = string.Empty;
-    private bool _isLoggedIn;
-    private string _sessionId = string.Empty;
     private ElementReference _commandInputRef;
-    private readonly List<string> _commandHistory = new();
-    private int _historyIndex = -1;
-    private string _commandDraft = string.Empty;
-    private readonly string[] _channels = [ChatChannels.Global, ChatChannels.Newbie, ChatChannels.Trade];
-    private readonly Dictionary<string, bool> _channelMuteState = new(StringComparer.OrdinalIgnoreCase);
-
-    private bool CanSubmitCredentials =>
-        _hubConnection?.State == HubConnectionState.Connected
-        && !string.IsNullOrWhiteSpace(_username)
-        && !string.IsNullOrWhiteSpace(_password);
-
     private bool _initialized;
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (!firstRender || _initialized)
+        if (firstRender && !_initialized)
         {
-            return;
-        }
+            _initialized = true;
+            Model.OnStateChanged += StateHasChanged;
+            Model.OnFocusInputRequested += FocusInput;
 
-        _initialized = true;
-
-        await LoadCommandHistoryAsync();
-
-        await InitializeAsync();
-    }
-
-    private async Task InitializeAsync()
-    {
-        await SetupHubConnectionAsync();
-
-        InitialiseChannelPreferences();
-
-        await InvokeAsync(StateHasChanged);
-    }
-
-    private async Task SetupHubConnectionAsync()
-    {
-        _sessionId = await GetOrCreateSessionIdAsync();
-
-        _hubConnection = new HubConnectionBuilder()
-            .WithUrl(Navigation.ToAbsoluteUri("/moohub"), options =>
-            {
-                options.AccessTokenProvider = () => Task.FromResult<string?>(_sessionId);
-            })
-            .Build();
-
-        _hubConnection.On<string>("ReceiveMessage",
-            (message) =>
-            {
-                _gameOutput.AppendLine(message);
-
-                InvokeAsync(StateHasChanged);
-            });
-
-        _hubConnection.On<bool, string>("LoginResult", (success, message) =>
-        {
-            _isLoggedIn = success;
-            _loginStatus = message;
-            _gameOutput.AppendLine(message);
-
-            InvokeAsync(StateHasChanged);
-        });
-
-        _hubConnection.Reconnecting += error =>
-        {
-            Logger.LogWarning(error, "SignalR reconnecting...");
-
-            _isLoggedIn = false;
-
-            return Task.CompletedTask;
-        };
-
-        _hubConnection.Reconnected += connectionId =>
-        {
-            Logger.LogInformation("SignalR reconnected. New ConnectionId={ConnectionId}", connectionId);
-
-            _isLoggedIn = false;
-
-            return Task.CompletedTask;
-        };
-
-        _hubConnection.Closed += error =>
-        {
-            Logger.LogWarning(error, "SignalR closed");
-
-            _isLoggedIn = false;
-
-            return Task.CompletedTask;
-        };
-
-        // Start the connection
-        try
-        {
-            await _hubConnection.StartAsync();
-        }
-        catch (Exception ex)
-        {
-            _gameOutput.AppendLine($"Starting hub failed: {ex.Message}");
+            await Model.InitializeAsync();
         }
     }
 
-    private async Task HandleKeyDown(KeyboardEventArgs e)
+    private async Task HandleCommandKeyDown(KeyboardEventArgs e)
     {
         switch (e.Key)
         {
-            case "Enter":
-                await SendCommandAsync();
-                break;
-            case "ArrowUp":
-                NavigateHistory(-1);
-                break;
-            case "ArrowDown":
-                NavigateHistory(1);
-                break;
+            case "Enter": await Model.SubmitCommandAsync(); break;
+            case "ArrowUp": Model.NavigateHistory(-1); break;
+            case "ArrowDown": Model.NavigateHistory(1); break;
             case "Tab":
-                await HandleAutocompleteAsync();
-                break;
-            default:
-                _historyIndex = -1;
-                _commandDraft = string.Empty;
+                await Model.PerformAutocompleteAsync();
+
+                // Prevent tab from moving focus (requires JS preventDefault usually, 
+                // but for now we just refocus)
                 break;
         }
 
-        await FocusCommandInputAsync();
+        await FocusInput();
     }
 
     private async Task HandlePasswordKeyDown(KeyboardEventArgs e)
     {
-        if (e.Key == "Enter")
-        {
-            await LoginAsync();
-        }
+        if (e.Key == "Enter") await Model.LoginAsync();
     }
 
-    private async Task SendCommandAsync()
+    private async Task FocusInput()
     {
-        if (_hubConnection is null || string.IsNullOrWhiteSpace(_commandInput) || !_isLoggedIn)
+        // Focus logic is purely View concern
+        if (_commandInputRef.Context != null)
         {
-            return;
+            await _commandInputRef.FocusAsync();
         }
-
-        try
-        {
-            await _hubConnection.SendAsync(nameof(MooHub.SendCommand), _commandInput);
-        }
-        catch (Exception e)
-        {
-            Logger.LogError(e, "Error on SignalR send");
-
-            throw;
-        }
-
-        AddCommandToHistory(_commandInput);
-        await SaveCommandHistoryAsync();
-
-        _commandInput = string.Empty;
-        _historyIndex = -1;
-        _commandDraft = string.Empty;
     }
 
-    private async Task LoginAsync()
+    public ValueTask DisposeAsync()
     {
-        if (!CanSubmitCredentials)
-        {
-            return;
-        }
+        Model.OnStateChanged -= StateHasChanged;
+        Model.OnFocusInputRequested -= FocusInput;
 
-        _loginStatus = "Logging in...";
+        return ValueTask.CompletedTask;
 
-        await SendCredentialCommandAsync(nameof(MooHub.Login));
+        // The DI container handles disposing the ViewModel if registered as Scoped,
+        // otherwise call VM.Dispose() here if Transient.
     }
 
-    private async Task RegisterAsync()
-    {
-        if (!CanSubmitCredentials)
-        {
-            return;
-        }
-
-        _loginStatus = "Registering...";
-
-        await SendCredentialCommandAsync(nameof(MooHub.Register));
-    }
-
-    private async Task LogoutAsync()
-    {
-        _loginStatus = "Logging out...";
-
-        await JS.InvokeVoidAsync("localStorage.removeItem", SessionStorageKey);
-
-        if (_hubConnection is not null)
-        {
-            try
-            {
-                await _hubConnection.StopAsync();
-            }
-            catch (Exception e)
-            {
-                Logger.LogError(e, "Error stopping SignalR connection on logout");
-            }
-
-            await _hubConnection.DisposeAsync();
-            _hubConnection = null;
-        }
-
-        _sessionId = string.Empty;
-        _isLoggedIn = false;
-        _commandInput = string.Empty;
-        _username = string.Empty;
-        _password = string.Empty;
-
-        foreach (var channel in _channels)
-        {
-            _channelMuteState[channel] = false;
-        }
-
-        const string logoutMessage = "Logged out. Session cleared.";
-
-        _gameOutput.AppendLine(logoutMessage);
-        _loginStatus = logoutMessage;
-
-        await SetupHubConnectionAsync();
-
-        await InvokeAsync(StateHasChanged);
-    }
-
-    private async Task SendCredentialCommandAsync(string commandName)
-    {
-        if (_hubConnection is null)
-        {
-            return;
-        }
-
-        try
-        {
-            await _hubConnection.SendAsync(commandName, _username, _password);
-        }
-        catch (Exception e)
-        {
-            Logger.LogError(e, "Error on SignalR send for {CommandName}", commandName);
-
-            _loginStatus = $"Failed to send {commandName.ToLowerInvariant()} request.";
-            throw;
-        }
-    }
-
-    private async Task<string> GetOrCreateSessionIdAsync()
-    {
-        var existingSessionId = await JS.InvokeAsync<string?>("localStorage.getItem", SessionStorageKey);
-
-        if (!string.IsNullOrWhiteSpace(existingSessionId))
-        {
-            return existingSessionId;
-        }
-
-        var newSessionId = Guid.NewGuid().ToString();
-
-        await JS.InvokeVoidAsync("localStorage.setItem", SessionStorageKey, newSessionId);
-
-        return newSessionId;
-    }
-
-    private void InitialiseChannelPreferences()
-    {
-        foreach (var channel in _channels)
-        {
-            _channelMuteState.TryAdd(channel, false);
-        }
-    }
-
-    private bool IsChannelMuted(string channel)
-    {
-        return _channelMuteState.TryGetValue(channel, out var muted) && muted;
-    }
-
-    private async Task HandleChannelToggleAsync(ChangeEventArgs args, string channel)
-    {
-        if (args.Value is not bool muted)
-        {
-            return;
-        }
-
-        await ToggleChannelAsync(channel, muted);
-
-        await InvokeAsync(StateHasChanged);
-    }
-
-    private async Task ToggleChannelAsync(string channel, bool muted)
-    {
-        if (_hubConnection is null || !_isLoggedIn)
-        {
-            _channelMuteState[channel] = muted;
-            return;
-        }
-
-        var command = muted ? $"mute {channel}" : $"unmute {channel}";
-
-        try
-        {
-            await _hubConnection.SendAsync(nameof(MooHub.SendCommand), command);
-            _channelMuteState[channel] = muted;
-        }
-        catch (Exception e)
-        {
-            Logger.LogError(e, "Error on SignalR send for channel toggle {Channel}", channel);
-        }
-    }
-
-    private void NavigateHistory(int delta)
-    {
-        if (_commandHistory.Count == 0)
-        {
-            return;
-        }
-
-        if (_historyIndex == -1)
-        {
-            _commandDraft = _commandInput;
-            _historyIndex = _commandHistory.Count;
-        }
-
-        var nextIndex = Math.Clamp(_historyIndex + delta, 0, _commandHistory.Count);
-
-        if (nextIndex == _commandHistory.Count)
-        {
-            _historyIndex = -1;
-            _commandInput = _commandDraft;
-            return;
-        }
-
-        _historyIndex = nextIndex;
-        _commandInput = _commandHistory[_historyIndex];
-    }
-
-    private async Task HandleAutocompleteAsync()
-    {
-        if (_hubConnection is null || !_isLoggedIn)
-        {
-            return;
-        }
-
-        var options = await _hubConnection.InvokeAsync<AutocompleteOptions>(nameof(MooHub.GetAutocompleteOptions));
-
-        var candidates = options.Exits
-            .Concat(options.InventoryItems)
-            .Distinct(StringComparer.OrdinalIgnoreCase)
-            .ToList();
-
-        if (candidates.Count == 0)
-        {
-            return;
-        }
-
-        var (prefix, fragment) = SplitCommandInput();
-
-        if (string.IsNullOrWhiteSpace(fragment))
-        {
-            return;
-        }
-
-        var matches = candidates
-            .Where(c => c.StartsWith(fragment, StringComparison.OrdinalIgnoreCase))
-            .ToList();
-
-        if (matches.Count == 0)
-        {
-            return;
-        }
-
-        var completion = matches.Count == 1
-            ? matches[0]
-            : FindCommonPrefix(matches, fragment);
-
-        _commandInput = $"{prefix}{completion}";
-    }
-
-    private (string Prefix, string Fragment) SplitCommandInput()
-    {
-        var trimmedInput = _commandInput;
-        var lastSpaceIndex = trimmedInput.LastIndexOf(' ');
-
-        if (lastSpaceIndex == -1)
-        {
-            return (string.Empty, trimmedInput);
-        }
-
-        var prefix = trimmedInput[..(lastSpaceIndex + 1)];
-        var fragment = trimmedInput[(lastSpaceIndex + 1)..];
-
-        return (prefix, fragment);
-    }
-
-    private static string FindCommonPrefix(List<string> options, string seed)
-    {
-        if (options.Count == 0)
-        {
-            return seed;
-        }
-
-        var comparison = StringComparison.OrdinalIgnoreCase;
-        var prefix = seed;
-        var reference = options[0];
-
-        for (var i = seed.Length; i < reference.Length; i++)
-        {
-            var candidate = reference[..(i + 1)];
-
-            if (options.Any(option => !option.StartsWith(candidate, comparison)))
-            {
-                break;
-            }
-
-            prefix = candidate;
-        }
-
-        return prefix;
-    }
-
-    private async Task LoadCommandHistoryAsync()
-    {
-        var historyJson = await JS.InvokeAsync<string?>("localStorage.getItem", CommandHistoryStorageKey);
-
-        if (string.IsNullOrWhiteSpace(historyJson))
-        {
-            return;
-        }
-
-        var history = JsonSerializer.Deserialize<List<string>>(historyJson);
-
-        if (history is null)
-        {
-            return;
-        }
-
-        foreach (var command in history.TakeLast(CommandHistoryLimit))
-        {
-            AddCommandToHistory(command);
-        }
-    }
-
-    private async Task SaveCommandHistoryAsync()
-    {
-        var historyJson = JsonSerializer.Serialize(_commandHistory.TakeLast(CommandHistoryLimit).ToList());
-
-        await JS.InvokeVoidAsync("localStorage.setItem", CommandHistoryStorageKey, historyJson);
-    }
-
-    private void AddCommandToHistory(string command)
-    {
-        var trimmed = command.Trim();
-
-        if (string.IsNullOrWhiteSpace(trimmed))
-        {
-            return;
-        }
-
-        _commandHistory.Remove(trimmed);
-        _commandHistory.Add(trimmed);
-
-        if (_commandHistory.Count > CommandHistoryLimit)
-        {
-            _commandHistory.RemoveAt(0);
-        }
-    }
-
-    private async Task FocusCommandInputAsync()
-    {
-        if (_commandInputRef.Context is null)
-        {
-            return;
-        }
-
-        await Task.Yield();
-        await _commandInputRef.FocusAsync();
-    }
-
-    public async ValueTask DisposeAsync()
-    {
-        if (_hubConnection is not null)
-        {
-            // Clean up the connection when the component is destroyed
-            await _hubConnection.DisposeAsync();
-        }
-    }
 }

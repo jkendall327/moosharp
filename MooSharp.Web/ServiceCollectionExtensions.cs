@@ -4,11 +4,19 @@ using MooSharp.Agents;
 using MooSharp.Infrastructure;
 using MooSharp.Messaging;
 using MooSharp.Persistence;
+using MooSharp.Web.Game;
 
 namespace MooSharp.Web;
 
 public static class ServiceCollectionExtensions
 {
+    public static void AddMooSharpWebServices(this IServiceCollection services)
+    {
+        services.AddScoped<IClientStorageService, ClientStorageService>();
+        services.AddScoped<IGameConnectionService, GameConnectionService>();
+        services.AddScoped<GameViewModel>();
+    }
+    
     public static void AddMooSharpServices(this IServiceCollection services, IConfiguration config)
     {
         // World
