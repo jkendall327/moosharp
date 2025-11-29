@@ -1,5 +1,6 @@
 @page "/game"
 @inject GameViewModel Model
+@inject NavigationManager NavigationManager
 @implements IAsyncDisposable
 @rendermode InteractiveServer
 
@@ -99,8 +100,10 @@ else
             _initialized = true;
             Model.OnStateChanged += ModelOnOnStateChanged;
             Model.OnFocusInputRequested += FocusInput;
+            
+            var hubUri = NavigationManager.ToAbsoluteUri("/moohub");
 
-            await Model.InitializeAsync();
+            await Model.InitializeAsync(hubUri);
         }
     }
 

@@ -1,5 +1,4 @@
 using System.Text;
-using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.SignalR.Client;
 using MooSharp;
 using MooSharp.Messaging;
@@ -11,7 +10,6 @@ public sealed class GameViewModel : IDisposable
     private readonly IGameConnectionService _connection;
     private readonly IGameHistoryService _historyService;
     private readonly ILogger<GameViewModel> _logger;
-    private readonly NavigationManager _navManager;
 
     // Internal State
     private readonly StringBuilder _outputBuffer = new();
@@ -46,15 +44,15 @@ public sealed class GameViewModel : IDisposable
     public event Action? OnStateChanged;
     public event Func<Task>? OnFocusInputRequested;
 
+    private Uri? _hubUri;
+    
     public GameViewModel(IGameConnectionService connection,
         IGameHistoryService historyService,
-        ILogger<GameViewModel> logger,
-        NavigationManager navManager)
+        ILogger<GameViewModel> logger)
     {
         _connection = connection;
         _historyService = historyService;
         _logger = logger;
-        _navManager = navManager;
 
         _connection.OnMessageReceived += HandleMessageReceived;
         _connection.OnLoginResult += HandleLoginResult;
@@ -65,15 +63,14 @@ public sealed class GameViewModel : IDisposable
         InitializeChannels();
     }
 
-    public async Task InitializeAsync()
+    public async Task InitializeAsync(Uri hub)
     {
         await _historyService.InitializeAsync();
         var sessionId = await _historyService.GetOrCreateSessionIdAsync();
-
-        var hubUri = _navManager.ToAbsoluteUri("/moohub");
-
+        
         // Pass the session ID provider to the connection service
-        await _connection.InitializeAsync(hubUri, () => Task.FromResult<string?>(sessionId));
+        _hubUri = hub;
+        await _connection.InitializeAsync(hub, () => Task.FromResult<string?>(sessionId));
 
         try
         {
@@ -197,7 +194,13 @@ public sealed class GameViewModel : IDisposable
         LoginStatus = logoutMessage;
 
         // 4. Re-Initialize (generates new Session ID)
-        await InitializeAsync();
+
+        if (_hubUri is null)
+        {
+            throw new InvalidOperationException("Hub URI was null when trying to log out.");
+        }
+        
+        await InitializeAsync(_hubUri);
     }
 
     public void NavigateHistory(int delta)
