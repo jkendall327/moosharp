@@ -4,56 +4,51 @@ using MooSharp;
 using MooSharp.Agents;
 using MooSharp.Messaging;
 
-public sealed class AgentBrain : IAsyncDisposable
+public sealed class AgentBrain(
+    AgentCore core,
+    AgentPlayerConnection connection,
+    ChannelWriter<GameInput> gameWriter,
+    TimeProvider clock,
+    IOptions<AgentOptions> options) : IAsyncDisposable
 {
-    private readonly AgentCore _core;
-    private readonly IOptions<AgentOptions> _options;
-    private readonly TimeProvider _clock;
-    private readonly ChannelWriter<GameInput> _gameInputWriter;
-    private readonly Channel<string> _incomingMessages;
-    private readonly CancellationTokenSource _cts;
+    private readonly Channel<string> _incomingMessages = Channel.CreateUnbounded<string>();
+    private readonly ConnectionId _myConnectionId = new(connection.Id);
+    private CancellationTokenSource? _cts;
 
     // Fire-and-forget tasks
     private Task? _processingTask;
     private Task? _volitionTask;
-    private readonly ConnectionId _myConnectionId;
 
-    public AgentBrain(AgentCore core,
-        AgentPlayerConnection connection,
-        ChannelWriter<GameInput> gameInputWriter,
-        CancellationToken ct,
-        TimeProvider clock,
-        IOptions<AgentOptions> options)
+    public async Task StartAsync(CancellationToken cancellationToken = default)
     {
-        _core = core;
-        _gameInputWriter = gameInputWriter;
-        _clock = clock;
-        _options = options;
-        _myConnectionId = new(connection.Id);
-        _cts = CancellationTokenSource.CreateLinkedTokenSource(ct);
+        _cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
 
         // Wire up the connection to the internal channel
-        _incomingMessages = Channel.CreateUnbounded<string>();
-        connection.OnMessageReceived = async (msg) => await _incomingMessages.Writer.WriteAsync(msg, _cts.Token);
-    }
+        connection.OnMessageReceived = WriteToInternalQueue;
 
-    public async Task StartAsync()
-    {
-        await _core.InitializeAsync(_cts.Token);
+        await core.InitializeAsync(_cts.Token);
 
         _processingTask = ProcessLoopAsync();
         _volitionTask = VolitionLoopAsync();
     }
 
+    private async Task WriteToInternalQueue(string msg)
+    {
+        ArgumentNullException.ThrowIfNull(_cts);
+        await _incomingMessages.Writer.WriteAsync(msg, _cts.Token);
+    }
+
     private async Task ProcessLoopAsync()
     {
+        ArgumentNullException.ThrowIfNull(_cts);
+        
         try
         {
             await foreach (var msg in _incomingMessages.Reader.ReadAllAsync(_cts.Token))
             {
-                await foreach (var cmd in _core.ProcessMessageAsync(msg, _cts.Token))
+                await foreach (var cmd in core.ProcessMessageAsync(msg, _cts.Token))
                 {
-                    await DispatchCommands([cmd]);
+                    await gameWriter.WriteAsync(new(_myConnectionId, cmd), _cts.Token);
                 }
             }
         }
@@ -64,14 +59,18 @@ public sealed class AgentBrain : IAsyncDisposable
 
     private async Task VolitionLoopAsync()
     {
-        using var timer = new PeriodicTimer(TimeSpan.FromSeconds(10), _clock);
+        ArgumentNullException.ThrowIfNull(_cts);
+        
+        using var timer = new PeriodicTimer(TimeSpan.FromSeconds(30), clock);
 
         try
         {
             while (await timer.WaitForNextTickAsync(_cts.Token))
             {
-                var commands = await _core.ProcessVolitionAsync(_cts.Token);
-                await DispatchCommands(commands);
+                if (core.RequiresVolition())
+                {
+                    await WriteToInternalQueue(options.Value.VolitionPrompt);
+                }
             }
         }
         catch (OperationCanceledException)
@@ -79,18 +78,23 @@ public sealed class AgentBrain : IAsyncDisposable
         }
     }
 
-    private async Task DispatchCommands(IEnumerable<InputCommand> commands)
-    {
-        foreach (var cmd in commands)
-        {
-            await _gameInputWriter.WriteAsync(new(_myConnectionId, cmd), _cts.Token);
-        }
-    }
-
     public async ValueTask DisposeAsync()
     {
+        ArgumentNullException.ThrowIfNull(_cts);
+        
         await _cts.CancelAsync();
+        _cts.Dispose();
 
-        // ... (standard disposal logic)
+        _incomingMessages.Writer.Complete();
+        
+        if (_processingTask is not null)
+        {
+            await _processingTask;
+        }
+
+        if (_volitionTask is not null)
+        {
+            await _volitionTask;
+        }
     }
 }
