@@ -1,5 +1,4 @@
 using System.Text;
-using System.Text.Json;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.SignalR.Client;
 using MooSharp;
@@ -10,18 +9,12 @@ public sealed class GameViewModel : IDisposable
 {
     // Dependencies
     private readonly IGameConnectionService _connection;
-    private readonly IClientStorageService _storage;
+    private readonly IGameHistoryService _historyService;
     private readonly ILogger<GameViewModel> _logger;
     private readonly NavigationManager _navManager;
 
-    // Constants
-    private const string SessionStorageKey = "mooSharpSession";
-    private const string CommandHistoryStorageKey = "mooSharpCommandHistory";
-    private const int CommandHistoryLimit = 20;
-
     // Internal State
     private readonly StringBuilder _outputBuffer = new();
-    private readonly List<string> _commandHistory = [];
     private int _historyIndex = -1;
     private string _commandDraft = string.Empty;
 
@@ -54,12 +47,12 @@ public sealed class GameViewModel : IDisposable
     public event Func<Task>? OnFocusInputRequested;
 
     public GameViewModel(IGameConnectionService connection,
-        IClientStorageService storage,
+        IGameHistoryService historyService,
         ILogger<GameViewModel> logger,
         NavigationManager navManager)
     {
         _connection = connection;
-        _storage = storage;
+        _historyService = historyService;
         _logger = logger;
         _navManager = navManager;
 
@@ -74,8 +67,8 @@ public sealed class GameViewModel : IDisposable
 
     public async Task InitializeAsync()
     {
-        await LoadCommandHistoryAsync();
-        var sessionId = await GetOrCreateSessionIdAsync();
+        await _historyService.InitializeAsync();
+        var sessionId = await _historyService.GetOrCreateSessionIdAsync();
 
         var hubUri = _navManager.ToAbsoluteUri("/moohub");
 
@@ -108,8 +101,8 @@ public sealed class GameViewModel : IDisposable
         {
             await _connection.SendCommandAsync(commandToSend);
 
-            AddCommandToHistory(commandToSend);
-            await SaveCommandHistoryAsync();
+            _historyService.AddCommand(commandToSend);
+            await _historyService.PersistAsync();
 
             // Clear input after successful send
             CommandInput = string.Empty;
@@ -180,7 +173,7 @@ public sealed class GameViewModel : IDisposable
         NotifyStateChanged();
 
         // 1. Clear Local Storage
-        await _storage.RemoveItemAsync(SessionStorageKey);
+        await _historyService.ClearSessionAsync();
 
         // 2. Stop Connection
         try
@@ -209,7 +202,9 @@ public sealed class GameViewModel : IDisposable
 
     public void NavigateHistory(int delta)
     {
-        if (_commandHistory.Count == 0)
+        var history = _historyService.CommandHistory;
+
+        if (history.Count == 0)
         {
             return;
         }
@@ -218,7 +213,7 @@ public sealed class GameViewModel : IDisposable
         if (_historyIndex == -1)
         {
             _commandDraft = CommandInput;
-            _historyIndex = _commandHistory.Count;
+            _historyIndex = history.Count;
         }
 
         var nextIndex = _historyIndex + delta;
@@ -229,12 +224,12 @@ public sealed class GameViewModel : IDisposable
             nextIndex = 0;
         }
 
-        if (nextIndex > _commandHistory.Count)
+        if (nextIndex > history.Count)
         {
-            nextIndex = _commandHistory.Count;
+            nextIndex = history.Count;
         }
 
-        if (nextIndex == _commandHistory.Count)
+        if (nextIndex == history.Count)
         {
             // Restored the draft
             _historyIndex = -1;
@@ -244,7 +239,7 @@ public sealed class GameViewModel : IDisposable
         {
             // Show history item
             _historyIndex = nextIndex;
-            CommandInput = _commandHistory[_historyIndex];
+            CommandInput = history[_historyIndex];
         }
 
         NotifyStateChanged();
@@ -371,95 +366,11 @@ public sealed class GameViewModel : IDisposable
         NotifyStateChanged();
     }
 
-    private async Task<string> GetOrCreateSessionIdAsync()
-    {
-        var existingSessionId = await _storage.GetItemAsync(SessionStorageKey);
-
-        if (!string.IsNullOrWhiteSpace(existingSessionId))
-        {
-            return existingSessionId;
-        }
-
-        var newSessionId = Guid
-            .NewGuid()
-            .ToString();
-
-        await _storage.SetItemAsync(SessionStorageKey, newSessionId);
-
-        return newSessionId;
-    }
-
     private void InitializeChannels()
     {
         foreach (var channel in AvailableChannels)
         {
             ChannelMuteState[channel] = false;
-        }
-    }
-
-    private void AddCommandToHistory(string command)
-    {
-        var trimmed = command.Trim();
-
-        if (string.IsNullOrWhiteSpace(trimmed))
-        {
-            return;
-        }
-
-        // Move to bottom if exists
-        _commandHistory.Remove(trimmed);
-        _commandHistory.Add(trimmed);
-
-        if (_commandHistory.Count > CommandHistoryLimit)
-        {
-            _commandHistory.RemoveAt(0);
-        }
-    }
-
-    private async Task LoadCommandHistoryAsync()
-    {
-        try
-        {
-            var historyJson = await _storage.GetItemAsync(CommandHistoryStorageKey);
-
-            if (string.IsNullOrWhiteSpace(historyJson))
-            {
-                return;
-            }
-
-            var history = JsonSerializer.Deserialize<List<string>>(historyJson);
-
-            if (history is null)
-            {
-                return;
-            }
-
-            _commandHistory.Clear();
-
-            foreach (var command in history.TakeLast(CommandHistoryLimit))
-            {
-                AddCommandToHistory(command);
-            }
-        }
-        catch (Exception ex)
-        {
-            _logger.LogWarning(ex, "Failed to load command history");
-        }
-    }
-
-    private async Task SaveCommandHistoryAsync()
-    {
-        try
-        {
-            var historyJson = JsonSerializer.Serialize(_commandHistory
-                .TakeLast(CommandHistoryLimit)
-                .ToList());
-
-            await _storage.SetItemAsync(CommandHistoryStorageKey, historyJson);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogWarning(ex, "Failed to save command history");
         }
     }
 
