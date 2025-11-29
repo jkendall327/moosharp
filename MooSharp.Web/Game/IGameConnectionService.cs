@@ -16,7 +16,6 @@ public interface IGameConnectionService : IAsyncDisposable
     Task StartAsync();
     Task StopAsync();
 
-    // These match MooHub.cs exactly
     Task Login(string username, string password);
     Task Register(string username, string password);
     Task SendCommandAsync(string command);

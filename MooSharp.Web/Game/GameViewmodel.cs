@@ -6,7 +6,7 @@ using MooSharp;
 using MooSharp.Messaging;
 using MooSharp.Web;
 
-public class GameViewModel : IDisposable
+public sealed class GameViewModel : IDisposable
 {
     // Dependencies
     private readonly IGameConnectionService _connection;
@@ -21,11 +21,9 @@ public class GameViewModel : IDisposable
 
     // Internal State
     private readonly StringBuilder _outputBuffer = new();
-    private readonly List<string> _commandHistory = new();
+    private readonly List<string> _commandHistory = [];
     private int _historyIndex = -1;
     private string _commandDraft = string.Empty;
-
-    // --- Public Properties (Bound to View) ---
 
     // The giant string of text for the terminal output
     public string GameOutput => _outputBuffer.ToString();
@@ -52,10 +50,9 @@ public class GameViewModel : IDisposable
     public string[] AvailableChannels { get; } = [ChatChannels.Global, ChatChannels.Newbie, ChatChannels.Trade];
 
     // --- Events ---
-    public event Action? OnStateChanged; // Tells Blazor to re-render
-    public event Func<Task>? OnFocusInputRequested; // Tells Blazor to focus the <input>
+    public event Action? OnStateChanged;
+    public event Func<Task>? OnFocusInputRequested;
 
-    // Constructor
     public GameViewModel(IGameConnectionService connection,
         IClientStorageService storage,
         ILogger<GameViewModel> logger,
@@ -66,7 +63,6 @@ public class GameViewModel : IDisposable
         _logger = logger;
         _navManager = navManager;
 
-        // Subscribe to Service Events
         _connection.OnMessageReceived += HandleMessageReceived;
         _connection.OnLoginResult += HandleLoginResult;
         _connection.OnReconnecting += HandleReconnecting;
@@ -75,8 +71,6 @@ public class GameViewModel : IDisposable
 
         InitializeChannels();
     }
-
-    // --- Initialization ---
 
     public async Task InitializeAsync()
     {
@@ -95,20 +89,20 @@ public class GameViewModel : IDisposable
         catch (Exception ex)
         {
             _outputBuffer.AppendLine($"Starting hub failed: {ex.Message}");
-            _logger.LogError(ex, "Failed to start hub connection.");
+            _logger.LogError(ex, "Failed to start hub connection");
         }
 
         NotifyStateChanged();
     }
 
-    // --- User Actions ---
-
     public async Task SubmitCommandAsync()
     {
         if (string.IsNullOrWhiteSpace(CommandInput) || !IsLoggedIn)
+        {
             return;
+        }
 
-        var commandToSend = CommandInput; // Capture current input
+        var commandToSend = CommandInput;
 
         try
         {
@@ -138,7 +132,10 @@ public class GameViewModel : IDisposable
 
     public async Task LoginAsync()
     {
-        if (!CanSubmitCredentials) return;
+        if (!CanSubmitCredentials)
+        {
+            return;
+        }
 
         LoginStatus = "Logging in...";
         NotifyStateChanged();
@@ -157,7 +154,10 @@ public class GameViewModel : IDisposable
 
     public async Task RegisterAsync()
     {
-        if (!CanSubmitCredentials) return;
+        if (!CanSubmitCredentials)
+        {
+            return;
+        }
 
         LoginStatus = "Registering...";
         NotifyStateChanged();
@@ -209,7 +209,10 @@ public class GameViewModel : IDisposable
 
     public void NavigateHistory(int delta)
     {
-        if (_commandHistory.Count == 0) return;
+        if (_commandHistory.Count == 0)
+        {
+            return;
+        }
 
         // If we are currently editing a new line, save it as draft
         if (_historyIndex == -1)
@@ -221,8 +224,15 @@ public class GameViewModel : IDisposable
         var nextIndex = _historyIndex + delta;
 
         // Clamp index
-        if (nextIndex < 0) nextIndex = 0;
-        if (nextIndex > _commandHistory.Count) nextIndex = _commandHistory.Count;
+        if (nextIndex < 0)
+        {
+            nextIndex = 0;
+        }
+
+        if (nextIndex > _commandHistory.Count)
+        {
+            nextIndex = _commandHistory.Count;
+        }
 
         if (nextIndex == _commandHistory.Count)
         {
@@ -242,7 +252,10 @@ public class GameViewModel : IDisposable
 
     public async Task PerformAutocompleteAsync()
     {
-        if (!IsLoggedIn) return;
+        if (!IsLoggedIn)
+        {
+            return;
+        }
 
         AutocompleteOptions options;
 
@@ -252,7 +265,7 @@ public class GameViewModel : IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Failed to fetch autocomplete options.");
+            _logger.LogWarning(ex, "Failed to fetch autocomplete options");
 
             return;
         }
@@ -263,17 +276,26 @@ public class GameViewModel : IDisposable
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .ToList();
 
-        if (candidates.Count == 0) return;
+        if (candidates.Count == 0)
+        {
+            return;
+        }
 
-        var (prefix, fragment) = SplitCommandInput(CommandInput);
+        (var prefix, var fragment) = SplitCommandInput(CommandInput);
 
-        if (string.IsNullOrWhiteSpace(fragment)) return;
+        if (string.IsNullOrWhiteSpace(fragment))
+        {
+            return;
+        }
 
         var matches = candidates
             .Where(c => c.StartsWith(fragment, StringComparison.OrdinalIgnoreCase))
             .ToList();
 
-        if (matches.Count == 0) return;
+        if (matches.Count == 0)
+        {
+            return;
+        }
 
         var completion = matches.Count == 1 ? matches[0] : FindCommonPrefix(matches, fragment);
 
@@ -281,7 +303,7 @@ public class GameViewModel : IDisposable
         CommandInput = $"{prefix}{completion}";
 
         NotifyStateChanged();
-        
+
         if (OnFocusInputRequested is not null)
         {
             await OnFocusInputRequested.Invoke();
@@ -290,7 +312,10 @@ public class GameViewModel : IDisposable
 
     public async Task ToggleChannelAsync(string channel, bool isMuted)
     {
-        if (!ChannelMuteState.ContainsKey(channel)) return;
+        if (!ChannelMuteState.ContainsKey(channel))
+        {
+            return;
+        }
 
         ChannelMuteState[channel] = isMuted;
 
@@ -311,8 +336,6 @@ public class GameViewModel : IDisposable
         NotifyStateChanged();
     }
 
-    // --- Private Event Handlers ---
-
     private void HandleMessageReceived(string message)
     {
         _outputBuffer.AppendLine(message);
@@ -329,26 +352,24 @@ public class GameViewModel : IDisposable
 
     private void HandleReconnecting()
     {
-        _logger.LogWarning("SignalR reconnecting...");
+        _logger.LogWarning("Reconnecting...");
         IsLoggedIn = false;
         NotifyStateChanged();
     }
 
     private void HandleReconnected()
     {
-        _logger.LogInformation("SignalR reconnected.");
+        _logger.LogInformation("Reconnected");
         IsLoggedIn = false;
         NotifyStateChanged();
     }
 
     private void HandleClosed()
     {
-        _logger.LogWarning("SignalR connection closed.");
+        _logger.LogWarning("Connection closed");
         IsLoggedIn = false;
         NotifyStateChanged();
     }
-
-    // --- Helpers ---
 
     private async Task<string> GetOrCreateSessionIdAsync()
     {
@@ -372,10 +393,7 @@ public class GameViewModel : IDisposable
     {
         foreach (var channel in AvailableChannels)
         {
-            if (ChannelMuteState.ContainsKey(channel))
-                ChannelMuteState[channel] = false;
-            else
-                ChannelMuteState.Add(channel, false);
+            ChannelMuteState[channel] = false;
         }
     }
 
@@ -383,9 +401,13 @@ public class GameViewModel : IDisposable
     {
         var trimmed = command.Trim();
 
-        if (string.IsNullOrWhiteSpace(trimmed)) return;
+        if (string.IsNullOrWhiteSpace(trimmed))
+        {
+            return;
+        }
 
-        _commandHistory.Remove(trimmed); // Move to bottom if exists
+        // Move to bottom if exists
+        _commandHistory.Remove(trimmed);
         _commandHistory.Add(trimmed);
 
         if (_commandHistory.Count > CommandHistoryLimit)
@@ -400,11 +422,17 @@ public class GameViewModel : IDisposable
         {
             var historyJson = await _storage.GetItemAsync(CommandHistoryStorageKey);
 
-            if (string.IsNullOrWhiteSpace(historyJson)) return;
+            if (string.IsNullOrWhiteSpace(historyJson))
+            {
+                return;
+            }
 
             var history = JsonSerializer.Deserialize<List<string>>(historyJson);
 
-            if (history is null) return;
+            if (history is null)
+            {
+                return;
+            }
 
             _commandHistory.Clear();
 
@@ -415,7 +443,7 @@ public class GameViewModel : IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Failed to load command history.");
+            _logger.LogWarning(ex, "Failed to load command history");
         }
     }
 
@@ -431,15 +459,13 @@ public class GameViewModel : IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Failed to save command history.");
+            _logger.LogWarning(ex, "Failed to save command history");
         }
     }
 
     private void NotifyStateChanged() => OnStateChanged?.Invoke();
 
-    // --- Static Logic (Pure functions) ---
-
-    public static (string Prefix, string Fragment) SplitCommandInput(string input)
+    private static (string Prefix, string Fragment) SplitCommandInput(string input)
     {
         var lastSpaceIndex = input.LastIndexOf(' ');
 
@@ -454,9 +480,12 @@ public class GameViewModel : IDisposable
         return (prefix, fragment);
     }
 
-    public static string FindCommonPrefix(List<string> options, string seed)
+    private static string FindCommonPrefix(List<string> options, string seed)
     {
-        if (options.Count == 0) return seed;
+        if (options.Count == 0)
+        {
+            return seed;
+        }
 
         var comparison = StringComparison.OrdinalIgnoreCase;
         var prefix = seed;

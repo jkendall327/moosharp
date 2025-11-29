@@ -118,9 +118,6 @@ else
             case "ArrowDown": Model.NavigateHistory(1); break;
             case "Tab":
                 await Model.PerformAutocompleteAsync();
-
-                // Prevent tab from moving focus (requires JS preventDefault usually, 
-                // but for now we just refocus)
                 break;
         }
 
@@ -129,12 +126,14 @@ else
 
     private async Task HandlePasswordKeyDown(KeyboardEventArgs e)
     {
-        if (e.Key == "Enter") await Model.LoginAsync();
+        if (e.Key == "Enter")
+        {
+            await Model.LoginAsync();
+        }
     }
 
     private async Task FocusInput()
     {
-        // Focus logic is purely View concern
         if (_commandInputRef.Context != null)
         {
             await _commandInputRef.FocusAsync();
