@@ -17,16 +17,11 @@ public class AgentFactory(
     {
         var logger = loggerFactory.CreateLogger($"{typeof(AgentBrain).FullName}[{identity.Name}]");
 
-        return new(
-            identity.Name,
-            identity.Persona,
-            identity.Source,
-            writer,
-            options,
-            promptProvider,
-            clock,
-            logger,
-            responseProvider,
-            identity.Cooldown);
+        var cooldown = identity.Cooldown ?? options.Value.DefaultActionCooldown;
+        var volition = TimeSpan.FromMinutes(1);
+
+        var bundle = new AgentCreationBundle(identity.Name, identity.Persona, identity.Source, cooldown, volition);
+
+        return new(bundle, writer, promptProvider, clock, responseProvider, options, logger);
     }
 }
