@@ -1,15 +1,7 @@
 using Microsoft.AspNetCore.SignalR;
+using MooSharp.Infrastructure;
 
 namespace MooSharp.Web;
-
-public interface IRawMessageSender
-{
-    Task SendLoginRequiredMessageAsync(ConnectionId connectionId, CancellationToken ct = default);
-    
-    Task SendSystemMessageAsync(ConnectionId connectionId, string message, CancellationToken ct = default);
-
-    Task SendLoginResultAsync(ConnectionId connectionId, bool success, string message, CancellationToken ct = default);
-}
 
 public class SignalRRawMessageSender(IHubContext<MooHub> hubContext) : IRawMessageSender
 {

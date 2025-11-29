@@ -4,6 +4,7 @@ using BCrypt.Net;
 using Dapper;
 using Microsoft.Data.Sqlite;
 using Microsoft.Extensions.Options;
+using MooSharp.Infrastructure;
 
 namespace MooSharp.Persistence;
 

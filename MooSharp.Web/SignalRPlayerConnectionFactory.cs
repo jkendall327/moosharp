@@ -1,12 +1,8 @@
 using Microsoft.AspNetCore.SignalR;
+using MooSharp.Infrastructure;
 using MooSharp.Messaging;
 
 namespace MooSharp.Web;
-
-public interface IPlayerConnectionFactory
-{
-    IPlayerConnection Create(ConnectionId connectionId);
-}
 
 public class SignalRPlayerConnectionFactory(IHubContext<MooHub> hubContext) : IPlayerConnectionFactory
 {

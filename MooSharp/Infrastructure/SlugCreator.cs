@@ -1,6 +1,6 @@
 using System.Text;
 
-namespace MooSharp;
+namespace MooSharp.Infrastructure;
 
 public class SlugCreator
 {

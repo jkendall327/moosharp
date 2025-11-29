@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
+using MooSharp.Infrastructure;
 
 namespace MooSharp;
 
