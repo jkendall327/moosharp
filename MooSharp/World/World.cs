@@ -11,7 +11,7 @@ public class World(IWorldStore worldStore, ILogger<World> logger)
     private readonly Dictionary<RoomId, Room> _rooms = new();
 
     private readonly Dictionary<Player, Room> _playerLocations = [];
-    private readonly object _locationLock = new();
+    private readonly Lock _locationLock = new();
 
     public void Initialize(IEnumerable<Room> rooms)
     {
