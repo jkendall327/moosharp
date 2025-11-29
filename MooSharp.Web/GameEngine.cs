@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.SignalR;
 using MooSharp.Messaging;
 using MooSharp.Agents;
 using MooSharp.Persistence;
+using MooSharp.Web;
 
 namespace MooSharp;
 
@@ -17,6 +18,7 @@ public class GameEngine(
     ChannelReader<GameInput> reader,
     IPlayerStore playerStore,
     IHubContext<MooHub> hubContext,
+    IPlayerConnectionFactory connectionFactory,
     ILogger<GameEngine> logger,
     IGameMessagePresenter presenter) : BackgroundService
 {
@@ -159,7 +161,7 @@ public class GameEngine(
             world.Players.TryRemove(oldConnectionId, out _);
         }
 
-        player.Connection = new SignalRPlayerConnection(newConnectionId, hubContext);
+        player.Connection = connectionFactory.Create(newConnectionId);
 
         world.Players[newConnectionId.Value] = player;
         _sessionConnections[sessionToken] = newConnectionId.Value;
@@ -246,7 +248,7 @@ public class GameEngine(
         var player = new Player
         {
             Username = rc.Username,
-            Connection = new SignalRPlayerConnection(connectionId, hubContext)
+            Connection = connectionFactory.Create(connectionId)
         };
 
         world.MovePlayer(player, defaultRoom);
@@ -292,7 +294,7 @@ public class GameEngine(
         var player = new Player
         {
             Username = dto.Username,
-            Connection = new SignalRPlayerConnection(connectionId, hubContext),
+            Connection = connectionFactory.Create(connectionId),
         };
 
         foreach (var item in dto.Inventory)

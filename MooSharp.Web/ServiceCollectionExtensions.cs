@@ -17,6 +17,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<CommandExecutor>();
         services.AddSingleton<CommandReference>();
         services.AddSingleton<IAgentPromptProvider, AgentPromptProvider>();
+        services.AddSingleton<IPlayerConnectionFactory, SignalRPlayerConnectionFactory>();
         services.AddSingleton<AgentSpawner>();
         services.AddSingleton<AgentFactory>();
         services.AddSingleton<SlugCreator>();
