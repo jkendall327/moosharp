@@ -1,0 +1,11 @@
+namespace MooSharp.Web;
+
+public interface IGameHistoryService
+{
+    IReadOnlyList<string> CommandHistory { get; }
+    Task InitializeAsync();
+    void AddCommand(string command);
+    Task PersistAsync();
+    Task<string> GetOrCreateSessionIdAsync();
+    Task ClearSessionAsync();
+}

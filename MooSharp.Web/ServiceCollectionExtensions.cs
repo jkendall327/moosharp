@@ -12,8 +12,8 @@ public static class ServiceCollectionExtensions
     public static void AddMooSharpWebServices(this IServiceCollection services)
     {
         services.AddScoped<IClientStorageService, ClientStorageService>();
-        services.AddScoped<IGameHistoryService, GameHistoryService>();
-        services.AddScoped<IGameConnectionService, GameConnectionService>();
+        services.AddScoped<IGameHistoryService, ClientStorageGameHistoryService>();
+        services.AddScoped<IGameConnectionService, SignalRGameConnectionService>();
         services.AddScoped<GameClientViewModel>();
     }
     

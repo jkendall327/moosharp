@@ -1,17 +1,13 @@
-using Microsoft.AspNetCore.SignalR.Client;
 using MooSharp;
 
 public interface IGameConnectionService : IAsyncDisposable
 {
     event Action<string>? OnMessageReceived;
     event Action<bool, string>? OnLoginResult;
-    
     event Action? OnReconnecting;
     event Action? OnReconnected;
     event Action? OnClosed;
-
-    HubConnectionState State { get; }
-
+    
     Task InitializeAsync(Uri hubUrl, Func<Task<string?>> accessTokenProvider);
     Task StartAsync();
     Task StopAsync();

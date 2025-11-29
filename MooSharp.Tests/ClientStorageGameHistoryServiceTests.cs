@@ -6,7 +6,7 @@ using NSubstitute;
 
 namespace MooSharp.Tests;
 
-public class GameHistoryServiceTests
+public class ClientStorageGameHistoryServiceTests
 {
     [Fact]
     public async Task InitializeAsync_LoadsHistoryFromStorage()
@@ -103,8 +103,8 @@ public class GameHistoryServiceTests
         await storage.Received(1).SetItemAsync("mooSharpSession", result);
     }
 
-    private static GameHistoryService CreateService(IClientStorageService storage)
+    private static ClientStorageGameHistoryService CreateService(IClientStorageService storage)
     {
-        return new GameHistoryService(storage, NullLogger<GameHistoryService>.Instance);
+        return new ClientStorageGameHistoryService(storage, NullLogger<ClientStorageGameHistoryService>.Instance);
     }
 }

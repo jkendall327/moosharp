@@ -1,29 +1,18 @@
 using System.Text.Json;
-using Microsoft.Extensions.Logging;
 
 namespace MooSharp.Web;
 
-public interface IGameHistoryService
-{
-    IReadOnlyList<string> CommandHistory { get; }
-    Task InitializeAsync();
-    void AddCommand(string command);
-    Task PersistAsync();
-    Task<string> GetOrCreateSessionIdAsync();
-    Task ClearSessionAsync();
-}
-
-public sealed class GameHistoryService : IGameHistoryService
+public sealed class ClientStorageGameHistoryService : IGameHistoryService
 {
     private const string SessionStorageKey = "mooSharpSession";
     private const string CommandHistoryStorageKey = "mooSharpCommandHistory";
     private const int CommandHistoryLimit = 20;
 
     private readonly IClientStorageService _storage;
-    private readonly ILogger<GameHistoryService> _logger;
+    private readonly ILogger<ClientStorageGameHistoryService> _logger;
     private readonly List<string> _commandHistory = [];
 
-    public GameHistoryService(IClientStorageService storage, ILogger<GameHistoryService> logger)
+    public ClientStorageGameHistoryService(IClientStorageService storage, ILogger<ClientStorageGameHistoryService> logger)
     {
         _storage = storage;
         _logger = logger;
