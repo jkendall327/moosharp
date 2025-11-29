@@ -14,7 +14,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IClientStorageService, ClientStorageService>();
         services.AddScoped<IGameHistoryService, GameHistoryService>();
         services.AddScoped<IGameConnectionService, GameConnectionService>();
-        services.AddScoped<GameViewModel>();
+        services.AddScoped<GameClientViewModel>();
     }
     
     public static void AddMooSharpServices(this IServiceCollection services, IConfiguration config)

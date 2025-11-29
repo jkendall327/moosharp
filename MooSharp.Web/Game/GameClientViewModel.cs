@@ -3,12 +3,12 @@ using MooSharp;
 using MooSharp.Messaging;
 using MooSharp.Web;
 
-public sealed class GameViewModel : IDisposable
+public sealed class GameClientViewModel : IDisposable
 {
     // Dependencies
     private readonly IGameConnectionService _connection;
     private readonly IGameHistoryService _historyService;
-    private readonly ILogger<GameViewModel> _logger;
+    private readonly ILogger<GameClientViewModel> _logger;
 
     // Internal State
     private readonly StringBuilder _outputBuffer = new();
@@ -45,9 +45,9 @@ public sealed class GameViewModel : IDisposable
 
     private Uri? _hubUri;
     
-    public GameViewModel(IGameConnectionService connection,
+    public GameClientViewModel(IGameConnectionService connection,
         IGameHistoryService historyService,
-        ILogger<GameViewModel> logger)
+        ILogger<GameClientViewModel> logger)
     {
         _connection = connection;
         _historyService = historyService;
