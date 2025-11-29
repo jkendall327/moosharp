@@ -53,9 +53,7 @@ public sealed class AgentBrain : IAsyncDisposable
             {
                 await foreach (var cmd in _core.ProcessMessageAsync(msg, _cts.Token))
                 {
-                    var input = new GameInput(_myConnectionId, cmd);
-
-                    await _gameInputWriter.WriteAsync(input, _cts.Token);
+                    await DispatchCommands([cmd]);
                 }
             }
         }
@@ -85,7 +83,7 @@ public sealed class AgentBrain : IAsyncDisposable
     {
         foreach (var cmd in commands)
         {
-            await _gameInputWriter.WriteAsync(new GameInput(_myConnectionId, cmd), _cts.Token);
+            await _gameInputWriter.WriteAsync(new(_myConnectionId, cmd), _cts.Token);
         }
     }
 

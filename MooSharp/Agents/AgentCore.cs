@@ -5,8 +5,6 @@ using Microsoft.Extensions.Options;
 
 namespace MooSharp.Agents;
 
-// This class is purely reactive. It takes inputs and returns outputs (commands).
-// It does NOT run its own background loops.
 public class AgentCore
 {
     private readonly AgentCreationBundle _bundle;
@@ -97,19 +95,15 @@ public class AgentCore
         }
     }
 
-    // Input: The fact that the timer ticked
-    // Output: Commands (or empty if cooldown isn't ready)
     public async Task<IReadOnlyList<InputCommand>> ProcessVolitionAsync(CancellationToken ct)
     {
         await _stateLock.WaitAsync(ct);
 
         try
         {
-            // Inject the volition prompt as if it were a system/internal message
-            // or handle logic to see if we should speak voluntarily
             if (!ShouldAct())
             {
-                return Array.Empty<InputCommand>();
+                return [];
             }
 
             // For volition, we might inject a specific prompt into history, or just ask the LLM
@@ -148,16 +142,18 @@ public class AgentCore
         var content = await _responseProvider.GetResponse(_bundle.Name, _bundle.Source, _history, ct);
         var responseText = content.Content?.Trim();
 
-        if (!string.IsNullOrEmpty(responseText))
+        if (string.IsNullOrEmpty(responseText))
         {
-            _history.AddAssistantMessage(responseText);
-            TrimHistory();
-
-            outputs.Add(new WorldCommand
-            {
-                Command = responseText
-            });
+            return outputs;
         }
+
+        _history.AddAssistantMessage(responseText);
+        TrimHistory();
+
+        outputs.Add(new WorldCommand
+        {
+            Command = responseText
+        });
 
         return outputs;
     }
