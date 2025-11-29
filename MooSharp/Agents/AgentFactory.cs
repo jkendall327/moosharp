@@ -2,6 +2,7 @@ using System.Threading;
 using System.Threading.Channels;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using MooSharp.Messaging;
 
 namespace MooSharp.Agents;
 
@@ -20,8 +21,13 @@ public class AgentFactory(
         var cooldown = identity.Cooldown ?? options.Value.DefaultActionCooldown;
         var volition = TimeSpan.FromMinutes(1);
 
-        var bundle = new AgentCreationBundle(identity.Name, identity.Persona, identity.Source, cooldown, volition);
+        var bundle = new AgentCreationBundle(identity.Name, identity.Persona, identity.Source, volition, cooldown);
+        var core = new AgentCore(bundle, promptProvider, responseProvider, clock, options, logger);
 
-        return new(bundle, writer, promptProvider, clock, responseProvider, options, logger);
+        var connection = new AgentPlayerConnection();
+        
+        var brain = new AgentBrain(core, connection, writer, clock, options);
+
+        return brain;
     }
 }
