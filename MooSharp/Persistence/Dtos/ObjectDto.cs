@@ -6,4 +6,6 @@ public class ObjectDto
     public required string Description { get; set; }
     public string? RoomSlug { get; set; }
     public string? TextContent { get; set; }
+    public ObjectFlags Flags { get; set; } = ObjectFlags.None;
+    public string? KeyId { get; set; }
 }

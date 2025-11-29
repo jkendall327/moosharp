@@ -6,4 +6,6 @@ public class InventoryItemDto
     public required string Name { get; init; }
     public required string Description { get; init; }
     public string? TextContent { get; init; }
+    public ObjectFlags Flags { get; init; } = ObjectFlags.None;
+    public string? KeyId { get; init; }
 }

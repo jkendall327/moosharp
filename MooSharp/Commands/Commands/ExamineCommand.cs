@@ -95,7 +95,7 @@ public class SelfExaminedEventFormatter : IGameEventFormatter<SelfExaminedEvent>
 
             foreach (var item in gameEvent.Inventory)
             {
-                sb.AppendLine(item.Description);
+                sb.AppendLine(item.DescribeWithState());
             }
         }
 
@@ -119,7 +119,7 @@ public class ObjectExaminedEventFormatter : IGameEventFormatter<ObjectExaminedEv
     {
         var sb = new StringBuilder();
 
-        sb.AppendLine(item.Description);
+        sb.AppendLine(item.DescribeWithState());
 
         if (!string.IsNullOrWhiteSpace(item.TextContent))
         {

@@ -76,25 +76,40 @@ public class SqliteWorldStore : IWorldStore
             fromRoom.Exits[exit.ToRoomId.Value] = exit.ToRoomId;
         }
 
+        var objects = await connection.QueryAsync<ObjectRecord>(
+            "SELECT Id, RoomId, Name, Description, TextContent, Flags, KeyId FROM Objects");
+
+        foreach (var obj in objects)
+        {
+            if (!roomDictionary.TryGetValue(obj.RoomId, out var room))
+            {
+                continue;
+            }
+
+            var item = new Object
+            {
+                Id = new ObjectId(Guid.Parse(obj.Id)),
+                Name = obj.Name,
+                Description = obj.Description,
+                Flags = (ObjectFlags)obj.Flags,
+                KeyId = obj.KeyId
+            };
+
+            if (!string.IsNullOrWhiteSpace(obj.TextContent))
+            {
+                item.WriteText(obj.TextContent);
+            }
+
+            item.MoveTo(room);
+        }
+
         return roomDictionary.Values.ToList();
     }
 
     public async Task SaveRoomAsync(Room room, CancellationToken cancellationToken = default)
     {
-        await using var connection = new SqliteConnection(_connectionString);
-
-        const string sql = """
-            INSERT INTO Rooms (Id, Name, Description, LongDescription, EnterText, ExitText)
-            VALUES (@Id, @Name, @Description, @LongDescription, @EnterText, @ExitText)
-            ON CONFLICT(Id) DO UPDATE SET
-                Name = excluded.Name,
-                Description = excluded.Description,
-                LongDescription = excluded.LongDescription,
-                EnterText = excluded.EnterText,
-                ExitText = excluded.ExitText;
-            """;
-
-        await connection.ExecuteAsync(sql, room);
+        ArgumentNullException.ThrowIfNull(room);
+        await SaveRoomsAsync([room], cancellationToken);
     }
 
     public async Task SaveExitAsync(RoomId fromRoomId, RoomId toRoomId, string direction, CancellationToken cancellationToken = default)
@@ -115,6 +130,8 @@ public class SqliteWorldStore : IWorldStore
 
     public async Task SaveRoomsAsync(IEnumerable<Room> rooms, CancellationToken cancellationToken = default)
     {
+        var roomList = rooms.ToList();
+
         await using var connection = new SqliteConnection(_connectionString);
         await connection.OpenAsync(cancellationToken);
 
@@ -137,19 +154,33 @@ public class SqliteWorldStore : IWorldStore
             ON CONFLICT(FromRoomId, ToRoomId) DO NOTHING;
             """;
 
+        const string deleteObjectsSql = "DELETE FROM Objects WHERE RoomId = @RoomId;";
+
+        const string insertObjectSql = """
+            INSERT INTO Objects (Id, RoomId, Name, Description, TextContent, Flags, KeyId)
+            VALUES (@Id, @RoomId, @Name, @Description, @TextContent, @Flags, @KeyId)
+            ON CONFLICT(Id) DO UPDATE SET
+                RoomId = excluded.RoomId,
+                Name = excluded.Name,
+                Description = excluded.Description,
+                TextContent = excluded.TextContent,
+                Flags = excluded.Flags,
+                KeyId = excluded.KeyId;
+            """;
+
         // IMPORTANT FIX:
         // We must save ALL rooms first. 
         // If we save Room A and its exits immediately, Room A might point to Room B 
         // which hasn't been inserted yet, triggering a Foreign Key violation.
         
         // 1. Save all Rooms
-        foreach (var room in rooms)
+        foreach (var room in roomList)
         {
             await connection.ExecuteAsync(insertRoomSql, room, transaction);
         }
 
         // 2. Save all Exits
-        foreach (var room in rooms)
+        foreach (var room in roomList)
         {
             var exits = room.Exits.Select(exit => new
             {
@@ -160,6 +191,28 @@ public class SqliteWorldStore : IWorldStore
             if (exits.Any())
             {
                 await connection.ExecuteAsync(insertExitSql, exits, transaction);
+            }
+        }
+
+        // 3. Save room objects
+        foreach (var room in roomList)
+        {
+            await connection.ExecuteAsync(deleteObjectsSql, new { RoomId = room.Id }, transaction);
+
+            var objects = room.Contents.Select(o => new
+            {
+                Id = o.Id.Value.ToString(),
+                RoomId = room.Id,
+                o.Name,
+                o.Description,
+                o.TextContent,
+                Flags = (int)o.Flags,
+                o.KeyId
+            });
+
+            if (objects.Any())
+            {
+                await connection.ExecuteAsync(insertObjectSql, objects, transaction);
             }
         }
 
@@ -193,7 +246,8 @@ public class SqliteWorldStore : IWorldStore
         using var connection = new SqliteConnection(new SqliteConnectionStringBuilder
         {
             DataSource = databasePath,
-            Mode = SqliteOpenMode.ReadWriteCreate
+            Mode = SqliteOpenMode.ReadWriteCreate,
+            ForeignKeys = true
         }.ToString());
 
         connection.Open();
@@ -223,10 +277,38 @@ public class SqliteWorldStore : IWorldStore
                 FOREIGN KEY (ToRoomId) REFERENCES Rooms(Id) ON DELETE CASCADE
             );
             """);
+
+        connection.Execute(
+            """
+            CREATE TABLE IF NOT EXISTS Objects
+            (
+                Id TEXT PRIMARY KEY,
+                RoomId TEXT NOT NULL,
+                Name TEXT NOT NULL,
+                Description TEXT NOT NULL,
+                TextContent TEXT,
+                Flags INTEGER NOT NULL DEFAULT 0,
+                KeyId TEXT,
+                FOREIGN KEY (RoomId) REFERENCES Rooms(Id) ON DELETE CASCADE
+            );
+            """);
+
+        connection.Execute("CREATE INDEX IF NOT EXISTS IX_Objects_RoomId ON Objects (RoomId);");
     }
 
     private record RoomRecord(RoomId Id, string Name, string Description, string LongDescription, string EnterText, string ExitText);
 
     // Removed Direction from record
     private record ExitRecord(RoomId FromRoomId, RoomId ToRoomId);
+
+    private sealed class ObjectRecord
+    {
+        public string Id { get; init; } = string.Empty;
+        public RoomId RoomId { get; init; }
+        public string Name { get; init; } = string.Empty;
+        public string Description { get; init; } = string.Empty;
+        public string? TextContent { get; init; }
+        public int Flags { get; init; }
+        public string? KeyId { get; init; }
+    }
 }
