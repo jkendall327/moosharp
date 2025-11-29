@@ -49,3 +49,4 @@ static async Task InitializeWorldAsync(IServiceProvider serviceProvider)
     await initializer.InitializeAsync();
 }
 
+public partial class Program;

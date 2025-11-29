@@ -5,8 +5,8 @@ namespace MooSharp.Infrastructure;
 public class AppOptions
 {
     [Required]
-    public required string WorldDataFilepath { get; init; }
+    public required string WorldDataFilepath { get; set; }
 
     [Required]
-    public required string DatabaseFilepath { get; init; }
+    public required string DatabaseFilepath { get; set; }
 }
