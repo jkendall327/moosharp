@@ -6,11 +6,11 @@ namespace MooSharp;
 
 public class World(IWorldStore worldStore, ILogger<World> logger)
 {
-    public ConcurrentDictionary<string, Player> Players { get; } = new();
-    public IReadOnlyDictionary<RoomId, Room> Rooms => _rooms;
-    private readonly Dictionary<RoomId, Room> _rooms = new();
-
+    private readonly Dictionary<RoomId, Room> _rooms = [];
     private readonly ConcurrentDictionary<Player, Room> _playerLocations = [];
+    
+    public ConcurrentDictionary<string, Player> Players { get; } = [];
+    public IReadOnlyDictionary<RoomId, Room> Rooms => _rooms;
 
     public void Initialize(IEnumerable<Room> rooms)
     {
