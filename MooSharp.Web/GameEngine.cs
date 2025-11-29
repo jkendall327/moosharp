@@ -30,7 +30,18 @@ public class GameEngine(
     {
         await foreach (var input in reader.ReadAllAsync(stoppingToken))
         {
-            await ProcessInput(input, stoppingToken);
+            try
+            {
+                await ProcessInput(input, stoppingToken);
+
+                // Signal success
+                input.CompletionSource?.TrySetResult();
+            }
+            catch (Exception ex)
+            {
+                input.CompletionSource?.TrySetException(ex);
+                logger.LogError(ex, "Error processing input");
+            }
         }
     }
 
@@ -75,12 +86,10 @@ public class GameEngine(
 
     private async Task HandleDisconnectAsync(ConnectionId connectionId, string? sessionToken)
     {
-        if (sessionToken is not null
-            && _sessionConnections.TryGetValue(sessionToken, out var trackedConnection)
-            && !string.Equals(trackedConnection, connectionId.Value, StringComparison.Ordinal))
+        if (sessionToken is not null && _sessionConnections.TryGetValue(sessionToken, out var trackedConnection) &&
+            !string.Equals(trackedConnection, connectionId.Value, StringComparison.Ordinal))
         {
-            logger.LogInformation(
-                "Ignoring disconnect for stale connection {ConnectionId} (session {SessionId})",
+            logger.LogInformation("Ignoring disconnect for stale connection {ConnectionId} (session {SessionId})",
                 connectionId,
                 sessionToken);
 
@@ -100,7 +109,8 @@ public class GameEngine(
         {
             logger.LogWarning("Player {Player} has no known location during disconnect", player.Username);
 
-            location = world.Rooms.First().Value;
+            location = world.Rooms.First()
+                .Value;
 
             world.MovePlayer(player, location);
         }
@@ -180,8 +190,7 @@ public class GameEngine(
                 _sessionConnections.Remove(sessionToken);
                 _sessionCleanupTokens.Remove(sessionToken);
 
-                logger.LogInformation(
-                    "Session {SessionId} removed after disconnect grace period of {GracePeriod}",
+                logger.LogInformation("Session {SessionId} removed after disconnect grace period of {GracePeriod}",
                     sessionToken,
                     SessionGracePeriod);
             }
@@ -274,9 +283,12 @@ public class GameEngine(
 
             return;
         }
-        
-        var startingRoom = world.Rooms.TryGetValue(dto.CurrentLocation, out var r) ? r : world.Rooms.First().Value;
-        
+
+        var startingRoom = world.Rooms.TryGetValue(dto.CurrentLocation, out var r)
+            ? r
+            : world.Rooms.First()
+                .Value;
+
         var player = new Player
         {
             Username = dto.Username,
@@ -284,18 +296,18 @@ public class GameEngine(
         };
 
         foreach (var item in dto.Inventory)
+        {
+            var obj = new Object
             {
-                var obj = new Object
-                {
-                    Id = new ObjectId(Guid.Parse(item.Id)),
-                    Name = item.Name,
-                    Description = item.Description
-                };
+                Id = new ObjectId(Guid.Parse(item.Id)),
+                Name = item.Name,
+                Description = item.Description
+            };
 
-                if (!string.IsNullOrWhiteSpace(item.TextContent))
-                {
-                    obj.WriteText(item.TextContent);
-                }
+            if (!string.IsNullOrWhiteSpace(item.TextContent))
+            {
+                obj.WriteText(item.TextContent);
+            }
 
             obj.MoveTo(player);
         }
@@ -397,7 +409,9 @@ public class GameEngine(
     {
         if (!world.Players.TryGetValue(connectionId.Value, out var player))
         {
-            logger.LogWarning("Could not find player for agent thinking indicator. ConnectionId={ConnectionId}", connectionId.Value);
+            logger.LogWarning("Could not find player for agent thinking indicator. ConnectionId={ConnectionId}",
+                connectionId.Value);
+
             return;
         }
 
@@ -406,6 +420,7 @@ public class GameEngine(
         if (room is null)
         {
             logger.LogWarning("Player {Player} has no known location when sending thinking indicator", player.Username);
+
             return;
         }
 

@@ -3,7 +3,11 @@ using MooSharp.Messaging;
 
 namespace MooSharp;
 
-public record GameInput(ConnectionId ConnectionId, InputCommand Command, string? SessionToken = null);
+public record GameInput(ConnectionId ConnectionId, InputCommand Command, string? SessionToken = null)
+{
+    // This task completes when the engine finishes processing this input
+    public TaskCompletionSource? CompletionSource { get; init; }
+}
 
 public abstract class InputCommand;
 
