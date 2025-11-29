@@ -1,8 +1,8 @@
 using System.Text;
-using System.Threading.Channels;
-using MooSharp.Messaging;
+using Microsoft.Extensions.Logging;
 using MooSharp.Agents;
 using MooSharp.Infrastructure;
+using MooSharp.Messaging;
 using MooSharp.Persistence;
 
 namespace MooSharp;
@@ -11,39 +11,18 @@ public class GameEngine(
     World world,
     CommandParser parser,
     CommandExecutor executor,
-    ChannelReader<GameInput> reader,
     IPlayerStore playerStore,
     IRawMessageSender rawMessageSender,
     IPlayerConnectionFactory connectionFactory,
-    ILogger<GameEngine> logger,
-    IGameMessagePresenter presenter) : BackgroundService
+    IGameMessagePresenter presenter,
+    ILogger<GameEngine> logger)
 {
-    private static readonly TimeSpan SessionGracePeriod = TimeSpan.FromSeconds(10);
-
     private readonly Dictionary<string, Player> _sessionPlayers = new(StringComparer.Ordinal);
     private readonly Dictionary<string, string> _sessionConnections = new(StringComparer.Ordinal);
     private readonly Dictionary<string, CancellationTokenSource> _sessionCleanupTokens = new(StringComparer.Ordinal);
+    private static readonly TimeSpan SessionGracePeriod = TimeSpan.FromSeconds(10);
 
-    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
-    {
-        await foreach (var input in reader.ReadAllAsync(stoppingToken))
-        {
-            try
-            {
-                await ProcessInput(input, stoppingToken);
-
-                // Signal success
-                input.CompletionSource?.TrySetResult();
-            }
-            catch (Exception ex)
-            {
-                input.CompletionSource?.TrySetException(ex);
-                logger.LogError(ex, "Error processing input");
-            }
-        }
-    }
-
-    private async Task ProcessInput(GameInput input, CancellationToken ct = default)
+    public async Task ProcessInputAsync(GameInput input, CancellationToken ct = default)
     {
         switch (input.Command)
         {
@@ -55,6 +34,7 @@ public class GameEngine(
                 if (!world.Players.TryGetValue(input.ConnectionId.Value, out var player))
                 {
                     await rawMessageSender.SendLoginRequiredMessageAsync(input.ConnectionId, ct);
+
                     break;
                 }
 
@@ -164,29 +144,29 @@ public class GameEngine(
         _sessionCleanupTokens[sessionToken] = cts;
 
         _ = Task.Run(async () =>
-        {
-            try
             {
-                await Task.Delay(SessionGracePeriod, cts.Token);
+                try
+                {
+                    await Task.Delay(SessionGracePeriod, cts.Token);
 
-                _sessionPlayers.Remove(sessionToken);
-                _sessionConnections.Remove(sessionToken);
-                _sessionCleanupTokens.Remove(sessionToken);
+                    _sessionPlayers.Remove(sessionToken);
+                    _sessionConnections.Remove(sessionToken);
+                    _sessionCleanupTokens.Remove(sessionToken);
 
-                logger.LogInformation("Session {SessionId} removed after disconnect grace period of {GracePeriod}",
-                    sessionToken,
-                    SessionGracePeriod);
-            }
-            catch (TaskCanceledException)
-            {
-                logger.LogInformation("Cleanup cancelled for session {SessionId}", sessionToken);
-            }
-            finally
-            {
-                cts.Dispose();
-            }
-        },
-        cts.Token);
+                    logger.LogInformation("Session {SessionId} removed after disconnect grace period of {GracePeriod}",
+                        sessionToken,
+                        SessionGracePeriod);
+                }
+                catch (TaskCanceledException)
+                {
+                    logger.LogInformation("Cleanup cancelled for session {SessionId}", sessionToken);
+                }
+                finally
+                {
+                    cts.Dispose();
+                }
+            },
+            cts.Token);
     }
 
     private void CancelScheduledCleanup(string sessionToken)
@@ -248,7 +228,9 @@ public class GameEngine(
             new(player, new RoomDescriptionEvent(description.ToString()))
         };
 
-        await rawMessageSender.SendLoginResultAsync(connectionId, true, $"Registered and logged in as {player.Username}.");
+        await rawMessageSender.SendLoginResultAsync(connectionId,
+            true,
+            $"Registered and logged in as {player.Username}.");
 
         _ = SendGameMessagesAsync(messages);
     }
@@ -321,7 +303,7 @@ public class GameEngine(
         _sessionPlayers[sessionToken] = player;
         _sessionConnections[sessionToken] = connectionId.Value;
     }
-    
+
     private async Task SendGameMessagesAsync(List<GameMessage> messages, CancellationToken ct = default)
     {
         var tasks = messages

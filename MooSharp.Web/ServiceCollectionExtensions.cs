@@ -11,22 +11,36 @@ public static class ServiceCollectionExtensions
 {
     public static void AddMooSharpServices(this IServiceCollection services, IConfiguration config)
     {
+        // World
         services.AddSingleton<IWorldSeeder, WorldSeeder>();
         services.AddSingleton<WorldInitializer>();
         services.AddSingleton<World>();
+        
+        // Commands
         services.AddSingleton<CommandParser>();
         services.AddSingleton<CommandExecutor>();
         services.AddSingleton<CommandReference>();
+        
+        // Agents
         services.AddSingleton<IAgentPromptProvider, AgentPromptProvider>();
-        services.AddSingleton<IPlayerConnectionFactory, SignalRPlayerConnectionFactory>();
-        services.AddSingleton<IRawMessageSender, SignalRRawMessageSender>();
         services.AddSingleton<AgentSpawner>();
         services.AddSingleton<AgentFactory>();
-        services.AddSingleton<SlugCreator>();
-        services.AddSingleton(TimeProvider.System);
+        
+        // Persistence
         services.AddSingleton<IPlayerStore, SqlitePlayerStore>();
         services.AddSingleton<IWorldStore, SqliteWorldStore>();
+
+        // Connections and message-sending
+        services.AddSingleton<IPlayerConnectionFactory, SignalRPlayerConnectionFactory>();
+        services.AddSingleton<IRawMessageSender, SignalRRawMessageSender>();
+        
+        // Generic infrastructure
+        services.AddSingleton<SlugCreator>();
+        services.AddSingleton(TimeProvider.System);
+        
+        // Systems
         services.AddSingleton<IWorldClock, WorldClock>();
+        services.AddSingleton<GameEngine>();
     }
     
     public static void AddMooSharpMessaging(this IServiceCollection services, IConfiguration config)
@@ -39,7 +53,7 @@ public static class ServiceCollectionExtensions
     
     public static void AddMooSharpHostedServices(this IServiceCollection services, IConfiguration config)
     {
-        services.AddHostedService<GameEngine>();
+        services.AddHostedService<GameEngineBackgroundService>();
         services.AddHostedService<AgentBackgroundService>();
         services.AddHostedService<WorldClockService>();
     }
