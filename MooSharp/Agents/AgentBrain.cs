@@ -31,12 +31,15 @@ public sealed class AgentBrain : IAsyncDisposable
     private readonly Channel<string> _incomingMessages;
     private readonly CancellationTokenSource _cts;
     private Task? _processingTask;
+    private Task? _volitionTask;
 
     // Rate limiting
     private readonly TimeSpan _actionCooldown;
     private DateTimeOffset _nextAllowedActionTime = DateTimeOffset.MinValue;
     private readonly SemaphoreSlim _cooldownLock = new(1, 1);
 
+    public IPlayerConnection Connection => _connection;
+    
     public AgentBrain(string name,
         string persona,
         AgentSource source,
@@ -77,9 +80,7 @@ public sealed class AgentBrain : IAsyncDisposable
 
         _history = new();
     }
-
-    public IPlayerConnection Connection => _connection;
-
+    
     public async Task StartAsync(CancellationToken ct = default)
     {
         _logger.LogInformation("Starting agent brain for {AgentName} (source: {AgentSource})", _name, _source);
@@ -88,6 +89,17 @@ public sealed class AgentBrain : IAsyncDisposable
             .ConfigureAwait(false);
 
         _processingTask = Task.Run(() => ProcessIncomingMessagesAsync(_cts.Token), ct);
+        _volitionTask = Task.Run(() => HandleVolitionAsync(_cts.Token), ct);
+    }
+    
+    private async Task HandleVolitionAsync(CancellationToken ct = default)
+    {
+        using var timer = new PeriodicTimer(TimeSpan.FromMinutes(1), _clock);
+
+        while (await timer.WaitForNextTickAsync(ct))
+        {
+            await EnqueueIncomingMessageAsync("<You've been stationary for too long - do something!>");
+        }
     }
 
     private async Task EnsureSystemPromptAsync(CancellationToken cancellationToken)
@@ -277,6 +289,10 @@ public sealed class AgentBrain : IAsyncDisposable
             if (_processingTask is not null)
             {
                 await _processingTask.ConfigureAwait(false);
+            }
+            if (_volitionTask is not null)
+            {
+                await _volitionTask.ConfigureAwait(false);
             }
         }
         catch (OperationCanceledException) when (_cts.IsCancellationRequested)
