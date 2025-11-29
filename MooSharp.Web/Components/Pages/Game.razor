@@ -97,11 +97,16 @@ else
         if (firstRender && !_initialized)
         {
             _initialized = true;
-            Model.OnStateChanged += StateHasChanged;
+            Model.OnStateChanged += ModelOnOnStateChanged;
             Model.OnFocusInputRequested += FocusInput;
 
             await Model.InitializeAsync();
         }
+    }
+
+    private void ModelOnOnStateChanged()
+    {
+        InvokeAsync(StateHasChanged);
     }
 
     private async Task HandleCommandKeyDown(KeyboardEventArgs e)
@@ -138,13 +143,10 @@ else
 
     public ValueTask DisposeAsync()
     {
-        Model.OnStateChanged -= StateHasChanged;
+        Model.OnStateChanged -= ModelOnOnStateChanged;
         Model.OnFocusInputRequested -= FocusInput;
 
         return ValueTask.CompletedTask;
-
-        // The DI container handles disposing the ViewModel if registered as Scoped,
-        // otherwise call VM.Dispose() here if Transient.
     }
 
 }
