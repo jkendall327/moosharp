@@ -10,8 +10,7 @@ public class World(IWorldStore worldStore, ILogger<World> logger)
     public IReadOnlyDictionary<RoomId, Room> Rooms => _rooms;
     private readonly Dictionary<RoomId, Room> _rooms = new();
 
-    private readonly Dictionary<Player, Room> _playerLocations = [];
-    private readonly Lock _locationLock = new();
+    private readonly ConcurrentDictionary<Player, Room> _playerLocations = [];
 
     public void Initialize(IEnumerable<Room> rooms)
     {
@@ -34,44 +33,34 @@ public class World(IWorldStore worldStore, ILogger<World> logger)
 
     public Room? GetPlayerLocation(Player player)
     {
-        lock (_locationLock)
-        {
-            _ = _playerLocations.TryGetValue(player, out var room);
+        _ = _playerLocations.TryGetValue(player, out var room);
 
-            return room;
-        }
+        return room;
     }
 
     public void MovePlayer(Player player, Room destination)
     {
         ArgumentNullException.ThrowIfNull(destination);
 
-        lock (_locationLock)
+        _playerLocations.TryGetValue(player, out var origin);
+
+        if (origin == destination)
         {
-            _playerLocations.TryGetValue(player, out var origin);
-
-            if (origin == destination)
-            {
-                return;
-            }
-
-            origin?.RemovePlayer(player);
-
-            destination.AddPlayer(player);
-
-            _playerLocations[player] = destination;
+            return;
         }
+
+        origin?.RemovePlayer(player);
+
+        destination.AddPlayer(player);
+
+        _playerLocations[player] = destination;
     }
 
     public void RemovePlayer(Player player)
     {
-        
-        lock (_locationLock)
+        if (_playerLocations.Remove(player, out var location))
         {
-            if (_playerLocations.Remove(player, out var location))
-            {
-                location.RemovePlayer(player);
-            }
+            location.RemovePlayer(player);
         }
         
         Players.TryRemove(player.Connection.Id, out _);
