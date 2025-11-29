@@ -10,6 +10,7 @@ builder.Services.AddRazorComponents().AddInteractiveServerComponents();
 builder.Services.AddSignalR();
 builder.Services.AddHttpClient();
 
+builder.Services.AddMooSharpWebServices();
 builder.Services.AddMooSharpServices(builder.Configuration);
 builder.Services.AddMooSharpOptions(builder.Configuration);
 builder.Services.AddMooSharpHostedServices(builder.Configuration);

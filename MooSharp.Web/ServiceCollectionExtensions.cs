@@ -9,6 +9,13 @@ namespace MooSharp.Web;
 
 public static class ServiceCollectionExtensions
 {
+    public static void AddMooSharpWebServices(this IServiceCollection services)
+    {
+        services.AddScoped<IClientStorageService, ClientStorageService>();
+        services.AddScoped<IGameConnectionService, GameConnectionService>();
+        services.AddScoped<GameViewModel>();
+    }
+    
     public static void AddMooSharpServices(this IServiceCollection services, IConfiguration config)
     {
         // World
