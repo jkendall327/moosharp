@@ -85,6 +85,42 @@ public class GameClientViewModelTests
     }
 
     [Fact]
+    public async Task SubmitCommandAsync_WhenClearCommand_ClearsOutputLocally()
+    {
+        _connection.OnLoginResult += Raise.Event<Action<bool, string>>(true, "ok");
+        _connection.OnMessageReceived += Raise.Event<Action<string>>("hello");
+
+        var stateChanges = 0;
+        _viewModel.OnStateChanged += () => stateChanges++;
+
+        var focusRequests = 0;
+
+        _viewModel.OnFocusInputRequested += () =>
+        {
+            focusRequests++;
+
+            return Task.CompletedTask;
+        };
+
+        _viewModel.CommandInput = "/clear";
+
+        await _viewModel.SubmitCommandAsync();
+
+        await _connection
+            .DidNotReceive()
+            .SendCommandAsync(Arg.Any<string>());
+
+        _history
+            .DidNotReceiveWithAnyArgs()
+            .AddCommand(default!);
+
+        Assert.Equal(string.Empty, _viewModel.GameOutput);
+        Assert.Equal(string.Empty, _viewModel.CommandInput);
+        Assert.Equal(1, stateChanges);
+        Assert.Equal(1, focusRequests);
+    }
+
+    [Fact]
     public void NavigateHistory_RestoresDraftAfterCycling()
     {
         _history.CommandHistory.Returns(new List<string>
