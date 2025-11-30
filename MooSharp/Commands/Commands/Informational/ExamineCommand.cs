@@ -96,8 +96,12 @@ public class SelfExaminedEventFormatter : IGameEventFormatter<SelfExaminedEvent>
 
             foreach (var item in gameEvent.Inventory)
             {
-                sb.AppendLine(item.DescribeWithState());
+                var valueText = item.Value != 0 ? $" ({item.Value:F2})" : "";
+                sb.AppendLine($"{item.DescribeWithState()}{valueText}");
             }
+
+            var totalValue = gameEvent.Inventory.Sum(i => i.Value);
+            sb.AppendLine($"Total value: {totalValue:F2}");
         }
 
         return sb.ToString().TrimEnd();
@@ -125,6 +129,11 @@ public class ObjectExaminedEventFormatter : IGameEventFormatter<ObjectExaminedEv
         if (!string.IsNullOrWhiteSpace(item.TextContent))
         {
             sb.AppendLine("There is something written on it.");
+        }
+
+        if (item.Value != 0)
+        {
+            sb.AppendLine($"Value: {item.Value:F2}");
         }
 
         return sb.ToString().TrimEnd();

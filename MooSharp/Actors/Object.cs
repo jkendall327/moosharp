@@ -17,6 +17,7 @@ public class Object
     public string? TextContent { get; private set; }
     public ObjectFlags Flags { get; set; } = ObjectFlags.None;
     public string? KeyId { get; set; }
+    public decimal Value { get; set; }
 
     public IContainer? Container { get; private set; }
 
@@ -44,7 +45,7 @@ public class Object
 
         TextContent = text.Trim();
     }
-    
+
     public bool IsContainer
     {
         get => Flags.HasFlag(ObjectFlags.Container);
@@ -106,7 +107,7 @@ public class Object
             SetFlag(ObjectFlags.Locked, value);
         }
     }
-    
+
     public bool IsScenery
     {
         get => Flags.HasFlag(ObjectFlags.Scenery);
