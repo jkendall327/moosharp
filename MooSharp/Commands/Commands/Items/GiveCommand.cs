@@ -45,8 +45,7 @@ public class GiveHandler(World world, TargetResolver resolver) : IHandler<GiveCo
             return Task.FromResult(result);
         }
 
-        var room = world.GetPlayerLocation(player)
-            ?? throw new InvalidOperationException("Player has no known current location.");
+        var room = world.GetLocationOrThrow(player);
 
         var recipient = room.PlayersInRoom
             .FirstOrDefault(p => p.Username.Equals(cmd.Target, StringComparison.OrdinalIgnoreCase));

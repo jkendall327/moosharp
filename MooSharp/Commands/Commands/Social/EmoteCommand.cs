@@ -36,8 +36,7 @@ public class EmoteHandler(World world) : IHandler<EmoteCommand>
             return Task.FromResult(result);
         }
 
-        var room = world.GetPlayerLocation(cmd.Player)
-            ?? throw new InvalidOperationException("Player has no known current location.");
+        var room = world.GetLocationOrThrow(cmd.Player);
 
         var gameEvent = new PlayerEmotedEvent(cmd.Player, content);
 

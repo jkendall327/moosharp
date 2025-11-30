@@ -37,8 +37,7 @@ public class DropHandler(World world, TargetResolver resolver) : IHandler<DropCo
             return Task.FromResult(result);
         }
 
-        var room = world.GetPlayerLocation(player)
-            ?? throw new InvalidOperationException("Player has no known current location.");
+        var room = world.GetLocationOrThrow(player);
 
         var search = resolver.FindObjects(player.Inventory, target);
 

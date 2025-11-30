@@ -32,8 +32,7 @@ public class MoveHandler(World world, ILogger<MoveHandler> logger) : IHandler<Mo
         var result = new CommandResult();
         var player = cmd.Player;
 
-        var originRoom = world.GetPlayerLocation(player)
-            ?? throw new InvalidOperationException("Player has no known current location.");
+        var originRoom = world.GetLocationOrThrow(player);
 
         var exits = originRoom.Exits;
 

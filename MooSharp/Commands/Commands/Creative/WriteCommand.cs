@@ -62,8 +62,7 @@ public class WriteHandler(World world, TargetResolver resolver) : IHandler<Write
             return Task.FromResult(result);
         }
 
-        var room = world.GetPlayerLocation(cmd.Player) ??
-                   throw new InvalidOperationException("Player has no known current location.");
+        var room = world.GetLocationOrThrow(cmd.Player);
 
         var search = resolver.FindNearbyObject(cmd.Player, room, target);
 
