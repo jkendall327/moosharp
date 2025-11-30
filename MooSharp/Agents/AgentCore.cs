@@ -60,7 +60,7 @@ public class AgentCore(
             // The shell is currently processing the Thinking command, 
             // but the lock prevents other messages from entering.
             var content = await responseProvider.GetResponse(bundle.Name, bundle.Source, _history, ct);
-            
+
             var responseText = content.Content?.Trim();
 
             if (string.IsNullOrEmpty(responseText))
@@ -89,7 +89,7 @@ public class AgentCore(
     {
         return bundle.VolitionCooldown;
     }
-    
+
     public bool RequiresVolition()
     {
         var idle = clock

@@ -19,7 +19,7 @@ public sealed class AgentBrain(
     private Task? _volitionTask;
 
     public IPlayerConnection Connection { get; } = connection;
-    
+
     public async Task StartAsync(CancellationToken cancellationToken = default)
     {
         _cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
@@ -42,7 +42,7 @@ public sealed class AgentBrain(
     private async Task ProcessLoopAsync()
     {
         ArgumentNullException.ThrowIfNull(_cts);
-        
+
         try
         {
             await foreach (var msg in _incomingMessages.Reader.ReadAllAsync(_cts.Token))
@@ -63,7 +63,7 @@ public sealed class AgentBrain(
         ArgumentNullException.ThrowIfNull(_cts);
 
         var cooldown = core.GetVolitionCooldown();
-        
+
         using var timer = new PeriodicTimer(cooldown, clock);
 
         try
@@ -84,12 +84,12 @@ public sealed class AgentBrain(
     public async ValueTask DisposeAsync()
     {
         ArgumentNullException.ThrowIfNull(_cts);
-        
+
         await _cts.CancelAsync();
         _cts.Dispose();
 
         _incomingMessages.Writer.Complete();
-        
+
         if (_processingTask is not null)
         {
             await _processingTask;

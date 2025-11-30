@@ -6,7 +6,9 @@ Made because I got nostalgic for the weird old MUDs I used to play as a kid and 
 
 I recently stripped out the actor pattern stuff because I wanted to try and make it actually playable, without dealing with all the boilerplate entailed.
 
-This dovetailed with an idea of mine to make a gameworld with persistent LLM NPCs who walk around, interact with things, pursue goals and so on. I think a MOO is a great format for that kind of thing, since it lowers human players to the level of the AIs; that is, to the layer of raw text. We will see how it works out.
+This dovetailed with an idea of mine to make a gameworld with persistent LLM NPCs who walk around, interact with things, pursue goals and so on. I think a MOO is a great format for that kind of thing, since it lowers human players to the level of the AIs; that is, to the layer of raw text. We will see how it works out. I am always fascinated by these ominously new intelligences and want to see what they are capable of.
+
+For that reason, the AIs in this game don't get any special tools (like privileged insight into the state of the world). They get the same raw text feed as humans do; they have to supply responses that meet the format of the game's parser.
 
 Right now the game loop is just one big foreach, so who knows how scaleable it is. I might refactor it back into doing the actor stuff down the line when I have actual mechanics nailed down. I will probably use Akka.NET then, instead of my own homegrown solution.
 

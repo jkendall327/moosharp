@@ -25,7 +25,7 @@ public class AgentFactory(
         var core = new AgentCore(bundle, promptProvider, responseProvider, clock, options, logger);
 
         var connection = new AgentPlayerConnection();
-        
+
         var brain = new AgentBrain(core, connection, writer, clock, options);
 
         return brain;

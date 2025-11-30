@@ -81,7 +81,7 @@ public class SqlitePlayerStore : IPlayerStore
             new { command.Username });
 
         player.Inventory = inventory.ToList();
-        
+
         return player;
     }
 

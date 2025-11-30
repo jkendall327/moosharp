@@ -6,6 +6,6 @@ namespace MooSharp.Web;
 
 public class SignalRPlayerConnectionFactory(IHubContext<MooHub> hubContext) : IPlayerConnectionFactory
 {
-    public IPlayerConnection Create(ConnectionId connectionId) 
+    public IPlayerConnection Create(ConnectionId connectionId)
         => new SignalRPlayerConnection(connectionId, hubContext);
 }

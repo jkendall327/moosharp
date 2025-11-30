@@ -16,7 +16,7 @@ public class AgentCoreTests
         var bundle = new AgentCreationBundle("Fake", "", AgentSource.OpenAI, TimeSpan.Zero, TimeSpan.Zero);
 
         var assistantResponse = "Hello back!";
-        
+
         var provider = Substitute.For<IAgentResponseProvider>();
 
         provider

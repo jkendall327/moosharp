@@ -2,7 +2,7 @@ namespace MooSharp.Tests;
 
 public class ReadHandlerTests
 {
-    
+
     [Fact]
     public async Task ReadHandler_ReturnsObjectReadEventWhenTextPresent()
     {

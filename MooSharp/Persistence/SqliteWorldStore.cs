@@ -116,7 +116,7 @@ public class SqliteWorldStore : IWorldStore
     {
         // Note: We ignore the 'direction' string parameter here because the schema 
         // now treats the relationship purely as From->To. 
-        
+
         await using var connection = new SqliteConnection(_connectionString);
 
         const string sql = """
@@ -172,7 +172,7 @@ public class SqliteWorldStore : IWorldStore
         // We must save ALL rooms first. 
         // If we save Room A and its exits immediately, Room A might point to Room B 
         // which hasn't been inserted yet, triggering a Foreign Key violation.
-        
+
         // 1. Save all Rooms
         foreach (var room in roomList)
         {

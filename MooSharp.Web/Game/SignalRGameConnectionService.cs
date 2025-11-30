@@ -7,7 +7,7 @@ public sealed class SignalRGameConnectionService : IGameConnectionService
 
     public event Action<string>? OnMessageReceived;
     public event Action<bool, string>? OnLoginResult;
-    
+
     public event Action? OnReconnecting;
     public event Action? OnReconnected;
     public event Action? OnClosed;
@@ -64,7 +64,7 @@ public sealed class SignalRGameConnectionService : IGameConnectionService
         {
             throw new InvalidOperationException("Hub not initialized.");
         }
-        
+
         await _hubConnection.SendAsync("Login", username, password);
     }
 
