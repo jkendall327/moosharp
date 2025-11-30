@@ -35,7 +35,7 @@ public class WorldClock(
             .Select(player => new GameMessage(player, gameEvent))
             .Select(message => (message.Player, Content: presenter.Present(message)))
             .Where(result => !string.IsNullOrWhiteSpace(result.Content))
-            .Select(result => result.Player.Connection.SendMessageAsync(result.Content!));
+            .Select(result => result.Player.Connection.SendMessageAsync(result.Content!, cancellationToken));
 
         try
         {
