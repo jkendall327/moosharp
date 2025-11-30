@@ -37,11 +37,12 @@ public class TakeHandler(World world, TargetResolver resolver) : IHandler<TakeCo
         if (ownedItem is not null)
         {
             result.Add(player, new ItemAlreadyInPossessionEvent(ownedItem));
+
             return Task.FromResult(result);
         }
 
-        var currentLocation = world.GetPlayerLocation(player)
-            ?? throw new InvalidOperationException("Player has no known current location.");
+        var currentLocation = world.GetPlayerLocation(player) ??
+                              throw new InvalidOperationException("Player has no known current location.");
 
         var search = resolver.FindObjects(currentLocation.Contents, cmd.Target);
 
@@ -58,18 +59,28 @@ public class TakeHandler(World world, TargetResolver resolver) : IHandler<TakeCo
                 {
                     result.Add(player, new ItemNotFoundEvent(cmd.Target));
                 }
+
                 break;
 
             case SearchStatus.IndexOutOfRange:
                 result.Add(player, new SystemMessageEvent($"You can't see a '{cmd.Target}' here."));
+
                 break;
 
             case SearchStatus.Ambiguous:
                 result.Add(player, new AmbiguousInputEvent(cmd.Target, search.Candidates));
+
                 break;
 
             case SearchStatus.Found:
                 var o = search.Match!;
+
+                if (o.IsScenery)
+                {
+                    result.Add(player, new SystemMessageEvent("You can't pick that up."));
+
+                    return Task.FromResult(result);
+                }
 
                 if (o.Owner is null)
                 {
@@ -84,6 +95,7 @@ public class TakeHandler(World world, TargetResolver resolver) : IHandler<TakeCo
                 {
                     result.Add(player, new ItemOwnedByOtherEvent(o, o.Owner));
                 }
+
                 break;
         }
 
@@ -92,9 +104,9 @@ public class TakeHandler(World world, TargetResolver resolver) : IHandler<TakeCo
 
     private static bool MatchesTarget(Object item, string target)
     {
-        return item.Name.Equals(target, StringComparison.OrdinalIgnoreCase)
-               || item.Keywords.Contains(target, StringComparer.OrdinalIgnoreCase)
-               || item.Name.Contains(target, StringComparison.OrdinalIgnoreCase);
+        return item.Name.Equals(target, StringComparison.OrdinalIgnoreCase) ||
+               item.Keywords.Contains(target, StringComparer.OrdinalIgnoreCase) ||
+               item.Name.Contains(target, StringComparison.OrdinalIgnoreCase);
     }
 
     private static (Object Item, Player Owner)? FindOtherOwnedItem(Room room, string target, Player actor)

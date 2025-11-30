@@ -84,7 +84,7 @@ public class SqliteWorldStoreObjectPersistenceTests
             {
                 Name = "lantern",
                 Description = "An old lantern",
-                Flags = ObjectFlags.LightSource | ObjectFlags.Takeable
+                Flags = ObjectFlags.LightSource | ObjectFlags.Scenery
             };
 
             item.IsOpenable = true;

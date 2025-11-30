@@ -42,7 +42,8 @@
       "Name": "notice board",
       "Description": "A wooden board for leaving notes.",
       "RoomSlug": "atrium",
-      "TextContent": "Welcome to MooSharp!"
+      "TextContent": "Welcome to MooSharp!",
+      "Flags": "Scenery"
     }
   ]
 }
