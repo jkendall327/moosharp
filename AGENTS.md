@@ -15,3 +15,4 @@
 - Always run dotnet builds/dotnet test to check your work.
 - If you are Codex CLI, you may have to run dotnet test etc. with elevated sandbox permissions; actively ask for
   permission in these cases.
+- Always run tests against the whole solution. Do not filter down what tests you run: run all tests every time.
