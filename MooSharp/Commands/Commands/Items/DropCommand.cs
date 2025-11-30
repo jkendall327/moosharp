@@ -11,6 +11,7 @@ public class DropCommand : CommandBase<DropCommand>
 public class DropCommandDefinition : ICommandDefinition
 {
     public IReadOnlyCollection<string> Verbs { get; } = ["drop"];
+    public CommandCategory Category => CommandCategory.General;
 
     public string Description => "Drop an item from your inventory. Usage: drop <item>.";
 

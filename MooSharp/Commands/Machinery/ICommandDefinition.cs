@@ -19,4 +19,14 @@ public interface ICommandDefinition
     /// Parses raw text into the command.
     /// </summary>
     ICommand Create(Player player, string args);
+
+    CommandCategory Category { get; }
+}
+
+public enum CommandCategory
+{
+    Admin,
+    Meta,
+    General,
+    Social
 }

@@ -13,6 +13,7 @@ public class DigCommand : CommandBase<DigCommand>
 public class DigCommandDefinition : ICommandDefinition
 {
     public IReadOnlyCollection<string> Verbs { get; } = ["@dig", "dig"];
+    public CommandCategory Category => CommandCategory.General;
 
     public string Description => "Create a new room connected to your current one. Usage: @dig to <room name>.";
 

@@ -12,6 +12,7 @@ public class WhisperCommand : CommandBase<WhisperCommand>
 public class WhisperCommandDefinition : ICommandDefinition
 {
     public IReadOnlyCollection<string> Verbs { get; } = ["whisper"];
+    public CommandCategory Category => CommandCategory.Social;
 
     public string Description => "Send a private message to another player. Usage: whisper <target> <message>.";
 

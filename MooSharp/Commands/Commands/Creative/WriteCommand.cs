@@ -12,6 +12,7 @@ public class WriteCommand : CommandBase<WriteCommand>
 public class WriteCommandDefinition : ICommandDefinition
 {
     public IReadOnlyCollection<string> Verbs { get; } = ["write"];
+    public CommandCategory Category => CommandCategory.General;
 
     public string Description => "Write a message on an item. Usage: write on <item> <text>.";
 

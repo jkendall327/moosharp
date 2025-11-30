@@ -11,6 +11,7 @@ public class CloseCommand : CommandBase<CloseCommand>
 public class CloseCommandDefinition : ICommandDefinition
 {
     public IReadOnlyCollection<string> Verbs { get; } = ["close", "shut"];
+    public CommandCategory Category => CommandCategory.General;
 
     public string Description => "Close a container or door. Usage: 'close <object>'.";
 

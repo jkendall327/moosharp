@@ -10,6 +10,7 @@ public class InventoryCommand : CommandBase<InventoryCommand>
 public class InventoryCommandDefinition : ICommandDefinition
 {
     public IReadOnlyCollection<string> Verbs { get; } = ["i", "inv", "inventory"];
+    public CommandCategory Category => CommandCategory.General;
 
     public string Description => "Check what you're carrying.";
 

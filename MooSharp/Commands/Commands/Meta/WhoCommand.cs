@@ -11,6 +11,7 @@ public class WhoCommandDefinition : ICommandDefinition
 {
     public IReadOnlyCollection<string> Verbs { get; } = ["who"];
 
+    public CommandCategory Category => CommandCategory.Meta;
     public string Description => "List all players currently online.";
 
     public ICommand Create(Player player, string args) => new WhoCommand

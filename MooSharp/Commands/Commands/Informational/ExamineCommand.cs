@@ -14,6 +14,7 @@ public class ExamineCommandDefinition : ICommandDefinition
     public IReadOnlyCollection<string> Verbs { get; } = ["examine", "ex", "x", "view", "look"];
 
     public string Description => "Inspect yourself, an item, or the room. Usage: examine <target>.";
+    public CommandCategory Category => CommandCategory.General;
 
     public ICommand Create(Player player, string args)
         => new ExamineCommand
