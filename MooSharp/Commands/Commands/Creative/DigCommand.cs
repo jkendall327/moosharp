@@ -65,13 +65,7 @@ public class DigHandler(World world, SlugCreator slugCreator) : IHandler<DigComm
         var result = new CommandResult();
         var player = cmd.Player;
 
-        var currentRoom = world.GetPlayerLocation(player);
-
-        if (currentRoom is null)
-        {
-            result.Add(player, new SystemMessageEvent("You cannot dig while not in a room."));
-            return result;
-        }
+        var currentRoom = world.GetLocationOrThrow(player);
 
         if (string.IsNullOrWhiteSpace(cmd.RoomName))
         {

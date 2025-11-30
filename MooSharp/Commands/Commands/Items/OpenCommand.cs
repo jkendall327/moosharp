@@ -45,12 +45,7 @@ public class OpenHandler(World world, TargetResolver resolver) : IHandler<OpenCo
 
         var player = command.Player;
 
-        var currentRoom = world.GetPlayerLocation(player);
-
-        if (currentRoom is null)
-        {
-            throw new InvalidOperationException("No current room found.");
-        }
+        var currentRoom = world.GetLocationOrThrow(player);
 
         var searchResult = resolver.FindObjects(currentRoom.Contents, command.Target);
 

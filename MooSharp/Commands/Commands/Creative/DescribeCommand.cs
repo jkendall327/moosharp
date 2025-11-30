@@ -77,13 +77,7 @@ public class DescribeHandler(World world) : IHandler<DescribeCommand>
             return result;
         }
 
-        var currentRoom = world.GetPlayerLocation(player);
-
-        if (currentRoom is null)
-        {
-            result.Add(player, new SystemMessageEvent("You are nowhere right now."));
-            return result;
-        }
+        var currentRoom = world.GetLocationOrThrow(player);
 
         var targetRoom = GetTargetRoom(currentRoom, cmd.Target);
 

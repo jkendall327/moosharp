@@ -34,8 +34,7 @@ public class ExamineHandler(World world, TargetResolver resolver) : IHandler<Exa
 
         if (string.IsNullOrWhiteSpace(cmd.Target))
         {
-            var currentLocation = world.GetPlayerLocation(player)
-                ?? throw new InvalidOperationException("Player has no known current location.");
+            var currentLocation = world.GetLocationOrThrow(player);
 
             result.Add(player, new RoomDescriptionEvent(currentLocation.DescribeFor(player, useLongDescription: true)));
 
@@ -52,8 +51,7 @@ public class ExamineHandler(World world, TargetResolver resolver) : IHandler<Exa
             return Task.FromResult(result);
         }
 
-        var current = world.GetPlayerLocation(player)
-            ?? throw new InvalidOperationException("Player has no known current location.");
+        var current = world.GetLocationOrThrow(player);
 
         var search = resolver.FindObjects(current.Contents, cmd.Target);
 

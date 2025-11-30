@@ -43,8 +43,7 @@ public class TakeHandler(World world, TargetResolver resolver) : IHandler<TakeCo
             return Task.FromResult(result);
         }
 
-        var currentLocation = world.GetPlayerLocation(player) ??
-                              throw new InvalidOperationException("Player has no known current location.");
+        var currentLocation = world.GetLocationOrThrow(player);
 
         var search = resolver.FindObjects(currentLocation.Contents, cmd.Target);
 
