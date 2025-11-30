@@ -12,6 +12,7 @@ public class GiveCommand : CommandBase<GiveCommand>
 public class GiveCommandDefinition : ICommandDefinition
 {
     public IReadOnlyCollection<string> Verbs { get; } = ["give"];
+    public CommandCategory Category => CommandCategory.General;
 
     public string Description => "Give an item to another player in the same room. Usage: give <target> <item>.";
 

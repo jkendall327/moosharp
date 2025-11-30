@@ -13,6 +13,7 @@ public class ReadCommandDefinition : ICommandDefinition
     public IReadOnlyCollection<string> Verbs { get; } = ["read"];
 
     public string Description => "Read writing on an item. Usage: read <item>.";
+    public CommandCategory Category => CommandCategory.General;
 
     public ICommand Create(Player player, string args) => new ReadCommand
     {

@@ -12,6 +12,7 @@ public class ChannelCommand : CommandBase<ChannelCommand>
 public class GlobalChannelCommandDefinition : ICommandDefinition
 {
     public IReadOnlyCollection<string> Verbs { get; } = ["/global", "/shout"];
+    public CommandCategory Category => CommandCategory.Meta;
 
     public string Description => "Send a message to the global channel. Usage: /g <message>.";
 
@@ -27,6 +28,7 @@ public class GlobalChannelCommandDefinition : ICommandDefinition
 public class ChannelCommandDefinition : ICommandDefinition
 {
     public IReadOnlyCollection<string> Verbs { get; } = ["channel", "ch", "/channel", "/ch"];
+    public CommandCategory Category => CommandCategory.Meta;
 
     public string Description =>
         "Send a message to a chat channel. Usage: channel <channel> <message> (defaults to global).";

@@ -11,6 +11,7 @@ public class EmoteCommand : CommandBase<EmoteCommand>
 public class EmoteCommandDefinition : ICommandDefinition
 {
     public IReadOnlyCollection<string> Verbs { get; } = ["/me"];
+    public CommandCategory Category => CommandCategory.Social;
 
     public string Description => "Emote an action to everyone in your current room. Usage: /me <action>.";
 

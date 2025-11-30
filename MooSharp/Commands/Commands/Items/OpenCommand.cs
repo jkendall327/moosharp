@@ -11,6 +11,7 @@ public class OpenCommand : CommandBase<OpenCommand>
 public class OpenCommandDefinition : ICommandDefinition
 {
     public IReadOnlyCollection<string> Verbs { get; } = ["open"];
+    public CommandCategory Category => CommandCategory.General;
 
     public string Description => "Open a container. No effect on already-open containers. Usage: 'open <object>'.";
 

@@ -12,6 +12,7 @@ public class ChannelMuteCommand : CommandBase<ChannelMuteCommand>
 public class MuteChannelCommandDefinition : ICommandDefinition
 {
     public IReadOnlyCollection<string> Verbs { get; } = ["mute", "/mute"];
+    public CommandCategory Category => CommandCategory.Meta;
 
     public string Description => "Mute a chat channel. Usage: mute <channel>.";
 
@@ -22,6 +23,7 @@ public class MuteChannelCommandDefinition : ICommandDefinition
 public class UnmuteChannelCommandDefinition : ICommandDefinition
 {
     public IReadOnlyCollection<string> Verbs { get; } = ["unmute", "/unmute"];
+    public CommandCategory Category => CommandCategory.Meta;
 
     public string Description => "Unmute a chat channel. Usage: unmute <channel>.";
 

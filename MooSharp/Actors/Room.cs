@@ -43,6 +43,11 @@ public class Room : IContainer
 
         sb.AppendLine(useLongDescription ? LongDescription : Description);
 
+        foreach (var obj in Contents)
+        {
+            sb.AppendLine($"{obj.Name} is here.");
+        }
+        
         var otherPlayers = PlayersInRoom
             .Select(s => s.Username)
             .Except([player.Username])

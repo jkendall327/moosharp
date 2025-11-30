@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using MooSharp.Infrastructure;
@@ -12,6 +13,11 @@ public interface IWorldSeeder
 
 public class WorldSeeder(IOptions<AppOptions> options, ILogger<WorldSeeder> logger) : IWorldSeeder
 {
+    private static readonly JsonSerializerOptions JsonSerializerOptions = new()
+    {
+        Converters = { new JsonStringEnumConverter<ObjectFlags>() }
+    };
+
     public IReadOnlyCollection<Room> GetSeedRooms()
     {
         var dto = GetWorldDto();
@@ -33,7 +39,7 @@ public class WorldSeeder(IOptions<AppOptions> options, ILogger<WorldSeeder> logg
 
         var raw = File.ReadAllText(path);
 
-        var dto = JsonSerializer.Deserialize<WorldDto>(raw);
+        var dto = JsonSerializer.Deserialize<WorldDto>(raw, JsonSerializerOptions);
 
         if (dto is null)
         {

@@ -8,20 +8,6 @@ public readonly record struct ObjectId(Guid Value)
     public override string ToString() => Value.ToString();
 }
 
-[Flags]
-public enum ObjectFlags
-{
-    None = 0,
-    Takeable = 1 << 0,
-    Container = 1 << 1,
-    Openable = 1 << 2,
-    Open = 1 << 3,
-    Lockable = 1 << 4,
-    Locked = 1 << 5,
-    Scenery = 1 << 6,
-    LightSource = 1 << 7
-}
-
 public class Object
 {
     public ObjectId Id { get; init; } = ObjectId.New();
@@ -58,13 +44,7 @@ public class Object
 
         TextContent = text.Trim();
     }
-
-    public bool IsTakeable
-    {
-        get => Flags.HasFlag(ObjectFlags.Takeable);
-        set => SetFlag(ObjectFlags.Takeable, value);
-    }
-
+    
     public bool IsContainer
     {
         get => Flags.HasFlag(ObjectFlags.Container);
@@ -124,6 +104,20 @@ public class Object
             }
 
             SetFlag(ObjectFlags.Locked, value);
+        }
+    }
+    
+    public bool IsScenery
+    {
+        get => Flags.HasFlag(ObjectFlags.Scenery);
+        set
+        {
+            if (value)
+            {
+                SetFlag(ObjectFlags.Scenery, true);
+            }
+
+            SetFlag(ObjectFlags.Scenery, value);
         }
     }
 

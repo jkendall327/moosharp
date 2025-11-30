@@ -16,6 +16,8 @@ public class DescribeCommandDefinition : ICommandDefinition
     public string Description =>
         "Update a room description. Usage: @describe here <description> or @describe <exit> <description>.";
 
+    public CommandCategory Category => CommandCategory.General;
+    
     public ICommand Create(Player player, string args)
     {
         ArgumentNullException.ThrowIfNull(player);
