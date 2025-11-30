@@ -47,7 +47,7 @@ public class Room : IContainer
         {
             sb.AppendLine($"{obj.Name} is here.");
         }
-        
+
         var otherPlayers = PlayersInRoom
             .Select(s => s.Username)
             .Except([player.Username])

@@ -18,7 +18,8 @@ public class WriteHandlerTests
         var item = new Object
         {
             Name = "Sign",
-            Description = "A wooden sign"
+            Description = "A wooden sign",
+            Flags = ObjectFlags.Writeable
         };
 
         item.MoveTo(room);
