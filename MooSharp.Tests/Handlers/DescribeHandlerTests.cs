@@ -4,7 +4,7 @@ namespace MooSharp.Tests;
 
 public class DescribeHandlerTests
 {
-    
+
     [Fact]
     public async Task DescribeHandler_UpdatesCurrentRoomDescriptions()
     {

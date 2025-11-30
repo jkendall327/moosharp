@@ -21,15 +21,15 @@ public class CommandExecutor(IServiceProvider services, ILogger<CommandExecutor>
         {
             { "CommandType", cmd.GetType().Name }
         });
-        
+
         logger.LogInformation("Beginning command execution");
-        
+
         var handler = services.GetRequiredService<IHandler<TCommand>>();
 
         try
         {
             var result = await handler.Handle(cmd, token);
-            
+
             logger.LogDebug("Command execution completed");
 
             return result;

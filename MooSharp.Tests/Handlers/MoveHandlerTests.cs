@@ -5,7 +5,7 @@ namespace MooSharp.Tests;
 
 public class MoveHandlerTests
 {
-        [Fact]
+    [Fact]
     public async Task MoveHandler_MovesPlayerAndAddsMovementEvents()
     {
         var origin = HandlerTestHelpers.CreateRoom("origin");
@@ -73,11 +73,11 @@ public class MoveHandlerTests
         var actor = HandlerTestHelpers.CreatePlayer("Actor");
         var originObserver = HandlerTestHelpers.CreatePlayer("OriginObserver");
         var destinationObserver = HandlerTestHelpers.CreatePlayer("DestinationObserver");
-        
+
         world.MovePlayer(actor, origin);
         world.MovePlayer(originObserver, origin);
         world.MovePlayer(destinationObserver, destination);
-        
+
         var handler = new MoveHandler(world, NullLogger<MoveHandler>.Instance);
 
         var result = await handler.Handle(new MoveCommand

@@ -85,7 +85,7 @@ public class OpenHandler(World world, TargetResolver resolver) : IHandler<OpenCo
         }
 
         target.IsOpen = true;
-        
+
         result.Add(player, new ItemOpenedEvent(player, target));
 
         return result;

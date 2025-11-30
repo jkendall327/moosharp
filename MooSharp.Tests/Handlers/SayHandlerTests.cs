@@ -14,7 +14,7 @@ public class SayHandlerTests
         var listener = HandlerTestHelpers.CreatePlayer("Listener");
         world.MovePlayer(speaker, room);
         world.MovePlayer(listener, room);
-        
+
         var handler = new SayHandler(world);
 
         var result = await handler.Handle(new SayCommand

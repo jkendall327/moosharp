@@ -30,7 +30,7 @@ public class CommandResult
         {
             if (!excluded.Contains(player))
             {
-                Messages.Add(new (player, @event, audience));
+                Messages.Add(new(player, @event, audience));
             }
         }
     }

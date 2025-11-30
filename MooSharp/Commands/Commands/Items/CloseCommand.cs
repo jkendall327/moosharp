@@ -80,7 +80,7 @@ public class CloseHandler(World world, TargetResolver resolver) : IHandler<Close
         }
 
         target.IsOpen = false;
-        
+
         result.Add(player, new ItemClosedEvent(player, target));
 
         return Task.FromResult(result);

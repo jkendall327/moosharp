@@ -36,7 +36,7 @@ public class Room : IContainer
     public IReadOnlyCollection<Object> Contents => _contents;
     public Dictionary<string, RoomId> Exits { get; } = new(StringComparer.OrdinalIgnoreCase);
     public IReadOnlyCollection<Player> PlayersInRoom => _playersInRoom;
-    
+
     public string DescribeFor(Player player, bool useLongDescription = false)
     {
         var sb = new StringBuilder();

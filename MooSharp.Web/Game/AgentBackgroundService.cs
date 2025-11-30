@@ -11,7 +11,7 @@ public class AgentBackgroundService(AgentSpawner spawner, IOptions<AgentOptions>
         {
             return;
         }
-        
+
         await spawner.ExecuteAsync(stoppingToken);
     }
 }

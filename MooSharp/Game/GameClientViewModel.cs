@@ -45,7 +45,7 @@ public sealed class GameClientViewModel : IDisposable
     public event Func<Task>? OnFocusInputRequested;
 
     private Uri? _hubUri;
-    
+
     public GameClientViewModel(IGameConnectionService connection,
         IGameHistoryService historyService,
         ILogger<GameClientViewModel> logger)
@@ -67,7 +67,7 @@ public sealed class GameClientViewModel : IDisposable
     {
         await _historyService.InitializeAsync();
         var sessionId = await _historyService.GetOrCreateSessionIdAsync();
-        
+
         // Pass the session ID provider to the connection service
         _hubUri = hub;
         await _connection.InitializeAsync(hub, () => Task.FromResult<string?>(sessionId));
@@ -199,7 +199,7 @@ public sealed class GameClientViewModel : IDisposable
         {
             throw new InvalidOperationException("Hub URI was null when trying to log out.");
         }
-        
+
         await InitializeAsync(_hubUri);
     }
 

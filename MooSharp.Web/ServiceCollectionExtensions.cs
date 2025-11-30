@@ -16,26 +16,26 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IGameConnectionService, SignalRGameConnectionService>();
         services.AddScoped<GameClientViewModel>();
     }
-    
+
     public static void AddMooSharpServices(this IServiceCollection services, IConfiguration config)
     {
         // World
         services.AddSingleton<IWorldSeeder, WorldSeeder>();
         services.AddSingleton<WorldInitializer>();
         services.AddSingleton<World>();
-        
+
         // Commands
         services.AddSingleton<CommandParser>();
         services.AddSingleton<CommandExecutor>();
         services.AddSingleton<CommandReference>();
         services.AddSingleton<TargetResolver>();
-        
+
         // Agents
         services.AddSingleton<IAgentPromptProvider, AgentPromptProvider>();
         services.AddSingleton<AgentSpawner>();
         services.AddSingleton<AgentFactory>();
         services.AddSingleton<IAgentResponseProvider, AgentResponseProvider>();
-        
+
         // Persistence
         services.AddSingleton<IPlayerStore, SqlitePlayerStore>();
         services.AddSingleton<IWorldStore, SqliteWorldStore>();
@@ -44,16 +44,16 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IPlayerConnectionFactory, SignalRPlayerConnectionFactory>();
         services.AddSingleton<IRawMessageSender, SignalRRawMessageSender>();
         services.AddSingleton<PlayerSessionManager>();
-        
+
         // Generic infrastructure
         services.AddSingleton<SlugCreator>();
         services.AddSingleton(TimeProvider.System);
-        
+
         // Systems
         services.AddSingleton<IWorldClock, WorldClock>();
         services.AddSingleton<GameEngine>();
     }
-    
+
     public static void AddMooSharpMessaging(this IServiceCollection services, IConfiguration config)
     {
         var channel = Channel.CreateUnbounded<GameInput>();
@@ -61,14 +61,14 @@ public static class ServiceCollectionExtensions
         services.AddSingleton(channel.Writer);
         services.AddSingleton(channel.Reader);
     }
-    
+
     public static void AddMooSharpHostedServices(this IServiceCollection services, IConfiguration config)
     {
         services.AddHostedService<GameEngineBackgroundService>();
         services.AddHostedService<AgentBackgroundService>();
         services.AddHostedService<WorldClockService>();
     }
-    
+
     public static void AddMooSharpOptions(this IServiceCollection services, IConfiguration config)
     {
         services
@@ -93,7 +93,7 @@ public static class ServiceCollectionExtensions
         });
     }
 
-    
+
     /// <summary>
     /// Register all ICommandHandler<T>s via reflection.
     /// </summary>
@@ -106,7 +106,7 @@ public static class ServiceCollectionExtensions
         foreach (var assembly in assemblies)
         {
             var handlerTypes = assembly.GetTypes()
-                .Where(t => t is {IsAbstract: false, IsInterface: false})
+                .Where(t => t is { IsAbstract: false, IsInterface: false })
                 .SelectMany(t => t.GetInterfaces()
                     .Where(i => i.IsGenericType && i.GetGenericTypeDefinition() ==
                         handlerInterfaceType)
@@ -140,7 +140,7 @@ public static class ServiceCollectionExtensions
         {
             var types = assembly.GetTypes()
                 .Where(t =>
-                    t is {IsAbstract: false, IsInterface: false} &&
+                    t is { IsAbstract: false, IsInterface: false } &&
                     definitionType.IsAssignableFrom(t));
 
             foreach (var type in types)
