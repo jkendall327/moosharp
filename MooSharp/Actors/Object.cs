@@ -44,7 +44,7 @@ public class Object
 
         TextContent = text.Trim();
     }
-    
+
     public bool IsContainer
     {
         get => Flags.HasFlag(ObjectFlags.Container);
@@ -106,7 +106,7 @@ public class Object
             SetFlag(ObjectFlags.Locked, value);
         }
     }
-    
+
     public bool IsScenery
     {
         get => Flags.HasFlag(ObjectFlags.Scenery);

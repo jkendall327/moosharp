@@ -45,7 +45,7 @@ public class CommandReference
                 {
                     sb.Append('.');
                 }
-                
+
                 if (synonyms.Any())
                 {
                     var verbs = string.Join(", ", synonyms);
