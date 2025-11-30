@@ -94,6 +94,13 @@ public sealed class GameClientViewModel : IDisposable
 
         var commandToSend = CommandInput;
 
+        if (TryHandleClientCommand(commandToSend))
+        {
+            await RequestFocusAsync();
+
+            return;
+        }
+
         try
         {
             await _connection.SendCommandAsync(commandToSend);
@@ -114,10 +121,7 @@ public sealed class GameClientViewModel : IDisposable
 
         NotifyStateChanged();
 
-        if (OnFocusInputRequested is not null)
-        {
-            await OnFocusInputRequested.Invoke();
-        }
+        await RequestFocusAsync();
     }
 
     public async Task LoginAsync()
@@ -374,6 +378,31 @@ public sealed class GameClientViewModel : IDisposable
         foreach (var channel in AvailableChannels)
         {
             ChannelMuteState[channel] = false;
+        }
+    }
+
+    private bool TryHandleClientCommand(string command)
+    {
+        if (string.Equals(command.Trim(), "/clear", StringComparison.OrdinalIgnoreCase))
+        {
+            _outputBuffer.Clear();
+            CommandInput = string.Empty;
+            _historyIndex = -1;
+            _commandDraft = string.Empty;
+
+            NotifyStateChanged();
+
+            return true;
+        }
+
+        return false;
+    }
+
+    private async Task RequestFocusAsync()
+    {
+        if (OnFocusInputRequested is not null)
+        {
+            await OnFocusInputRequested.Invoke();
         }
     }
 
