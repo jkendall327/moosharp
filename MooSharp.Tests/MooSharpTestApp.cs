@@ -12,6 +12,7 @@ public class MooSharpTestApp : WebApplicationFactory<Program>
 {
     public string DbName { get; } = $"test_{Guid.NewGuid()}.db";
     public TestConnectionFactory ConnectionFactory { get; } = new();
+    public string? Motd { get; set; }
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
@@ -24,6 +25,7 @@ public class MooSharpTestApp : WebApplicationFactory<Program>
             {
                 opts.DatabaseFilepath = DbName;
                 opts.WorldDataFilepath = "world.json";
+                opts.Motd = Motd;
             });
 
             services.Configure<AgentOptions>(opts => { opts.Enabled = false; });

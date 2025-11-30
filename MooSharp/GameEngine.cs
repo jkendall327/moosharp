@@ -4,6 +4,7 @@ using MooSharp.Agents;
 using MooSharp.Infrastructure;
 using MooSharp.Messaging;
 using MooSharp.Persistence;
+using Microsoft.Extensions.Options;
 
 namespace MooSharp;
 
@@ -16,8 +17,11 @@ public class GameEngine(
     IPlayerConnectionFactory connectionFactory,
     IGameMessagePresenter presenter,
     PlayerSessionManager sessionManager,
-    ILogger<GameEngine> logger)
+    ILogger<GameEngine> logger,
+    IOptionsMonitor<AppOptions> appOptions)
 {
+    private string Motd => (appOptions.CurrentValue.Motd ?? string.Empty).Trim();
+
     public async Task ProcessInputAsync(GameInput input, CancellationToken ct = default)
     {
         switch (input.Command)
@@ -166,9 +170,12 @@ public class GameEngine(
 
         var messages = new List<GameMessage>
         {
-            new(player, new SystemMessageEvent($"Welcome, {player.Username}.")),
-            new(player, new RoomDescriptionEvent(description.ToString()))
+            new(player, new SystemMessageEvent($"Welcome, {player.Username}."))
         };
+
+        AddMotdMessage(messages, player);
+
+        messages.Add(new(player, new RoomDescriptionEvent(description.ToString())));
 
         await rawMessageSender.SendLoginResultAsync(connectionId,
             true,
@@ -225,9 +232,12 @@ public class GameEngine(
 
         var messages = new List<GameMessage>
         {
-            new(player, new SystemMessageEvent($"Welcome back, {player.Username}.")),
-            new(player, new RoomDescriptionEvent(description.ToString()))
+            new(player, new SystemMessageEvent($"Welcome back, {player.Username}."))
         };
+
+        AddMotdMessage(messages, player);
+
+        messages.Add(new(player, new RoomDescriptionEvent(description.ToString())));
 
         await rawMessageSender.SendLoginResultAsync(connectionId, true, $"Logged in as {player.Username}.");
 
@@ -279,6 +289,18 @@ public class GameEngine(
         sb.Append(room.DescribeFor(player));
 
         return sb;
+    }
+
+    private void AddMotdMessage(List<GameMessage> messages, Player player)
+    {
+        var motd = Motd;
+
+        if (string.IsNullOrWhiteSpace(motd))
+        {
+            return;
+        }
+
+        messages.Add(new GameMessage(player, new SystemMessageEvent(motd)));
     }
 
     private Task RegisterAgent(ConnectionId connectionId, RegisterAgentCommand command)
