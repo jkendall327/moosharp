@@ -8,8 +8,9 @@ public class World(IWorldStore worldStore, ILogger<World> logger)
 {
     private readonly Dictionary<RoomId, Room> _rooms = [];
     private readonly ConcurrentDictionary<Player, Room> _playerLocations = [];
-    
+
     public ConcurrentDictionary<string, Player> Players { get; } = [];
+    public DayPeriod CurrentDayPeriod { get; set; } = DayPeriod.Morning;
     public IReadOnlyDictionary<RoomId, Room> Rooms => _rooms;
 
     public void Initialize(IEnumerable<Room> rooms)
@@ -62,7 +63,7 @@ public class World(IWorldStore worldStore, ILogger<World> logger)
         {
             location.RemovePlayer(player);
         }
-        
+
         Players.TryRemove(player.Connection.Id, out _);
     }
 

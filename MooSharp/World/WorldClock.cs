@@ -9,26 +9,64 @@ public class WorldClock(
     World world,
     IGameMessagePresenter presenter,
     IOptions<WorldClockOptions> options,
+    TimeProvider timeProvider,
     ILogger<WorldClock> logger) : IWorldClock
 {
+    private DateTimeOffset _lastPeriodChange = timeProvider.GetUtcNow();
+
     public async Task TriggerTickAsync(CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
+
+        var now = timeProvider.GetUtcNow();
+        var elapsed = now - _lastPeriodChange;
+        var periodDuration = TimeSpan.FromMinutes(options.Value.DayPeriodDurationMinutes);
+
+        if (elapsed < periodDuration)
+        {
+            return;
+        }
+
+        _lastPeriodChange = now;
+
+        var nextPeriod = GetNextDayPeriod(world.CurrentDayPeriod);
+        world.CurrentDayPeriod = nextPeriod;
+
+        logger.LogInformation("Day period changed to {DayPeriod}", nextPeriod);
 
         if (world.Players.IsEmpty)
         {
             return;
         }
 
-        var eventText = GetEventText();
+        var message = GetDayPeriodMessage(nextPeriod);
 
-        if (string.IsNullOrWhiteSpace(eventText))
+        if (string.IsNullOrWhiteSpace(message))
         {
-            logger.LogWarning("World clock produced an empty event; skipping broadcast");
+            logger.LogWarning("No message configured for day period {DayPeriod}; skipping broadcast", nextPeriod);
             return;
         }
 
-        var gameEvent = new SystemMessageEvent(eventText);
+        await BroadcastMessageAsync(message, cancellationToken);
+    }
+
+    private static DayPeriod GetNextDayPeriod(DayPeriod current)
+    {
+        var values = Enum.GetValues<DayPeriod>();
+        var currentIndex = Array.IndexOf(values, current);
+        var nextIndex = (currentIndex + 1) % values.Length;
+
+        return values[nextIndex];
+    }
+
+    private string GetDayPeriodMessage(DayPeriod period)
+    {
+        return options.Value.DayPeriodMessages.GetValueOrDefault(period, string.Empty);
+    }
+
+    private async Task BroadcastMessageAsync(string messageText, CancellationToken cancellationToken)
+    {
+        var gameEvent = new SystemMessageEvent(messageText);
 
         var sends = world.Players
             .Values
@@ -43,21 +81,7 @@ public class WorldClock(
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Error broadcasting world clock event");
+            logger.LogError(ex, "Error broadcasting day period change");
         }
-    }
-
-    private string GetEventText()
-    {
-        var events = options.Value.Events;
-
-        if (events.Count == 0)
-        {
-            return string.Empty;
-        }
-
-        var index = Random.Shared.Next(events.Count);
-
-        return events[index];
     }
 }
