@@ -24,8 +24,7 @@ public class WriteCommandDefinition : ICommandDefinition
             trimmedArgs = trimmedArgs[3..];
         }
 
-        var split = trimmedArgs
-            .Split(' ', 2, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        var split = trimmedArgs.Split(' ', 2, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
 
         var target = split.ElementAtOrDefault(0) ?? string.Empty;
         var text = split.ElementAtOrDefault(1) ?? string.Empty;
@@ -51,17 +50,19 @@ public class WriteHandler(World world, TargetResolver resolver) : IHandler<Write
         if (string.IsNullOrWhiteSpace(target))
         {
             result.Add(cmd.Player, new SystemMessageEvent("Write on what?"));
+
             return Task.FromResult(result);
         }
 
         if (string.IsNullOrWhiteSpace(text))
         {
             result.Add(cmd.Player, new SystemMessageEvent("Write what?"));
+
             return Task.FromResult(result);
         }
 
-        var room = world.GetPlayerLocation(cmd.Player)
-            ?? throw new InvalidOperationException("Player has no known current location.");
+        var room = world.GetPlayerLocation(cmd.Player) ??
+                   throw new InvalidOperationException("Player has no known current location.");
 
         var search = resolver.FindNearbyObject(cmd.Player, room, target);
 
@@ -69,18 +70,28 @@ public class WriteHandler(World world, TargetResolver resolver) : IHandler<Write
         {
             case SearchStatus.NotFound:
                 result.Add(cmd.Player, new ItemNotFoundEvent(target));
+
                 break;
 
             case SearchStatus.IndexOutOfRange:
                 result.Add(cmd.Player, new SystemMessageEvent($"You can't see a '{target}' here."));
+
                 break;
 
             case SearchStatus.Ambiguous:
                 result.Add(cmd.Player, new AmbiguousInputEvent(target, search.Candidates));
+
                 break;
 
             case SearchStatus.Found:
                 var item = search.Match!;
+
+                if (!item.Flags.HasFlag(ObjectFlags.Writeable))
+                {
+                    result.Add(cmd.Player, new SystemMessageEvent("You can't write on that."));
+                    return Task.FromResult(result);
+                }
+
                 item.WriteText(text);
 
                 var writeEvent = new ObjectWrittenOnEvent(cmd.Player, item, text);
@@ -102,9 +113,9 @@ public record ObjectWrittenOnEvent(Player Player, Object Item, string Text) : IG
 
 public class ObjectWrittenOnEventFormatter : IGameEventFormatter<ObjectWrittenOnEvent>
 {
-    public string FormatForActor(ObjectWrittenOnEvent gameEvent)
-        => $"You write \"{gameEvent.Text}\" on the {gameEvent.Item.Name}.";
+    public string FormatForActor(ObjectWrittenOnEvent gameEvent) =>
+        $"You write \"{gameEvent.Text}\" on the {gameEvent.Item.Name}.";
 
-    public string FormatForObserver(ObjectWrittenOnEvent gameEvent)
-        => $"{gameEvent.Player.Username} writes \"{gameEvent.Text}\" on the {gameEvent.Item.Name}.";
+    public string FormatForObserver(ObjectWrittenOnEvent gameEvent) =>
+        $"{gameEvent.Player.Username} writes \"{gameEvent.Text}\" on the {gameEvent.Item.Name}.";
 }

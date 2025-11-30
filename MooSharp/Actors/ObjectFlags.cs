@@ -10,5 +10,6 @@ public enum ObjectFlags
     Lockable = 1 << 4,
     Locked = 1 << 5,
     Scenery = 1 << 6,
-    LightSource = 1 << 7
+    LightSource = 1 << 7,
+    Writeable = 1 << 8,
 }
