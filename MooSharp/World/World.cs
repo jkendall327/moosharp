@@ -120,4 +120,33 @@ public class World(IWorldStore worldStore, ILogger<World> logger)
 
         logger.LogInformation("Room {RoomName} ({RoomId}) description updated", room.Name, room.Id);
     }
+
+    public bool SpawnTreasureInEmptyRoom(IReadOnlyList<Object> treasurePool)
+    {
+        ArgumentNullException.ThrowIfNull(treasurePool);
+
+        if (treasurePool.Count == 0)
+        {
+            return false;
+        }
+
+        var emptyRooms = _rooms.Values
+            .Where(r => r.PlayersInRoom.Count == 0)
+            .ToList();
+
+        if (emptyRooms.Count == 0)
+        {
+            logger.LogDebug("No empty rooms available for treasure spawn");
+            return false;
+        }
+
+        var room = emptyRooms[Random.Shared.Next(emptyRooms.Count)];
+        var treasure = treasurePool[Random.Shared.Next(treasurePool.Count)];
+
+        treasure.MoveTo(room);
+
+        logger.LogInformation("Spawned {TreasureName} in room {RoomName}", treasure.Name, room.Name);
+
+        return true;
+    }
 }

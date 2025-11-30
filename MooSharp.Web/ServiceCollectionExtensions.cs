@@ -67,6 +67,7 @@ public static class ServiceCollectionExtensions
         services.AddHostedService<GameEngineBackgroundService>();
         services.AddHostedService<AgentBackgroundService>();
         services.AddHostedService<WorldClockService>();
+        services.AddHostedService<TreasureSpawnerService>();
     }
 
     public static void AddMooSharpOptions(this IServiceCollection services, IConfiguration config)
@@ -84,6 +85,11 @@ public static class ServiceCollectionExtensions
         services
             .AddOptionsWithValidateOnStart<WorldClockOptions>()
             .BindConfiguration(WorldClockOptions.SectionName)
+            .ValidateDataAnnotations();
+
+        services
+            .AddOptionsWithValidateOnStart<TreasureSpawnerOptions>()
+            .BindConfiguration(TreasureSpawnerOptions.SectionName)
             .ValidateDataAnnotations();
 
         services.Configure<ServiceProviderOptions>(s =>
