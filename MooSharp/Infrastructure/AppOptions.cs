@@ -9,4 +9,6 @@ public class AppOptions
 
     [Required]
     public required string DatabaseFilepath { get; set; }
+
+    public string? Motd { get; set; }
 }

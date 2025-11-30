@@ -43,6 +43,42 @@ public class GameEngineIntegrationTests
         var messages = conn.Messages;
     }
 
+    [Fact]
+    public async Task PlayerReceivesMotdAfterLogin()
+    {
+        const string motd = "Server maintenance tonight.";
+
+        await using var app = new MooSharpTestApp
+        {
+            Motd = motd
+        };
+
+        var inputWriter = app.Services.GetRequiredService<ChannelWriter<GameInput>>();
+
+        var registerConnection = new ConnectionId("motd-register");
+        var register = new RegisterCommand
+        {
+            Username = "MotdHero",
+            Password = "password123"
+        };
+
+        await SendAndWaitAsync(inputWriter, registerConnection, register);
+
+        var loginConnection = new ConnectionId("motd-login");
+        var login = new LoginCommand
+        {
+            Username = "MotdHero",
+            Password = "password123"
+        };
+
+        await SendAndWaitAsync(inputWriter, loginConnection, login);
+
+        var connection = app.ConnectionFactory.CreatedConnections[loginConnection.Value];
+
+        Assert.True(connection.Messages.Count >= 3);
+        Assert.Equal(motd, connection.Messages[1]);
+    }
+
     private static async Task SendAndWaitAsync(ChannelWriter<GameInput> writer,
         ConnectionId connectionId,
         InputCommand command)
