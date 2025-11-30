@@ -19,7 +19,7 @@ public class HelpCommandDefinition : ICommandDefinition
             Player = player
         };
 
-    public CommandCategory Category => CommandCategory.General;
+    public CommandCategory Category => CommandCategory.Meta;
 }
 
 public class HelpHandler(CommandReference commandReference) : IHandler<HelpCommand>
