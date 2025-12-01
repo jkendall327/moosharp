@@ -12,5 +12,7 @@ For that reason, the AIs in this game don't get any special tools (like privileg
 
 Right now the game loop is just one big foreach, so who knows how scaleable it is. I might refactor it back into doing the actor stuff down the line when I have actual mechanics nailed down. I will probably use Akka.NET then, instead of my own homegrown solution.
 
+You can look at `AGENTS.md` for some more detailed technical info.
+
 When running the web app in Development, the agent OpenAI API key comes from user secrets. Set it from the MooSharp.Web project directory with:
 - dotnet user-secrets set "Agents:OpenAIApiKey" "<your key>"
