@@ -120,8 +120,10 @@ public class GameEngine(
 
         // 3. Add back to World map
         world.Players[newConnectionId.Value] = player;
-
-        await player.Connection.SendMessageAsync("Reconnected to your active session.");
+        
+        // Tell the client we have logged in.
+        await rawMessageSender.SendLoginResultAsync(newConnectionId, true, "Session restored.");
+        
         logger.LogInformation("Player {Player} reconnected successfully", player.Username);
     }
 
