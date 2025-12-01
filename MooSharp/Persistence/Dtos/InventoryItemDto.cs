@@ -8,4 +8,5 @@ public class InventoryItemDto
     public string? TextContent { get; init; }
     public ObjectFlags Flags { get; init; } = ObjectFlags.None;
     public string? KeyId { get; init; }
+    public string? CreatorUsername { get; init; }
 }

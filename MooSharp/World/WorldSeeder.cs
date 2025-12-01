@@ -79,6 +79,7 @@ public class WorldSeeder(IOptions<AppOptions> options, ILogger<WorldSeeder> logg
                 LongDescription = r.LongDescription,
                 EnterText = r.EnterText,
                 ExitText = r.ExitText,
+                CreatorUsername = r.CreatorUsername,
             });
 
         foreach (var roomDto in dto.Rooms)
@@ -130,7 +131,8 @@ public class WorldSeeder(IOptions<AppOptions> options, ILogger<WorldSeeder> logg
                 Description = objectDto.Description,
                 Name = objectDto.Name,
                 Flags = objectDto.Flags,
-                KeyId = objectDto.KeyId
+                KeyId = objectDto.KeyId,
+                CreatorUsername = objectDto.CreatorUsername
             };
 
             if (!string.IsNullOrWhiteSpace(objectDto.TextContent))

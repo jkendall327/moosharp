@@ -97,14 +97,15 @@ public class DigHandler(World world, SlugCreator slugCreator) : IHandler<DigComm
         var longDescription =
             $"Freshly carved walls surround this new space extending from {currentRoom.Name}. Dust still hangs in the air.";
 
-        var newRoom = await world.CreateRoomAsync(
-            slug,
-            cmd.RoomName,
-            description,
-            longDescription,
-            DefaultEnterText,
-            DefaultExitText,
-            cancellationToken);
+            var newRoom = await world.CreateRoomAsync(
+                slug,
+                cmd.RoomName,
+                description,
+                longDescription,
+                DefaultEnterText,
+                DefaultExitText,
+                player.Username,
+                cancellationToken);
 
         await world.AddExitAsync(currentRoom, newRoom, slug, cancellationToken);
         await world.AddExitAsync(newRoom, currentRoom, currentRoom.Id.Value, cancellationToken);

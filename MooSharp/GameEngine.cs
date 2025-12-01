@@ -198,22 +198,23 @@ public class GameEngine(
 
         var startingRoom = world.Rooms.TryGetValue(dto.CurrentLocation, out var r) ? r : world.GetDefaultRoom();
 
-        var player = new Player
-        {
-            Username = dto.Username,
-            Connection = connectionFactory.Create(connectionId),
-        };
-
-        foreach (var item in dto.Inventory)
-        {
-            var obj = new Object
+            var player = new Player
             {
-                Id = new ObjectId(Guid.Parse(item.Id)),
-                Name = item.Name,
-                Description = item.Description,
-                Flags = item.Flags,
-                KeyId = item.KeyId
+                Username = dto.Username,
+                Connection = connectionFactory.Create(connectionId),
             };
+
+            foreach (var item in dto.Inventory)
+            {
+                var obj = new Object
+                {
+                    Id = new ObjectId(Guid.Parse(item.Id)),
+                    Name = item.Name,
+                    Description = item.Description,
+                    Flags = item.Flags,
+                    KeyId = item.KeyId,
+                    CreatorUsername = item.CreatorUsername
+                };
 
             if (!string.IsNullOrWhiteSpace(item.TextContent))
             {

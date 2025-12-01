@@ -11,8 +11,9 @@ public readonly record struct ObjectId(Guid Value)
 public class Object
 {
     public ObjectId Id { get; init; } = ObjectId.New();
-    public required string Name { get; init; }
+    public required string Name { get; set; }
     public required string Description { get; init; }
+    public string? CreatorUsername { get; init; }
     public IReadOnlyCollection<string> Keywords { get; } = new HashSet<string>(StringComparer.OrdinalIgnoreCase).ToFrozenSet();
     public string? TextContent { get; private set; }
     public ObjectFlags Flags { get; set; } = ObjectFlags.None;
@@ -23,6 +24,13 @@ public class Object
 
     public Player? Owner => Container as Player;
     public Room? Location => Container as Room;
+
+    public bool IsOwnedBy(Player player)
+    {
+        ArgumentNullException.ThrowIfNull(player);
+
+        return string.Equals(CreatorUsername, player.Username, StringComparison.OrdinalIgnoreCase);
+    }
 
     public void MoveTo(IContainer destination)
     {

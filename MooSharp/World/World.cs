@@ -73,7 +73,7 @@ public class World(IWorldStore worldStore, ILogger<World> logger)
     }
 
     public async Task<Room> CreateRoomAsync(string slug, string name, string description, string longDescription,
-        string enterText, string exitText, CancellationToken cancellationToken = default)
+        string enterText, string exitText, string? creatorUsername, CancellationToken cancellationToken = default)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(slug);
         var room = new Room
@@ -83,7 +83,8 @@ public class World(IWorldStore worldStore, ILogger<World> logger)
             Description = description,
             LongDescription = longDescription,
             EnterText = enterText,
-            ExitText = exitText
+            ExitText = exitText,
+            CreatorUsername = creatorUsername
         };
 
         _rooms[room.Id] = room;
@@ -93,6 +94,32 @@ public class World(IWorldStore worldStore, ILogger<World> logger)
         logger.LogInformation("Room {RoomName} ({RoomId}) created", room.Name, room.Id);
 
         return room;
+    }
+
+    public async Task RenameRoomAsync(Room room, string name, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(room);
+        ArgumentException.ThrowIfNullOrWhiteSpace(name);
+
+        var oldName = room.Name;
+        room.Name = name;
+
+        await worldStore.RenameRoomAsync(room.Id, name, cancellationToken);
+
+        logger.LogInformation("Room {OldName} ({RoomId}) renamed to {NewName}", oldName, room.Id, name);
+    }
+
+    public async Task RenameObjectAsync(Object item, string name, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(item);
+        ArgumentException.ThrowIfNullOrWhiteSpace(name);
+
+        var oldName = item.Name;
+        item.Name = name;
+
+        await worldStore.RenameObjectAsync(item.Id, name, cancellationToken);
+
+        logger.LogInformation("Object {OldName} ({ObjectId}) renamed to {NewName}", oldName, item.Id, name);
     }
 
     public async Task AddExitAsync(Room origin, Room destination, string direction,

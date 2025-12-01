@@ -26,11 +26,12 @@ public class RoomIdJsonConverter : JsonConverter<RoomId>
 public class Room : IContainer
 {
     public RoomId Id { get; init; }
-    public required string Name { get; init; }
+    public required string Name { get; set; }
     public required string Description { get; set; }
     public required string LongDescription { get; set; }
     public required string EnterText { get; init; }
     public required string ExitText { get; init; }
+    public string? CreatorUsername { get; init; }
     private readonly List<Object> _contents = new();
     private readonly List<Player> _playersInRoom = new();
     public IReadOnlyCollection<Object> Contents => _contents;
@@ -68,6 +69,13 @@ public class Room : IContainer
         sb.AppendLine(availableExitsMessage);
 
         return sb.ToString();
+    }
+
+    public bool IsOwnedBy(Player player)
+    {
+        ArgumentNullException.ThrowIfNull(player);
+
+        return string.Equals(CreatorUsername, player.Username, StringComparison.OrdinalIgnoreCase);
     }
 
     public override string ToString() => Id.ToString();

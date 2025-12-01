@@ -16,4 +16,8 @@ public interface IWorldStore
 
     Task UpdateRoomDescriptionAsync(RoomId roomId, string description, string longDescription,
         CancellationToken cancellationToken = default);
+
+    Task RenameRoomAsync(RoomId roomId, string name, CancellationToken cancellationToken = default);
+
+    Task RenameObjectAsync(ObjectId objectId, string name, CancellationToken cancellationToken = default);
 }

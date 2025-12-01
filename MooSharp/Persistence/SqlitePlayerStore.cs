@@ -72,9 +72,9 @@ public class SqlitePlayerStore : IPlayerStore
             return null;
         }
 
-        var inventory = await connection.QueryAsync<InventoryItemDto>(
-            """
-            SELECT ItemId as Id, Name, Description, TextContent, Flags, KeyId
+            var inventory = await connection.QueryAsync<InventoryItemDto>(
+                """
+            SELECT ItemId as Id, Name, Description, TextContent, Flags, KeyId, CreatorUsername
             FROM PlayerInventory
             WHERE Username = @Username
             """,
@@ -138,6 +138,7 @@ public class SqlitePlayerStore : IPlayerStore
                 TextContent TEXT,
                 Flags INTEGER NOT NULL DEFAULT 0,
                 KeyId TEXT,
+                CreatorUsername TEXT,
                 FOREIGN KEY (Username) REFERENCES Players (Username) ON DELETE CASCADE
             );
             """);
@@ -164,8 +165,8 @@ public class SqlitePlayerStore : IPlayerStore
         const string deleteSql = "DELETE FROM PlayerInventory WHERE Username = @Username";
         const string insertSql =
             """
-            INSERT INTO PlayerInventory (ItemId, Username, Name, Description, TextContent, Flags, KeyId)
-            VALUES (@ItemId, @Username, @Name, @Description, @TextContent, @Flags, @KeyId);
+            INSERT INTO PlayerInventory (ItemId, Username, Name, Description, TextContent, Flags, KeyId, CreatorUsername)
+            VALUES (@ItemId, @Username, @Name, @Description, @TextContent, @Flags, @KeyId, @CreatorUsername);
             """;
 
         await connection.ExecuteAsync(deleteSql, new { player.Username }, transaction);
@@ -184,7 +185,8 @@ public class SqlitePlayerStore : IPlayerStore
                 o.Description,
                 o.TextContent,
                 Flags = (int)o.Flags,
-                o.KeyId
+                o.KeyId,
+                o.CreatorUsername
             });
 
         await connection.ExecuteAsync(insertSql, items, transaction);
@@ -205,6 +207,11 @@ public class SqlitePlayerStore : IPlayerStore
         if (!existingColumns.Contains("KeyId"))
         {
             connection.Execute("ALTER TABLE PlayerInventory ADD COLUMN KeyId TEXT;");
+        }
+
+        if (!existingColumns.Contains("CreatorUsername"))
+        {
+            connection.Execute("ALTER TABLE PlayerInventory ADD COLUMN CreatorUsername TEXT;");
         }
     }
 

@@ -41,7 +41,7 @@ public class SqliteWorldStore : IWorldStore
         await using var connection = new SqliteConnection(_connectionString);
 
         var rooms = await connection.QueryAsync<RoomRecord>(
-            "SELECT Id, Name, Description, LongDescription, EnterText, ExitText FROM Rooms");
+            "SELECT Id, Name, Description, LongDescription, EnterText, ExitText, CreatorUsername FROM Rooms");
 
         var roomDictionary = rooms.ToDictionary(
             r => r.Id,
@@ -52,7 +52,8 @@ public class SqliteWorldStore : IWorldStore
                 Description = r.Description,
                 LongDescription = r.LongDescription,
                 EnterText = r.EnterText,
-                ExitText = r.ExitText
+                ExitText = r.ExitText,
+                CreatorUsername = r.CreatorUsername
             });
 
         // We no longer load 'Direction'. We simply load the connections.
@@ -77,7 +78,7 @@ public class SqliteWorldStore : IWorldStore
         }
 
         var objects = await connection.QueryAsync<ObjectRecord>(
-            "SELECT Id, RoomId, Name, Description, TextContent, Flags, KeyId FROM Objects");
+            "SELECT Id, RoomId, Name, Description, TextContent, Flags, KeyId, CreatorUsername FROM Objects");
 
         foreach (var obj in objects)
         {
@@ -92,7 +93,8 @@ public class SqliteWorldStore : IWorldStore
                 Name = obj.Name,
                 Description = obj.Description,
                 Flags = (ObjectFlags)obj.Flags,
-                KeyId = obj.KeyId
+                KeyId = obj.KeyId,
+                CreatorUsername = obj.CreatorUsername
             };
 
             if (!string.IsNullOrWhiteSpace(obj.TextContent))
@@ -138,14 +140,15 @@ public class SqliteWorldStore : IWorldStore
         await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
 
         const string insertRoomSql = """
-            INSERT INTO Rooms (Id, Name, Description, LongDescription, EnterText, ExitText)
-            VALUES (@Id, @Name, @Description, @LongDescription, @EnterText, @ExitText)
+            INSERT INTO Rooms (Id, Name, Description, LongDescription, EnterText, ExitText, CreatorUsername)
+            VALUES (@Id, @Name, @Description, @LongDescription, @EnterText, @ExitText, @CreatorUsername)
             ON CONFLICT(Id) DO UPDATE SET
                 Name = excluded.Name,
                 Description = excluded.Description,
                 LongDescription = excluded.LongDescription,
                 EnterText = excluded.EnterText,
-                ExitText = excluded.ExitText;
+                ExitText = excluded.ExitText,
+                CreatorUsername = excluded.CreatorUsername;
             """;
 
         const string insertExitSql = """
@@ -157,15 +160,16 @@ public class SqliteWorldStore : IWorldStore
         const string deleteObjectsSql = "DELETE FROM Objects WHERE RoomId = @RoomId;";
 
         const string insertObjectSql = """
-            INSERT INTO Objects (Id, RoomId, Name, Description, TextContent, Flags, KeyId)
-            VALUES (@Id, @RoomId, @Name, @Description, @TextContent, @Flags, @KeyId)
+            INSERT INTO Objects (Id, RoomId, Name, Description, TextContent, Flags, KeyId, CreatorUsername)
+            VALUES (@Id, @RoomId, @Name, @Description, @TextContent, @Flags, @KeyId, @CreatorUsername)
             ON CONFLICT(Id) DO UPDATE SET
                 RoomId = excluded.RoomId,
                 Name = excluded.Name,
                 Description = excluded.Description,
                 TextContent = excluded.TextContent,
                 Flags = excluded.Flags,
-                KeyId = excluded.KeyId;
+                KeyId = excluded.KeyId,
+                CreatorUsername = excluded.CreatorUsername;
             """;
 
         // IMPORTANT FIX:
@@ -199,16 +203,17 @@ public class SqliteWorldStore : IWorldStore
         {
             await connection.ExecuteAsync(deleteObjectsSql, new { RoomId = room.Id }, transaction);
 
-            var objects = room.Contents.Select(o => new
-            {
-                Id = o.Id.Value.ToString(),
-                RoomId = room.Id,
-                o.Name,
-                o.Description,
-                o.TextContent,
-                Flags = (int)o.Flags,
-                o.KeyId
-            });
+                var objects = room.Contents.Select(o => new
+                {
+                    Id = o.Id.Value.ToString(),
+                    RoomId = room.Id,
+                    o.Name,
+                    o.Description,
+                    o.TextContent,
+                    Flags = (int)o.Flags,
+                    o.KeyId,
+                    o.CreatorUsername
+                });
 
             if (objects.Any())
             {
@@ -232,6 +237,32 @@ public class SqliteWorldStore : IWorldStore
             """;
 
         await connection.ExecuteAsync(sql, new { Id = roomId, Description = description, LongDescription = longDescription });
+    }
+
+    public async Task RenameRoomAsync(RoomId roomId, string name, CancellationToken cancellationToken = default)
+    {
+        await using var connection = new SqliteConnection(_connectionString);
+
+        const string sql = """
+            UPDATE Rooms
+            SET Name = @Name
+            WHERE Id = @Id;
+            """;
+
+        await connection.ExecuteAsync(sql, new { Id = roomId, Name = name });
+    }
+
+    public async Task RenameObjectAsync(ObjectId objectId, string name, CancellationToken cancellationToken = default)
+    {
+        await using var connection = new SqliteConnection(_connectionString);
+
+        const string sql = """
+            UPDATE Objects
+            SET Name = @Name
+            WHERE Id = @Id;
+            """;
+
+        await connection.ExecuteAsync(sql, new { Id = objectId.Value.ToString(), Name = name });
     }
 
     private static void InitializeDatabase(string databasePath)
@@ -261,7 +292,8 @@ public class SqliteWorldStore : IWorldStore
                 Description TEXT NOT NULL,
                 LongDescription TEXT NOT NULL,
                 EnterText TEXT NOT NULL,
-                ExitText TEXT NOT NULL
+                ExitText TEXT NOT NULL,
+                CreatorUsername TEXT
             );
             """);
 
@@ -289,14 +321,18 @@ public class SqliteWorldStore : IWorldStore
                 TextContent TEXT,
                 Flags INTEGER NOT NULL DEFAULT 0,
                 KeyId TEXT,
+                CreatorUsername TEXT,
                 FOREIGN KEY (RoomId) REFERENCES Rooms(Id) ON DELETE CASCADE
             );
             """);
 
         connection.Execute("CREATE INDEX IF NOT EXISTS IX_Objects_RoomId ON Objects (RoomId);");
+
+        EnsureRoomAndObjectColumns(connection);
     }
 
-    private record RoomRecord(RoomId Id, string Name, string Description, string LongDescription, string EnterText, string ExitText);
+    private record RoomRecord(RoomId Id, string Name, string Description, string LongDescription, string EnterText, string ExitText,
+        string? CreatorUsername);
 
     // Removed Direction from record
     private record ExitRecord(RoomId FromRoomId, RoomId ToRoomId);
@@ -310,5 +346,30 @@ public class SqliteWorldStore : IWorldStore
         public string? TextContent { get; init; }
         public int Flags { get; init; }
         public string? KeyId { get; init; }
+        public string? CreatorUsername { get; init; }
+    }
+
+    private static void EnsureRoomAndObjectColumns(SqliteConnection connection)
+    {
+        EnsureColumn(connection, "Rooms", "CreatorUsername", "ALTER TABLE Rooms ADD COLUMN CreatorUsername TEXT;");
+        EnsureColumn(connection, "Objects", "CreatorUsername", "ALTER TABLE Objects ADD COLUMN CreatorUsername TEXT;");
+    }
+
+    private static void EnsureColumn(SqliteConnection connection, string tableName, string columnName, string alterSql)
+    {
+        var existingColumns = connection
+            .Query<TableInfo>($"PRAGMA table_info('{tableName}');")
+            .Select(c => c.Name)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        if (!existingColumns.Contains(columnName))
+        {
+            connection.Execute(alterSql);
+        }
+    }
+
+    private sealed class TableInfo
+    {
+        public string Name { get; init; } = string.Empty;
     }
 }

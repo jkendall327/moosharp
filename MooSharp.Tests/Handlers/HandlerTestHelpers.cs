@@ -26,7 +26,7 @@ public class HandlerTestHelpers
         return world;
     }
 
-    public static Room CreateRoom(string slug)
+    public static Room CreateRoom(string slug, string? creator = null)
     {
         return new Room
         {
@@ -35,7 +35,8 @@ public class HandlerTestHelpers
             Description = $"{slug} description",
             LongDescription = $"{slug} long description",
             EnterText = "",
-            ExitText = ""
+            ExitText = "",
+            CreatorUsername = creator
         };
     }
 
