@@ -3,7 +3,7 @@ namespace MooSharp.Tests;
 public class InventoryHandlerTests
 {
     [Fact]
-    public async Task InventoryHandler_ReturnsSelfExaminedEventWithInventory()
+    public async Task InventoryHandler_ReturnsInventoryExaminedEventWithInventory()
     {
         var player = HandlerTestHelpers.CreatePlayer();
 
@@ -23,7 +23,7 @@ public class InventoryHandlerTests
         });
 
         var message = Assert.Single(result.Messages);
-        var evt = Assert.IsType<SelfExaminedEvent>(message.Event);
+        var evt = Assert.IsType<InventoryExaminedEvent>(message.Event);
         Assert.Contains(item, evt.Inventory);
     }
 }

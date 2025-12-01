@@ -1,3 +1,4 @@
+using System.Text;
 using MooSharp.Messaging;
 
 namespace MooSharp;
@@ -28,8 +29,42 @@ public class InventoryHandler : IHandler<InventoryCommand>
         var result = new CommandResult();
         var inventory = cmd.Player.Inventory.ToList();
 
-        result.Add(cmd.Player, new SelfExaminedEvent(cmd.Player, inventory));
+        result.Add(cmd.Player, new InventoryExaminedEvent(cmd.Player, inventory));
 
         return Task.FromResult(result);
     }
+}
+
+public record InventoryExaminedEvent(Player Player, IReadOnlyCollection<Object> Inventory) : IGameEvent;
+
+public class InventoryExaminedEventFormatter : IGameEventFormatter<InventoryExaminedEvent>
+{
+    public string FormatForActor(InventoryExaminedEvent gameEvent)
+    {
+        if (gameEvent.Inventory.Count == 0)
+        {
+            return "You aren't carrying anything.";
+        }
+
+        var sb = new StringBuilder();
+
+        sb.AppendLine("You are carrying:");
+
+        foreach (var item in gameEvent.Inventory)
+        {
+            var valueText = item.Value != 0 ? $" ({item.Value:F2})" : "";
+            sb.AppendLine($"{item.DescribeWithState()}{valueText}");
+        }
+
+        var totalValue = gameEvent.Inventory.Sum(i => i.Value);
+
+        if (totalValue != 0)
+        {
+            sb.AppendLine($"Total value: {totalValue:F2}");
+        }
+
+        return sb.ToString().TrimEnd();
+    }
+
+    public string FormatForObserver(InventoryExaminedEvent gameEvent) => "Someone checks what they're carrying.";
 }
