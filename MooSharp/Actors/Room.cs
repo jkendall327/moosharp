@@ -46,7 +46,7 @@ public class Room : IContainer
 
         foreach (var obj in Contents)
         {
-            sb.AppendLine($"{obj.Name} is here.");
+            sb.AppendLine($"A {obj.Name} is here.");
         }
 
         var otherPlayers = PlayersInRoom

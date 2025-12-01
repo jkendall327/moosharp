@@ -1,6 +1,5 @@
 @page "/"
 @rendermode InteractiveServer
-@using System.Net.Http.Json
 @implements IAsyncDisposable
 @inject IHttpClientFactory HttpClientFactory
 @inject NavigationManager Navigation
@@ -13,15 +12,14 @@
             <p class="tag">welcome</p>
             <h1 class="hero-title">MooSharp is a living terminal world.</h1>
             <p class="lede">
-                Connect, register, and roam a multiplayer text realm. Keep your session alive, chat with others, and let the
-                agents keep the world humming even when you're offline.
+                Connect, register, and roam a multiplayer text realm. Chat with others and interact with AI
+                agents that keep the world humming even when you're offline.
             </p>
             <div class="actions">
                 <button class="btn btn-accent" @onclick="NavigateToGame">Launch client</button>
-                <a class="btn btn-ghost" href="/game">Preview interface</a>
             </div>
             <div class="stat-line">
-                <span>Players online: @_playerCount?.ToString() ?? "—"</span>
+                <span>Players online: @(_playerCount?.ToString() ?? "—")</span>
                 <span>@_statusMessage</span>
             </div>
         </div>
@@ -29,16 +27,16 @@
         <div class="terminal-card" data-label="/system-log">
             <ul class="list-reset">
                 <li>
-                    <strong>Persistent sessions</strong>
-                    <span>Reconnect with your stored session ID and pick up right where you left off.</span>
+                    <strong>Classic MOO gameplay</strong>
+                    <span>Talk to people, collect Precious Gems, and create your own rooms.</span>
                 </li>
                 <li>
-                    <strong>Realtime SignalR</strong>
-                    <span>Chat, explore, and receive updates instantly through the hub.</span>
+                    <strong>Realtime interaction</strong>
+                    <span>Chat, explore, and talk with other players seamlessly.</span>
                 </li>
                 <li>
                     <strong>Agents in the loop</strong>
-                    <span>Background agents keep the world reactive without manual babysitting.</span>
+                    <span>AI agents roam the world with their own personalities and goals.</span>
                 </li>
             </ul>
         </div>
@@ -47,18 +45,16 @@
     <div class="info-grid">
         <div class="info-card">
             <p class="tag">quickstart</p>
-            <h2>Join a room in seconds</h2>
+            <h2>How do I play?</h2>
             <p>
                 Head to the game page, choose a username and password, then issue commands. Your inventory and discoveries
-                persist between logins.
+                persist between logins. Use '/help' to see all available commands.
             </p>
-            <a class="inline-link" href="/game">Open the /game terminal →</a>
         </div>
         <div class="info-card">
             <p class="tag">activity</p>
-            <h2>Who's online?</h2>
-            <p>Check the live connection count, then step in to say hello.</p>
-            <button class="btn btn-ghost" @onclick="NavigateToGame">Start playing</button>
+            <h2>News and updates</h2>
+            <p>v1.00 - initial public release</p>
         </div>
     </div>
 </div>
@@ -71,7 +67,7 @@
 
     protected override async Task OnInitializedAsync()
     {
-        _pollingCts = new CancellationTokenSource();
+        _pollingCts = new();
 
         await RefreshPlayerCountAsync(_pollingCts.Token);
         _ = PollPlayerCountAsync(_pollingCts.Token);
@@ -83,7 +79,7 @@
         {
             var client = HttpClientFactory.CreateClient();
 
-            client.BaseAddress ??= new Uri(Navigation.BaseUri);
+            client.BaseAddress ??= new(Navigation.BaseUri);
 
             var response = await client.GetFromJsonAsync<PlayerCountResponse>("api/player-count", cancellationToken);
 
