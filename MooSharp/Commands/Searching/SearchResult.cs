@@ -7,4 +7,6 @@ public class SearchResult
     public Object? Match { get; init; }
 
     public List<Object> Candidates { get; init; } = [];
+
+    public bool IsSelf { get; init; }
 }
