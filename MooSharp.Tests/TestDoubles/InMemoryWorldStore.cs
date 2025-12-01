@@ -1,4 +1,3 @@
-using MooSharp;
 using MooSharp.Persistence;
 
 namespace MooSharp.Tests.TestDoubles;

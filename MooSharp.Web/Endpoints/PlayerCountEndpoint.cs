@@ -1,8 +1,3 @@
-using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Routing;
-using MooSharp;
-
 namespace MooSharp.Web.Endpoints;
 
 public static class PlayerCountEndpoint

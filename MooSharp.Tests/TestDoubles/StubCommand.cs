@@ -1,4 +1,3 @@
-using MooSharp;
 using MooSharp.Messaging;
 
 namespace MooSharp.Tests;

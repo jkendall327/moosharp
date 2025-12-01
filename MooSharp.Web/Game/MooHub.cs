@@ -1,10 +1,8 @@
 using System.Threading.Channels;
-using System.Linq;
 
 namespace MooSharp;
 
 using Microsoft.AspNetCore.SignalR;
-using Microsoft.Extensions.Primitives;
 
 public class MooHub(ChannelWriter<GameInput> writer, ILogger<MooHub> logger, World world) : Hub
 {

@@ -1,5 +1,3 @@
-using MooSharp;
-
 namespace MooSharp.Persistence;
 
 public interface IWorldStore

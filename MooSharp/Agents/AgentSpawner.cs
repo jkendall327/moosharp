@@ -7,7 +7,6 @@ using System.Threading;
 using System.Threading.Channels;
 using Microsoft.Extensions.Options;
 using MooSharp;
-using MooSharp.Messaging;
 
 public class AgentSpawner(AgentFactory factory, ChannelWriter<GameInput> writer, IOptions<AgentOptions> options)
 {

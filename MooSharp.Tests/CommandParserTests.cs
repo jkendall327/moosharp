@@ -1,6 +1,5 @@
 using Microsoft.Extensions.Logging.Abstractions;
 using NSubstitute;
-using MooSharp;
 
 namespace MooSharp.Tests;
 
