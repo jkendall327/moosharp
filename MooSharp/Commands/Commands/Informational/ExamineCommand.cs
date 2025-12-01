@@ -41,7 +41,11 @@ public class ExamineHandler(World world, TargetResolver resolver) : IHandler<Exa
             return Task.FromResult(result);
         }
 
-        if (cmd.Target is "me")
+        var current = world.GetLocationOrThrow(player);
+
+        var search = resolver.FindObjects(current.Contents, cmd.Target);
+
+        if (search.IsSelf)
         {
             var inventory = player.Inventory
                 .ToList();
@@ -50,10 +54,6 @@ public class ExamineHandler(World world, TargetResolver resolver) : IHandler<Exa
 
             return Task.FromResult(result);
         }
-
-        var current = world.GetLocationOrThrow(player);
-
-        var search = resolver.FindObjects(current.Contents, cmd.Target);
 
         switch (search.Status)
         {

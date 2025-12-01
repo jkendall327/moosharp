@@ -13,6 +13,14 @@ public partial class TargetResolver
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(target);
 
+        if (IsSelfReference(target))
+        {
+            return new()
+            {
+                IsSelf = true
+            };
+        }
+
         var result = FindObjects(player.Inventory, target);
 
         return result.Status is SearchStatus.NotFound ? FindObjects(room.Contents, target) : result;
@@ -21,6 +29,14 @@ public partial class TargetResolver
     public SearchResult FindObjects(IReadOnlyCollection<Object> contents, string query)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(query);
+
+        if (IsSelfReference(query))
+        {
+            return new()
+            {
+                IsSelf = true
+            };
+        }
 
         var match = SearchRegex.Match(query);
         var targetName = query;
@@ -80,6 +96,11 @@ public partial class TargetResolver
             }
         };
     }
+
+    private static bool IsSelfReference(string target)
+        => string.Equals(target, "me", StringComparison.OrdinalIgnoreCase) ||
+           string.Equals(target, "self", StringComparison.OrdinalIgnoreCase) ||
+           string.Equals(target, "myself", StringComparison.OrdinalIgnoreCase);
 
     [GeneratedRegex(@"^(\d+)\.(.+)|(.+)\s+(\d+)$", RegexOptions.Compiled)]
     private static partial Regex CreateSearchRegex();
