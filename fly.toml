@@ -21,3 +21,12 @@ primary_region = 'iad'
   cpu_kind = 'shared'
   cpus = 1
   memory_mb = 1024
+
+[mounts]
+  source = "moo_data"
+  destination = "/data"
+
+[env]
+  ASPNETCORE_URLS = "http://+:8080"
+  # Override appsettings.json to use the mounted volume
+  AppOptions__DatabaseFilepath = "/data/moo.db"
