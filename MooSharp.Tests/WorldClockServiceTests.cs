@@ -13,7 +13,7 @@ public class WorldClockServiceTests
     [Fact]
     public async Task TriggerTickAsync_DoesNotBroadcastBeforePeriodDurationElapsed()
     {
-        var world = CreateWorldWithPlayers(out var connections);
+        var world = CreateWorldWithPlayers(out var _);
         var presenter = Substitute.For<IGameMessagePresenter>();
         var timeProvider = new FakeTimeProvider();
 
@@ -49,7 +49,7 @@ public class WorldClockServiceTests
     [Fact]
     public async Task TriggerTickAsync_AdvancesDayPeriod()
     {
-        var world = CreateWorldWithPlayers(out _);
+        var world = CreateWorldWithPlayers(out var _);
         world.CurrentDayPeriod = DayPeriod.Morning;
 
         var presenter = Substitute.For<IGameMessagePresenter>();
@@ -67,7 +67,7 @@ public class WorldClockServiceTests
     [Fact]
     public async Task TriggerTickAsync_CyclesThroughAllPeriods()
     {
-        var world = CreateWorldWithPlayers(out _);
+        var world = CreateWorldWithPlayers(out var _);
         world.CurrentDayPeriod = DayPeriod.Night;
 
         var presenter = Substitute.For<IGameMessagePresenter>();

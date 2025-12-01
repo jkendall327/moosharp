@@ -86,7 +86,7 @@ public class CommandParserTests
 
     private static Player CreatePlayer()
     {
-        return new Player
+        return new()
         {
             Username = "Player",
             Connection = new TestPlayerConnection()

@@ -22,7 +22,7 @@ public class CloseCommandDefinition : ICommandDefinition
         return new CloseCommand
         {
             Player = player,
-            Target = args,
+            Target = args
         };
     }
 }

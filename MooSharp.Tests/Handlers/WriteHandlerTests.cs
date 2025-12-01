@@ -24,9 +24,9 @@ public class WriteHandlerTests
 
         item.MoveTo(room);
 
-        var handler = new WriteHandler(world, new TargetResolver());
+        var handler = new WriteHandler(world, new());
 
-        var result = await handler.Handle(new WriteCommand
+        var result = await handler.Handle(new()
         {
             Player = writer,
             Target = "Sign",

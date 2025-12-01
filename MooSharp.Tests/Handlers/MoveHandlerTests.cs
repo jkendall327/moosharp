@@ -19,7 +19,7 @@ public class MoveHandlerTests
 
         var handler = new MoveHandler(world, NullLogger<MoveHandler>.Instance);
 
-        var result = await handler.Handle(new MoveCommand
+        var result = await handler.Handle(new()
         {
             Player = player,
             TargetExit = "north"
@@ -50,7 +50,7 @@ public class MoveHandlerTests
 
         var handler = new MoveHandler(world, NullLogger<MoveHandler>.Instance);
 
-        var result = await handler.Handle(new MoveCommand
+        var result = await handler.Handle(new()
         {
             Player = player,
             TargetExit = "south"
@@ -80,7 +80,7 @@ public class MoveHandlerTests
 
         var handler = new MoveHandler(world, NullLogger<MoveHandler>.Instance);
 
-        var result = await handler.Handle(new MoveCommand
+        var result = await handler.Handle(new()
         {
             Player = actor,
             TargetExit = "north"

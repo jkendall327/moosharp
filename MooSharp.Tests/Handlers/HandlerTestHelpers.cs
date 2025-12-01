@@ -28,7 +28,7 @@ public class HandlerTestHelpers
 
     public static Room CreateRoom(string slug, string? creator = null)
     {
-        return new Room
+        return new()
         {
             Id = slug,
             Name = $"{slug} name",
@@ -42,7 +42,7 @@ public class HandlerTestHelpers
 
     public static Player CreatePlayer(string? username = null)
     {
-        return new Player
+        return new()
         {
             Username = username ?? "Player",
             Connection = new TestPlayerConnection()

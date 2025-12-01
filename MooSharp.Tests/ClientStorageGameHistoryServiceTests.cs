@@ -104,6 +104,6 @@ public class ClientStorageGameHistoryServiceTests
 
     private static ClientStorageGameHistoryService CreateService(IClientStorageService storage)
     {
-        return new ClientStorageGameHistoryService(storage, NullLogger<ClientStorageGameHistoryService>.Instance);
+        return new(storage, NullLogger<ClientStorageGameHistoryService>.Instance);
     }
 }

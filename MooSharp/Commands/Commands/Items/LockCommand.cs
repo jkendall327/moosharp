@@ -22,7 +22,7 @@ public class LockCommandDefinition : ICommandDefinition
         return new LockCommand
         {
             Player = player,
-            Target = args,
+            Target = args
         };
     }
 }
@@ -47,7 +47,7 @@ public class UnlockCommandDefinition : ICommandDefinition
         return new UnlockCommand
         {
             Player = player,
-            Target = args,
+            Target = args
         };
     }
 }

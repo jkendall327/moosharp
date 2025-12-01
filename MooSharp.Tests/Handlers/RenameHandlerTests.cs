@@ -11,9 +11,9 @@ public class RenameHandlerTests
         var world = await HandlerTestHelpers.CreateWorld(store, room);
         world.MovePlayer(player, room);
 
-        var handler = new RenameHandler(world, new TargetResolver());
+        var handler = new RenameHandler(world, new());
 
-        var result = await handler.Handle(new RenameCommand
+        var result = await handler.Handle(new()
         {
             Player = player,
             Target = "here",
@@ -38,9 +38,9 @@ public class RenameHandlerTests
         var world = await HandlerTestHelpers.CreateWorld(store, room);
         world.MovePlayer(player, room);
 
-        var handler = new RenameHandler(world, new TargetResolver());
+        var handler = new RenameHandler(world, new());
 
-        var result = await handler.Handle(new RenameCommand
+        var result = await handler.Handle(new()
         {
             Player = player,
             Target = "here",
@@ -69,9 +69,9 @@ public class RenameHandlerTests
         var world = await HandlerTestHelpers.CreateWorld(store, room);
         world.MovePlayer(player, room);
 
-        var handler = new RenameHandler(world, new TargetResolver());
+        var handler = new RenameHandler(world, new());
 
-        var result = await handler.Handle(new RenameCommand
+        var result = await handler.Handle(new()
         {
             Player = player,
             Target = "lantern",
@@ -101,9 +101,9 @@ public class RenameHandlerTests
         var world = await HandlerTestHelpers.CreateWorld(store, room);
         world.MovePlayer(player, room);
 
-        var handler = new RenameHandler(world, new TargetResolver());
+        var handler = new RenameHandler(world, new());
 
-        var result = await handler.Handle(new RenameCommand
+        var result = await handler.Handle(new()
         {
             Player = player,
             Target = "book",

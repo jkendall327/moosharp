@@ -79,7 +79,7 @@ public class WorldSeeder(IOptions<AppOptions> options, ILogger<WorldSeeder> logg
                 LongDescription = r.LongDescription,
                 EnterText = r.EnterText,
                 ExitText = r.ExitText,
-                CreatorUsername = r.CreatorUsername,
+                CreatorUsername = r.CreatorUsername
             });
 
         foreach (var roomDto in dto.Rooms)

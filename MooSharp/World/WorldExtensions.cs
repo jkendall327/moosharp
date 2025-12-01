@@ -15,7 +15,7 @@ public static class WorldExtensions
         room = world.GetPlayerLocation(player);
         if (room is null)
         {
-            error = new CommandResult();
+            error = new();
             error.Add(player, new SystemMessageEvent("You are floating in the void."));
             return false;
         }

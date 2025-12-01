@@ -40,7 +40,6 @@ public class GameEngineIntegrationTests
                    throw new InvalidOperationException("Test player didn't have a test connection - setup is wrong.");
 
         // TODO: can probably do some tests based on these.
-        var messages = conn.Messages;
     }
 
     [Fact]

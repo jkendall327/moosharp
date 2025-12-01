@@ -69,7 +69,7 @@ public class ChannelMuteHandler : IHandler<ChannelMuteCommand>
             : cmd.Player.UnmuteChannel(channel);
 
         var message = changed
-            ? new SystemMessageEvent(cmd.Mute ? $"Muted {channel}." : $"Unmuted {channel}.")
+            ? new(cmd.Mute ? $"Muted {channel}." : $"Unmuted {channel}.")
             : new SystemMessageEvent(cmd.Mute ? $"{channel} is already muted." : $"{channel} is not muted.");
 
         result.Add(cmd.Player, message);

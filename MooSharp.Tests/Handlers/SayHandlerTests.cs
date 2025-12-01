@@ -17,7 +17,7 @@ public class SayHandlerTests
 
         var handler = new SayHandler(world);
 
-        var result = await handler.Handle(new SayCommand
+        var result = await handler.Handle(new()
         {
             Player = speaker,
             Message = " Hello there "
@@ -43,7 +43,7 @@ public class SayHandlerTests
 
         var handler = new SayHandler(world);
 
-        var result = await handler.Handle(new SayCommand
+        var result = await handler.Handle(new()
         {
             Player = speaker,
             Message = "   "

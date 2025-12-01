@@ -64,7 +64,7 @@ public class World(IWorldStore worldStore, ILogger<World> logger)
             location.RemovePlayer(player);
         }
 
-        Players.TryRemove(player.Connection.Id, out _);
+        Players.TryRemove(player.Connection.Id, out var _);
     }
 
     public IReadOnlyCollection<Player> GetActivePlayers()
@@ -78,7 +78,7 @@ public class World(IWorldStore worldStore, ILogger<World> logger)
         ArgumentException.ThrowIfNullOrWhiteSpace(slug);
         var room = new Room
         {
-            Id = new RoomId(slug),
+            Id = new(slug),
             Name = name,
             Description = description,
             LongDescription = longDescription,

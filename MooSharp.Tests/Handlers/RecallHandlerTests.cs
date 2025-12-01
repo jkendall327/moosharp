@@ -17,7 +17,7 @@ public class RecallHandlerTests
 
         var handler = new RecallHandler(world);
 
-        var result = await handler.Handle(new RecallCommand
+        var result = await handler.Handle(new()
         {
             Player = player
         });
@@ -47,7 +47,7 @@ public class RecallHandlerTests
 
         var handler = new RecallHandler(world);
 
-        var result = await handler.Handle(new RecallCommand
+        var result = await handler.Handle(new()
         {
             Player = actor
         });

@@ -9,10 +9,11 @@ namespace MooSharp.Persistence;
 public class SqlitePlayerStore : IPlayerStore
 {
     private readonly string _connectionString;
+
     public SqlitePlayerStore(IOptions<AppOptions> options)
     {
-        var databasePath = options.Value.DatabaseFilepath
-            ?? throw new InvalidOperationException("DatabaseFilepath is not set.");
+        var databasePath = options.Value.DatabaseFilepath ??
+                           throw new InvalidOperationException("DatabaseFilepath is not set.");
 
         _connectionString = new SqliteConnectionStringBuilder
         {
@@ -24,7 +25,10 @@ public class SqlitePlayerStore : IPlayerStore
         InitializeDatabase(databasePath);
     }
 
-    public async Task SaveNewPlayer(Player player, Room currentLocation, string password, CancellationToken ct = default)
+    public async Task SaveNewPlayer(Player player,
+        Room currentLocation,
+        string password,
+        CancellationToken ct = default)
     {
         var hashedPassword = BCrypt.Net.BCrypt.HashPassword(password);
 
@@ -49,7 +53,11 @@ public class SqlitePlayerStore : IPlayerStore
 
         await connection.ExecuteAsync(
             "UPDATE Players SET CurrentLocation = @CurrentLocation WHERE Username = @Username",
-            new { player.Username, CurrentLocation = currentLocation.Id },
+            new
+            {
+                player.Username,
+                CurrentLocation = currentLocation.Id
+            },
             transaction);
 
         await ReplaceInventoryAsync(connection, player, transaction);
@@ -63,20 +71,25 @@ public class SqlitePlayerStore : IPlayerStore
 
         var player = await connection.QuerySingleOrDefaultAsync<PlayerDto>(
             "SELECT Username, Password, CurrentLocation FROM Players WHERE Username = @Username LIMIT 1",
-            new { command.Username });
+            new
+            {
+                command.Username
+            });
 
         if (player is null || !BCrypt.Net.BCrypt.Verify(command.Password, player.Password))
         {
             return null;
         }
 
-            var inventory = await connection.QueryAsync<InventoryItemDto>(
-                """
-            SELECT ItemId as Id, Name, Description, TextContent, Flags, KeyId, CreatorUsername
-            FROM PlayerInventory
-            WHERE Username = @Username
-            """,
-            new { command.Username });
+        var inventory = await connection.QueryAsync<InventoryItemDto>("""
+                                                                      SELECT ItemId as Id, Name, Description, TextContent, Flags, KeyId, CreatorUsername
+                                                                      FROM PlayerInventory
+                                                                      WHERE Username = @Username
+                                                                      """,
+            new
+            {
+                command.Username
+            });
 
         player.Inventory = inventory.ToList();
 
@@ -88,12 +101,12 @@ public class SqlitePlayerStore : IPlayerStore
         await using var connection = new SqliteConnection(_connectionString);
 
         const string sql = """
-            INSERT INTO Players (Username, Password, CurrentLocation)
-            VALUES (@Username, @Password, @CurrentLocation)
-            ON CONFLICT(Username) DO UPDATE SET
-                Password = excluded.Password,
-                CurrentLocation = excluded.CurrentLocation;
-            """;
+                           INSERT INTO Players (Username, Password, CurrentLocation)
+                           VALUES (@Username, @Password, @CurrentLocation)
+                           ON CONFLICT(Username) DO UPDATE SET
+                               Password = excluded.Password,
+                               CurrentLocation = excluded.CurrentLocation;
+                           """;
 
         await connection.ExecuteAsync(sql, player);
     }
@@ -115,31 +128,29 @@ public class SqlitePlayerStore : IPlayerStore
 
         connection.Open();
 
-        connection.Execute(
-            """
-            CREATE TABLE IF NOT EXISTS Players
-            (
-                Username TEXT PRIMARY KEY,
-                Password TEXT NOT NULL,
-                CurrentLocation TEXT NOT NULL
-            );
-            """);
+        connection.Execute("""
+                           CREATE TABLE IF NOT EXISTS Players
+                           (
+                               Username TEXT PRIMARY KEY,
+                               Password TEXT NOT NULL,
+                               CurrentLocation TEXT NOT NULL
+                           );
+                           """);
 
-        connection.Execute(
-            """
-            CREATE TABLE IF NOT EXISTS PlayerInventory
-            (
-                ItemId TEXT PRIMARY KEY,
-                Username TEXT NOT NULL,
-                Name TEXT NOT NULL,
-                Description TEXT NOT NULL,
-                TextContent TEXT,
-                Flags INTEGER NOT NULL DEFAULT 0,
-                KeyId TEXT,
-                CreatorUsername TEXT,
-                FOREIGN KEY (Username) REFERENCES Players (Username) ON DELETE CASCADE
-            );
-            """);
+        connection.Execute("""
+                           CREATE TABLE IF NOT EXISTS PlayerInventory
+                           (
+                               ItemId TEXT PRIMARY KEY,
+                               Username TEXT NOT NULL,
+                               Name TEXT NOT NULL,
+                               Description TEXT NOT NULL,
+                               TextContent TEXT,
+                               Flags INTEGER NOT NULL DEFAULT 0,
+                               KeyId TEXT,
+                               CreatorUsername TEXT,
+                               FOREIGN KEY (Username) REFERENCES Players (Username) ON DELETE CASCADE
+                           );
+                           """);
 
         connection.Execute("CREATE INDEX IF NOT EXISTS IX_PlayerInventory_Username ON PlayerInventory (Username);");
 
@@ -158,34 +169,40 @@ public class SqlitePlayerStore : IPlayerStore
         await transaction.CommitAsync();
     }
 
-    private static async Task ReplaceInventoryAsync(SqliteConnection connection, Player player, IDbTransaction transaction)
+    private static async Task ReplaceInventoryAsync(SqliteConnection connection,
+        Player player,
+        IDbTransaction transaction)
     {
         const string deleteSql = "DELETE FROM PlayerInventory WHERE Username = @Username";
-        const string insertSql =
-            """
-            INSERT INTO PlayerInventory (ItemId, Username, Name, Description, TextContent, Flags, KeyId, CreatorUsername)
-            VALUES (@ItemId, @Username, @Name, @Description, @TextContent, @Flags, @KeyId, @CreatorUsername);
-            """;
 
-        await connection.ExecuteAsync(deleteSql, new { player.Username }, transaction);
+        const string insertSql = """
+                                 INSERT INTO PlayerInventory (ItemId, Username, Name, Description, TextContent, Flags, KeyId, CreatorUsername)
+                                 VALUES (@ItemId, @Username, @Name, @Description, @TextContent, @Flags, @KeyId, @CreatorUsername);
+                                 """;
+
+        await connection.ExecuteAsync(deleteSql,
+            new
+            {
+                player.Username
+            },
+            transaction);
 
         if (!player.Inventory.Any())
         {
             return;
         }
 
-        var items = player.Inventory
-            .Select(o => new
-            {
-                ItemId = o.Id.Value.ToString(),
-                player.Username,
-                o.Name,
-                o.Description,
-                o.TextContent,
-                Flags = (int)o.Flags,
-                o.KeyId,
-                o.CreatorUsername
-            });
+        var items = player.Inventory.Select(o => new
+        {
+            ItemId = o.Id.Value.ToString(),
+            player.Username,
+            o.Name,
+            o.Description,
+            o.TextContent,
+            Flags = (int) o.Flags,
+            o.KeyId,
+            o.CreatorUsername
+        });
 
         await connection.ExecuteAsync(insertSql, items, transaction);
     }

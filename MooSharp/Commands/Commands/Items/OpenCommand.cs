@@ -22,7 +22,7 @@ public class OpenCommandDefinition : ICommandDefinition
         return new OpenCommand
         {
             Player = player,
-            Target = args,
+            Target = args
         };
     }
 }
@@ -39,7 +39,7 @@ public class ItemOpenedEventEventFormatter : IGameEventFormatter<ItemOpenedEvent
 
 public class OpenHandler(World world, TargetResolver resolver) : IHandler<OpenCommand>
 {
-    public async Task<CommandResult> Handle(OpenCommand command, CancellationToken cancellationToken = default)
+    public Task<CommandResult> Handle(OpenCommand command, CancellationToken cancellationToken = default)
     {
         var result = new CommandResult();
 
@@ -55,7 +55,7 @@ public class OpenHandler(World world, TargetResolver resolver) : IHandler<OpenCo
         {
             result.Add(player, new SystemMessageEvent("No item was found to open."));
 
-            return result;
+            return Task.FromResult(result);
         }
 
         var openable = target.IsOpenable;
@@ -70,20 +70,20 @@ public class OpenHandler(World world, TargetResolver resolver) : IHandler<OpenCo
         {
             result.Add(player, new SystemMessageEvent("You can't open that."));
 
-            return result;
+            return Task.FromResult(result);
         }
 
         if (open)
         {
             result.Add(player, new SystemMessageEvent("But it's already open."));
 
-            return result;
+            return Task.FromResult(result);
         }
 
         target.IsOpen = true;
 
         result.Add(player, new ItemOpenedEvent(player, target));
 
-        return result;
+        return Task.FromResult(result);
     }
 }

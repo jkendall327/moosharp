@@ -11,9 +11,9 @@ public class ExamineHandlerTests
         var player = HandlerTestHelpers.CreatePlayer();
         world.MovePlayer(player, room);
 
-        var handler = new ExamineHandler(world, new TargetResolver());
+        var handler = new ExamineHandler(world, new());
 
-        var result = await handler.Handle(new ExamineCommand
+        var result = await handler.Handle(new()
         {
             Player = player,
             Target = string.Empty
@@ -41,9 +41,9 @@ public class ExamineHandlerTests
 
         item.MoveTo(player);
 
-        var handler = new ExamineHandler(world, new TargetResolver());
+        var handler = new ExamineHandler(world, new());
 
-        var result = await handler.Handle(new ExamineCommand
+        var result = await handler.Handle(new()
         {
             Player = player,
             Target = "me"
@@ -71,9 +71,9 @@ public class ExamineHandlerTests
 
         item.MoveTo(room);
 
-        var handler = new ExamineHandler(world, new TargetResolver());
+        var handler = new ExamineHandler(world, new());
 
-        var result = await handler.Handle(new ExamineCommand
+        var result = await handler.Handle(new()
         {
             Player = player,
             Target = "Scroll"

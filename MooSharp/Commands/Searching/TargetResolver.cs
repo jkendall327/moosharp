@@ -89,7 +89,7 @@ public partial class TargetResolver
             {
                 Match = candidates[0]
             },
-            _ => new()
+            var _ => new()
             {
                 Status = SearchStatus.Ambiguous,
                 Candidates = candidates

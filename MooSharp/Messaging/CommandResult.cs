@@ -18,7 +18,7 @@ public class CommandResult
     // Helper to add a message to a specific player
     public void Add(Player player, IGameEvent @event, MessageAudience audience = MessageAudience.Actor)
     {
-        Messages.Add(new GameMessage(player, @event, audience));
+        Messages.Add(new(player, @event, audience));
     }
 
     public void Broadcast(IEnumerable<Player> players, IGameEvent @event, MessageAudience audience = MessageAudience.Observer,

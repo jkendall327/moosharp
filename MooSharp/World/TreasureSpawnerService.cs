@@ -40,7 +40,7 @@ public class TreasureSpawnerService(
     {
         var template = TreasureTemplates[Random.Shared.Next(TreasureTemplates.Count)];
 
-        return new Object
+        return new()
         {
             Name = template.Name,
             Description = template.Description,

@@ -88,7 +88,7 @@ public class SqliteWorldStore : IWorldStore
 
             var item = new Object
             {
-                Id = new ObjectId(Guid.Parse(obj.Id)),
+                Id = new(Guid.Parse(obj.Id)),
                 Name = obj.Name,
                 Description = obj.Description,
                 Flags = (ObjectFlags)obj.Flags,

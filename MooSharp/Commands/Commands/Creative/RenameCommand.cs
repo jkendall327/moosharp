@@ -130,12 +130,7 @@ public class RenameHandler(World world, TargetResolver resolver) : IHandler<Rena
             return currentRoom;
         }
 
-        if (!currentRoom.Exits.TryGetValue(target, out var exitRoomId))
-        {
-            return null;
-        }
-
-        return world.Rooms.TryGetValue(exitRoomId, out var room) ? room : null;
+        return currentRoom.Exits.TryGetValue(target, out var exitRoomId) ? world.Rooms.GetValueOrDefault(exitRoomId) : null;
     }
 
 }

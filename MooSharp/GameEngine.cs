@@ -112,7 +112,7 @@ public class GameEngine(
 
         if (oldConnection != null)
         {
-            world.Players.TryRemove(oldConnection, out _);
+            world.Players.TryRemove(oldConnection, out var _);
         }
 
         // 2. Refresh connection object on player
@@ -203,14 +203,14 @@ public class GameEngine(
             var player = new Player
             {
                 Username = dto.Username,
-                Connection = connectionFactory.Create(connectionId),
+                Connection = connectionFactory.Create(connectionId)
             };
 
             foreach (var item in dto.Inventory)
             {
                 var obj = new Object
                 {
-                    Id = new ObjectId(Guid.Parse(item.Id)),
+                    Id = new(Guid.Parse(item.Id)),
                     Name = item.Name,
                     Description = item.Description,
                     Flags = item.Flags,
@@ -303,7 +303,7 @@ public class GameEngine(
             return;
         }
 
-        messages.Add(new GameMessage(player, new SystemMessageEvent(motd)));
+        messages.Add(new(player, new SystemMessageEvent(motd)));
     }
 
     private Task RegisterAgent(ConnectionId connectionId, RegisterAgentCommand command)

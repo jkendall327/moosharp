@@ -383,19 +383,19 @@ public sealed class GameClientViewModel : IDisposable
 
     private bool TryHandleClientCommand(string command)
     {
-        if (string.Equals(command.Trim(), "/clear", StringComparison.OrdinalIgnoreCase))
+        if (!string.Equals(command.Trim(), "/clear", StringComparison.OrdinalIgnoreCase))
         {
-            _outputBuffer.Clear();
-            CommandInput = string.Empty;
-            _historyIndex = -1;
-            _commandDraft = string.Empty;
-
-            NotifyStateChanged();
-
-            return true;
+            return false;
         }
 
-        return false;
+        _outputBuffer.Clear();
+        CommandInput = string.Empty;
+        _historyIndex = -1;
+        _commandDraft = string.Empty;
+
+        NotifyStateChanged();
+
+        return true;
     }
 
     private async Task RequestFocusAsync()

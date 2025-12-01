@@ -112,7 +112,7 @@ public class DescribeHandler(World world) : IHandler<DescribeCommand>
             return null;
         }
 
-        return world.Rooms.TryGetValue(exitRoomId, out var room) ? room : null;
+        return world.Rooms.GetValueOrDefault(exitRoomId);
     }
 
 }

@@ -16,7 +16,7 @@ public class DescribeHandlerTests
 
         var handler = new DescribeHandler(world);
 
-        var result = await handler.Handle(new DescribeCommand
+        var result = await handler.Handle(new()
         {
             Player = player,
             Target = "here",
@@ -49,7 +49,7 @@ public class DescribeHandlerTests
 
         var handler = new DescribeHandler(world);
 
-        var result = await handler.Handle(new DescribeCommand
+        var result = await handler.Handle(new()
         {
             Player = player,
             Target = "east",
@@ -76,7 +76,7 @@ public class DescribeHandlerTests
 
         var handler = new DescribeHandler(world);
 
-        var result = await handler.Handle(new DescribeCommand
+        var result = await handler.Handle(new()
         {
             Player = player,
             Target = "here",

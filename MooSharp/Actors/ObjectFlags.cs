@@ -11,5 +11,5 @@ public enum ObjectFlags
     Locked = 1 << 5,
     Scenery = 1 << 6,
     LightSource = 1 << 7,
-    Writeable = 1 << 8,
+    Writeable = 1 << 8
 }

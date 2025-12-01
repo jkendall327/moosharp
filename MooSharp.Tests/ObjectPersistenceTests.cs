@@ -37,7 +37,7 @@ public class SqlitePlayerStoreObjectPersistenceTests
 
             await store.SaveNewPlayer(player, room, "password");
 
-            var loaded = await store.LoadPlayer(new LoginCommand
+            var loaded = await store.LoadPlayer(new()
             {
                 Username = player.Username,
                 Password = "password"
@@ -45,7 +45,7 @@ public class SqlitePlayerStoreObjectPersistenceTests
 
             Assert.NotNull(loaded);
 
-            var loadedItem = Assert.Single(loaded!.Inventory);
+            var loadedItem = Assert.Single(loaded.Inventory);
 
             Assert.Equal(item.Id.Value.ToString(), loadedItem.Id);
             Assert.Equal(item.Flags, loadedItem.Flags);

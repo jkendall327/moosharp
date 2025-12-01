@@ -46,7 +46,7 @@ public class AgentResponseProvider(
             AgentSource.OpenRouter => await GetOpenAiResponseAsync(history, endpoint: options.Value.OpenRouterEndpoint),
             AgentSource.Gemini => await GetGeminiResponseAsync(history),
             AgentSource.Anthropic => await GetAnthropicResponseAsync(history),
-            _ => throw new NotSupportedException($"Unknown agent source {source}")
+            var _ => throw new NotSupportedException($"Unknown agent source {source}")
         };
 
         stopwatch.Stop();
@@ -143,7 +143,7 @@ public class AgentResponseProvider(
                 message.Content ?? string.Empty),
             var role when role == AuthorRole.System =>
                 new ChatMessage(ChatRole.System, message.Content ?? string.Empty),
-            _ => new ChatMessage(ChatRole.User, message.Content ?? string.Empty)
+            var _ => new ChatMessage(ChatRole.User, message.Content ?? string.Empty)
         };
     }
 }
