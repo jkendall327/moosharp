@@ -32,8 +32,8 @@ public class Room : IContainer
     public required string EnterText { get; init; }
     public required string ExitText { get; init; }
     public string? CreatorUsername { get; init; }
-    private readonly List<Object> _contents = new();
-    private readonly List<Player> _playersInRoom = new();
+    private readonly List<Object> _contents = [];
+    private readonly List<Player> _playersInRoom = [];
     public IReadOnlyCollection<Object> Contents => _contents;
     public Dictionary<string, RoomId> Exits { get; } = new(StringComparer.OrdinalIgnoreCase);
     public IReadOnlyCollection<Player> PlayersInRoom => _playersInRoom;

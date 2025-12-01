@@ -86,8 +86,10 @@ public class WorldClockServiceTests
     [Fact]
     public async Task TriggerTickAsync_UpdatesPeriodEvenWithNoPlayers()
     {
-        var world = new World(Substitute.For<IWorldStore>(), NullLogger<World>.Instance);
-        world.CurrentDayPeriod = DayPeriod.Morning;
+        var world = new World(Substitute.For<IWorldStore>(), NullLogger<World>.Instance)
+        {
+            CurrentDayPeriod = DayPeriod.Morning
+        };
 
         var presenter = Substitute.For<IGameMessagePresenter>();
         var timeProvider = new FakeTimeProvider();

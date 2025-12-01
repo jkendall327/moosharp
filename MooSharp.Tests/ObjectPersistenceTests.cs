@@ -29,10 +29,10 @@ public class SqlitePlayerStoreObjectPersistenceTests
                 Name = "chest",
                 Description = "A small chest",
                 Flags = ObjectFlags.Openable | ObjectFlags.Lockable,
-                KeyId = "skeleton-key"
+                KeyId = "skeleton-key",
+                IsLocked = true
             };
 
-            item.IsLocked = true;
             item.MoveTo(player);
 
             await store.SaveNewPlayer(player, room, "password");
@@ -85,10 +85,10 @@ public class SqliteWorldStoreObjectPersistenceTests
                 Name = "lantern",
                 Description = "An old lantern",
                 Flags = ObjectFlags.LightSource | ObjectFlags.Scenery,
-                CreatorUsername = "builder"
+                CreatorUsername = "builder",
+                IsOpenable = true
             };
 
-            item.IsOpenable = true;
             item.MoveTo(room);
 
             await store.SaveRoomsAsync([room]);

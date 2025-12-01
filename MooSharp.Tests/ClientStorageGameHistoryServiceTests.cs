@@ -19,7 +19,7 @@ public class ClientStorageGameHistoryServiceTests
 
         await service.InitializeAsync();
 
-        Assert.Equal(new[] { "second", "first" }, service.CommandHistory);
+        Assert.Equal(["second", "first"], service.CommandHistory);
     }
 
     [Fact]

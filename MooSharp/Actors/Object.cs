@@ -130,7 +130,7 @@ public class Object
         }
     }
 
-    public string? GetStateSummary()
+    private string? GetStateSummary()
     {
         var parts = new List<string>();
 
@@ -144,12 +144,7 @@ public class Object
             parts.Add(IsLocked ? "locked" : "unlocked");
         }
 
-        if (!parts.Any())
-        {
-            return null;
-        }
-
-        return $"It is {string.Join(" and ", parts)}.";
+        return parts.Any() ? $"It is {string.Join(" and ", parts)}." : null;
     }
 
     public string DescribeWithState()
