@@ -9,8 +9,8 @@ public class AgentOptions
     /// The number of recent non-system chat messages to retain in memory. The system prompt is always preserved.
     /// </summary>
     public int MaxRecentMessages { get; init; } = 20;
-    public required string OpenAIModelId { get; init; }
-    public required string OpenAIApiKey { get; init; }
+    public required string OpenAiModelId { get; init; }
+    public required string OpenAiApiKey { get; init; }
     public required string GeminiModelId { get; init; }
     public required string GeminiApiKey { get; init; }
     public required string OpenRouterModelId { get; init; }

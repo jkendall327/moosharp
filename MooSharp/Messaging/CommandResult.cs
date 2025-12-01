@@ -41,10 +41,4 @@ public class CommandResult
     {
         Broadcast(room.PlayersInRoom, @event, audience, exclude: player);
     }
-
-    public void BroadcastToAll(World.World world, IGameEvent @event, MessageAudience audience = MessageAudience.Observer,
-        params Player[] exclude)
-    {
-        Broadcast(world.Players.Values, @event, audience, exclude);
-    }
 }

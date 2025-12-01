@@ -84,19 +84,20 @@ public class Room : IContainer
 
     void IContainer.AddToContents(Object item) => _contents.Add(item);
 
-    bool IContainer.RemoveFromContents(Object item) => _contents.Remove(item);
+    void IContainer.RemoveFromContents(Object item) => _contents.Remove(item);
 
-    internal bool AddPlayer(Player player)
+    internal void AddPlayer(Player player)
     {
         if (_playersInRoom.Contains(player))
         {
-            return false;
+            return;
         }
 
         _playersInRoom.Add(player);
-
-        return true;
     }
 
-    internal bool RemovePlayer(Player player) => _playersInRoom.Remove(player);
+    internal void RemovePlayer(Player player)
+    {
+        _playersInRoom.Remove(player);
+    }
 }

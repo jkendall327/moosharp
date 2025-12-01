@@ -43,7 +43,7 @@ public class GameEngine(
                     break;
                 }
 
-                await ProcessWorldCommand(wc, ct, player);
+                await ProcessWorldCommand(wc, player, ct);
 
                 break;
             case DisconnectCommand:
@@ -132,7 +132,7 @@ public class GameEngine(
         logger.LogInformation("Player {Player} reconnected successfully", player.Username);
     }
 
-    private async Task ProcessWorldCommand(WorldCommand command, CancellationToken ct, Player player)
+    private async Task ProcessWorldCommand(WorldCommand command, Player player, CancellationToken ct = default)
     {
         var parsed = await parser.ParseAsync(player, command.Command, ct);
 

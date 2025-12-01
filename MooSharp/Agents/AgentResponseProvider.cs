@@ -66,7 +66,7 @@ public class AgentResponseProvider(
 
         if (endpoint is null)
         {
-            builder.AddOpenAIChatCompletion(o.OpenAIModelId, o.OpenAIApiKey);
+            builder.AddOpenAIChatCompletion(o.OpenAiModelId, o.OpenAiApiKey);
         }
         else
         {
