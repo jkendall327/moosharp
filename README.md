@@ -1,5 +1,7 @@
 ![MooSharp hero image](./image.png)
 
+## [**Access the game here**](https://moosharp.fly.dev)
+
 This is a little toy game engine for a MOO/MUD in C#.
 
 Made because I got nostalgic for the weird old MUDs I used to play as a kid and thought it would be fun to try making one. It initially morphed into experimenting with implementing the actor pattern for concurrency (similar to Akka.NET et al), which was pretty fun to learn about (though it gave rise to some really confusing bugs).
