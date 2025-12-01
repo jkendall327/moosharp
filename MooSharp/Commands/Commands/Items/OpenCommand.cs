@@ -9,8 +9,8 @@ namespace MooSharp.Commands.Commands.Items;
 
 public class OpenCommand : CommandBase<OpenCommand>
 {
-    public required Player Player { get; set; }
-    public required string Target { get; set; }
+    public required Player Player { get; init; }
+    public required string Target { get; init; }
 }
 
 public class OpenCommandDefinition : ICommandDefinition

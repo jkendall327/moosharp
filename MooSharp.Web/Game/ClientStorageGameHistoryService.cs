@@ -3,21 +3,15 @@ using MooSharp.Game;
 
 namespace MooSharp.Web.Game;
 
-public sealed class ClientStorageGameHistoryService : IGameHistoryService
+public sealed class ClientStorageGameHistoryService(
+    IClientStorageService storage,
+    ILogger<ClientStorageGameHistoryService> logger) : IGameHistoryService
 {
     private const string SessionStorageKey = "mooSharpSession";
     private const string CommandHistoryStorageKey = "mooSharpCommandHistory";
     private const int CommandHistoryLimit = 20;
 
-    private readonly IClientStorageService _storage;
-    private readonly ILogger<ClientStorageGameHistoryService> _logger;
     private readonly List<string> _commandHistory = [];
-
-    public ClientStorageGameHistoryService(IClientStorageService storage, ILogger<ClientStorageGameHistoryService> logger)
-    {
-        _storage = storage;
-        _logger = logger;
-    }
 
     public IReadOnlyList<string> CommandHistory => _commandHistory;
 
@@ -52,17 +46,17 @@ public sealed class ClientStorageGameHistoryService : IGameHistoryService
                 .TakeLast(CommandHistoryLimit)
                 .ToList());
 
-            await _storage.SetItemAsync(CommandHistoryStorageKey, historyJson);
+            await storage.SetItemAsync(CommandHistoryStorageKey, historyJson);
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Failed to save command history");
+            logger.LogWarning(ex, "Failed to save command history");
         }
     }
 
     public async Task<string> GetOrCreateSessionIdAsync()
     {
-        var existingSessionId = await _storage.GetItemAsync(SessionStorageKey);
+        var existingSessionId = await storage.GetItemAsync(SessionStorageKey);
 
         if (!string.IsNullOrWhiteSpace(existingSessionId))
         {
@@ -73,21 +67,21 @@ public sealed class ClientStorageGameHistoryService : IGameHistoryService
             .NewGuid()
             .ToString();
 
-        await _storage.SetItemAsync(SessionStorageKey, newSessionId);
+        await storage.SetItemAsync(SessionStorageKey, newSessionId);
 
         return newSessionId;
     }
 
     public async Task ClearSessionAsync()
     {
-        await _storage.RemoveItemAsync(SessionStorageKey);
+        await storage.RemoveItemAsync(SessionStorageKey);
     }
 
     private async Task LoadCommandHistoryAsync()
     {
         try
         {
-            var historyJson = await _storage.GetItemAsync(CommandHistoryStorageKey);
+            var historyJson = await storage.GetItemAsync(CommandHistoryStorageKey);
 
             if (string.IsNullOrWhiteSpace(historyJson))
             {
@@ -110,7 +104,7 @@ public sealed class ClientStorageGameHistoryService : IGameHistoryService
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Failed to load command history");
+            logger.LogWarning(ex, "Failed to load command history");
         }
     }
 }

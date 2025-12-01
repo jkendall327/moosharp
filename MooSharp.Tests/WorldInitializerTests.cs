@@ -44,7 +44,7 @@ public class WorldInitializerTests
     {
         var providedRoom = CreateRoom("provided");
         var seeder = Substitute.For<IWorldSeeder>();
-        seeder.GetSeedRooms().Returns(Array.Empty<Room>());
+        seeder.GetSeedRooms().Returns([]);
 
         (var initializer, var store, var _, var world) = await CreateInitializerAsync(seeder: seeder);
 

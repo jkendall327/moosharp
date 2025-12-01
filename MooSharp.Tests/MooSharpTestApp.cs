@@ -12,7 +12,7 @@ public class MooSharpTestApp : WebApplicationFactory<Program>
 {
     public string DbName { get; } = $"test_{Guid.NewGuid()}.db";
     public TestConnectionFactory ConnectionFactory { get; } = new();
-    public string? Motd { get; set; }
+    public string? Motd { get; init; }
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {

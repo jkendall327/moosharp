@@ -17,8 +17,8 @@ public class Object
     public IReadOnlyCollection<string> Keywords { get; } = new HashSet<string>(StringComparer.OrdinalIgnoreCase).ToFrozenSet();
     public string? TextContent { get; private set; }
     public ObjectFlags Flags { get; set; } = ObjectFlags.None;
-    public string? KeyId { get; set; }
-    public decimal Value { get; set; }
+    public string? KeyId { get; init; }
+    public decimal Value { get; init; }
 
     public IContainer? Container { get; private set; }
 

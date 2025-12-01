@@ -9,7 +9,7 @@ namespace MooSharp.Commands.Machinery;
 public class CommandParser
 {
     private readonly ILogger<CommandParser> _logger;
-    private readonly IReadOnlyDictionary<string, ICommandDefinition> _verbs;
+    private readonly Dictionary<string, ICommandDefinition> _verbs;
     private static readonly Task<ICommand?> NullCommand = Task.FromResult<ICommand?>(null);
 
     public CommandParser(ILogger<CommandParser> logger, IEnumerable<ICommandDefinition> definitions)

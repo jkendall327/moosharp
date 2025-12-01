@@ -14,7 +14,7 @@ public sealed class SignalRGameConnectionService : IGameConnectionService
     public event Action? OnReconnected;
     public event Action? OnClosed;
 
-    public HubConnectionState State => _hubConnection?.State ?? HubConnectionState.Disconnected;
+    private HubConnectionState State => _hubConnection?.State ?? HubConnectionState.Disconnected;
 
     public async Task InitializeAsync(Uri hubUrl, Func<Task<string?>> accessTokenProvider)
     {

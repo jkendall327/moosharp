@@ -9,8 +9,8 @@ namespace MooSharp.Commands.Commands.Items;
 
 public class CloseCommand : CommandBase<CloseCommand>
 {
-    public required Player Player { get; set; }
-    public required string Target { get; set; }
+    public required Player Player { get; init; }
+    public required string Target { get; init; }
 }
 
 public class CloseCommandDefinition : ICommandDefinition

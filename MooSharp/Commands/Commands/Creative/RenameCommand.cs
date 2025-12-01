@@ -4,7 +4,6 @@ using MooSharp.Commands.Machinery;
 using MooSharp.Commands.Searching;
 using MooSharp.Messaging;
 using MooSharp.World;
-using Object = MooSharp.Actors.Object;
 
 namespace MooSharp.Commands.Commands.Creative;
 
@@ -76,7 +75,7 @@ public class RenameHandler(World.World world, TargetResolver resolver) : IHandle
                 return result;
             }
 
-            var renameEvent = new RoomRenamedEvent(cmd.Player, targetRoom, targetRoom.Name, newName);
+            var renameEvent = new RoomRenamedEvent(cmd.Player, targetRoom.Name, newName);
 
             await world.RenameRoomAsync(targetRoom, newName, cancellationToken);
 
@@ -112,7 +111,7 @@ public class RenameHandler(World.World world, TargetResolver resolver) : IHandle
                     break;
                 }
 
-                var renameEvent = new ObjectRenamedEvent(cmd.Player, item, item.Name, newName);
+                var renameEvent = new ObjectRenamedEvent(cmd.Player, item.Name, newName);
 
                 await world.RenameObjectAsync(item, newName, cancellationToken);
 
@@ -141,7 +140,7 @@ public class RenameHandler(World.World world, TargetResolver resolver) : IHandle
 
 }
 
-public record RoomRenamedEvent(Player Player, Room Room, string OldName, string NewName) : IGameEvent;
+public record RoomRenamedEvent(Player Player, string OldName, string NewName) : IGameEvent;
 
 public class RoomRenamedEventFormatter : IGameEventFormatter<RoomRenamedEvent>
 {
@@ -152,7 +151,7 @@ public class RoomRenamedEventFormatter : IGameEventFormatter<RoomRenamedEvent>
         $"{gameEvent.Player.Username} renames {gameEvent.OldName} to '{gameEvent.NewName}'.";
 }
 
-public record ObjectRenamedEvent(Player Player, Object Item, string OldName, string NewName) : IGameEvent;
+public record ObjectRenamedEvent(Player Player, string OldName, string NewName) : IGameEvent;
 
 public class ObjectRenamedEventFormatter : IGameEventFormatter<ObjectRenamedEvent>
 {
