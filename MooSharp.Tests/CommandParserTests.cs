@@ -57,6 +57,34 @@ public class CommandParserTests
         definition.Received(1).Create(player, "spaced words");
     }
 
+    [Fact]
+    public async Task ParseAsync_MapsQuotePrefixToSayCommand()
+    {
+        var definition = CreateDefinition("say", "s");
+        var parser = new CommandParser(NullLogger<CommandParser>.Instance, new[] { definition });
+        var player = CreatePlayer();
+
+        var result = await parser.ParseAsync(player, "\"   hello   world  ");
+
+        var command = Assert.IsType<StubCommand>(result);
+        Assert.Equal("hello world", command.Args);
+        definition.Received(1).Create(player, "hello world");
+    }
+
+    [Fact]
+    public async Task ParseAsync_MapsColonPrefixToEmoteCommand()
+    {
+        var definition = CreateDefinition("/me");
+        var parser = new CommandParser(NullLogger<CommandParser>.Instance, new[] { definition });
+        var player = CreatePlayer();
+
+        var result = await parser.ParseAsync(player, ":  waves  excitedly ");
+
+        var command = Assert.IsType<StubCommand>(result);
+        Assert.Equal("waves excitedly", command.Args);
+        definition.Received(1).Create(player, "waves excitedly");
+    }
+
     private static Player CreatePlayer()
     {
         return new Player
@@ -66,10 +94,10 @@ public class CommandParserTests
         };
     }
 
-    private static ICommandDefinition CreateDefinition(string verb)
+    private static ICommandDefinition CreateDefinition(params string[] verbs)
     {
         var definition = Substitute.For<ICommandDefinition>();
-        definition.Verbs.Returns(new[] { verb });
+        definition.Verbs.Returns(verbs);
         definition.Description.Returns("test command");
         definition.Create(Arg.Any<Player>(), Arg.Any<string>())
             .Returns(call => new StubCommand(call.ArgAt<string>(1)));
