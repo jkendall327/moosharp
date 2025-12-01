@@ -10,7 +10,7 @@ namespace MooSharp.Tests;
 
 public class MooSharpTestApp : WebApplicationFactory<Program>
 {
-    public string DbName { get; } = $"test_{Guid.NewGuid()}.db";
+    private string DbName { get; } = $"test_{Guid.NewGuid()}.db";
     public TestConnectionFactory ConnectionFactory { get; } = new();
     public string? Motd { get; init; }
 

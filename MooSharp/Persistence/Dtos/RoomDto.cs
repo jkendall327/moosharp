@@ -1,8 +1,10 @@
 using System.Text.Json.Serialization;
+using JetBrains.Annotations;
 using MooSharp.Actors;
 
 namespace MooSharp.Persistence.Dtos;
 
+[UsedImplicitly]
 public class RoomDto
 {
     public required string Name { get; set; }

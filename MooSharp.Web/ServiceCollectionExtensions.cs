@@ -110,7 +110,7 @@ public static class ServiceCollectionExtensions
     extension(WebApplicationBuilder webApplicationBuilder)
     {
         /// <summary>
-        /// Register all ICommandHandler<T>s via reflection.
+        /// Register all ICommandHandlers via reflection.
         /// </summary>
         public void RegisterCommandHandlers()
         {
