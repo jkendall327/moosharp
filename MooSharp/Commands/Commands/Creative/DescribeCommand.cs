@@ -87,6 +87,12 @@ public class DescribeHandler(World world) : IHandler<DescribeCommand>
             return result;
         }
 
+        if (!targetRoom.IsOwnedBy(player))
+        {
+            result.Add(player, new SystemMessageEvent("You can only describe rooms you created."));
+            return result;
+        }
+
         await world.UpdateRoomDescriptionAsync(targetRoom, cmd.Description, cancellationToken);
 
         result.Add(player, new RoomDescriptionUpdatedEvent(targetRoom));
@@ -108,6 +114,7 @@ public class DescribeHandler(World world) : IHandler<DescribeCommand>
 
         return world.Rooms.TryGetValue(exitRoomId, out var room) ? room : null;
     }
+
 }
 
 public record RoomDescriptionUpdatedEvent(Room Room) : IGameEvent;

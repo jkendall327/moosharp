@@ -84,7 +84,8 @@ public class SqliteWorldStoreObjectPersistenceTests
             {
                 Name = "lantern",
                 Description = "An old lantern",
-                Flags = ObjectFlags.LightSource | ObjectFlags.Scenery
+                Flags = ObjectFlags.LightSource | ObjectFlags.Scenery,
+                CreatorUsername = "builder"
             };
 
             item.IsOpenable = true;
@@ -99,6 +100,7 @@ public class SqliteWorldStoreObjectPersistenceTests
             Assert.Equal(item.Id, loadedItem.Id);
             Assert.Equal(item.Flags, loadedItem.Flags);
             Assert.Equal(item.KeyId, loadedItem.KeyId);
+            Assert.Equal(item.CreatorUsername, loadedItem.CreatorUsername);
         }
         finally
         {

@@ -78,6 +78,34 @@ public sealed class InMemoryWorldStore : IWorldStore
         return Task.CompletedTask;
     }
 
+    public Task RenameRoomAsync(RoomId roomId, string name, CancellationToken cancellationToken = default)
+    {
+        var existing = _rooms.SingleOrDefault(r => r.Id == roomId);
+
+        if (existing is null)
+        {
+            return Task.CompletedTask;
+        }
+
+        existing.Name = name;
+
+        return Task.CompletedTask;
+    }
+
+    public Task RenameObjectAsync(ObjectId objectId, string name, CancellationToken cancellationToken = default)
+    {
+        var existing = _rooms
+            .SelectMany(r => r.Contents)
+            .SingleOrDefault(o => o.Id == objectId);
+
+        if (existing is not null)
+        {
+            existing.Name = name;
+        }
+
+        return Task.CompletedTask;
+    }
+
     private static Room CloneRoom(Room room)
     {
         var clone = new Room
@@ -87,7 +115,8 @@ public sealed class InMemoryWorldStore : IWorldStore
             Description = room.Description,
             LongDescription = room.LongDescription,
             EnterText = room.EnterText,
-            ExitText = room.ExitText
+            ExitText = room.ExitText,
+            CreatorUsername = room.CreatorUsername
         };
 
         foreach (var exit in room.Exits)
@@ -103,7 +132,8 @@ public sealed class InMemoryWorldStore : IWorldStore
                 Name = item.Name,
                 Description = item.Description,
                 Flags = item.Flags,
-                KeyId = item.KeyId
+                KeyId = item.KeyId,
+                CreatorUsername = item.CreatorUsername
             };
 
             if (!string.IsNullOrWhiteSpace(item.TextContent))

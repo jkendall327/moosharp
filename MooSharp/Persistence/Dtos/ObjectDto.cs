@@ -8,4 +8,5 @@ public class ObjectDto
     public string? TextContent { get; set; }
     public ObjectFlags Flags { get; set; } = ObjectFlags.None;
     public string? KeyId { get; set; }
+    public string? CreatorUsername { get; set; }
 }

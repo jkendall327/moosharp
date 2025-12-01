@@ -9,10 +9,9 @@ public class DescribeHandlerTests
     public async Task DescribeHandler_UpdatesCurrentRoomDescriptions()
     {
         var store = new InMemoryWorldStore();
-        var room = HandlerTestHelpers.CreateRoom("room");
-        var world = await HandlerTestHelpers.CreateWorld(store, room);
-
         var player = HandlerTestHelpers.CreatePlayer();
+        var room = HandlerTestHelpers.CreateRoom("room", player.Username);
+        var world = await HandlerTestHelpers.CreateWorld(store, room);
         world.MovePlayer(player, room);
 
         var handler = new DescribeHandler(world);
@@ -40,13 +39,12 @@ public class DescribeHandlerTests
     public async Task DescribeHandler_UpdatesExitRoomDescription()
     {
         var store = new InMemoryWorldStore();
-        var origin = HandlerTestHelpers.CreateRoom("origin");
-        var destination = HandlerTestHelpers.CreateRoom("destination");
+        var player = HandlerTestHelpers.CreatePlayer();
+        var origin = HandlerTestHelpers.CreateRoom("origin", player.Username);
+        var destination = HandlerTestHelpers.CreateRoom("destination", player.Username);
         origin.Exits.Add("east", destination.Id);
 
         var world = await HandlerTestHelpers.CreateWorld(store, origin, destination);
-
-        var player = HandlerTestHelpers.CreatePlayer();
         world.MovePlayer(player, origin);
 
         var handler = new DescribeHandler(world);
@@ -65,5 +63,28 @@ public class DescribeHandlerTests
         var persisted = (await store.LoadRoomsAsync()).Single(r => r.Id == destination.Id);
         Assert.Equal("An airy annex", persisted.Description);
         Assert.Equal("An airy annex", persisted.LongDescription);
+    }
+
+    [Fact]
+    public async Task DescribeHandler_PreventsNonCreatorFromUpdatingRoom()
+    {
+        var store = new InMemoryWorldStore();
+        var room = HandlerTestHelpers.CreateRoom("room", "Builder");
+        var world = await HandlerTestHelpers.CreateWorld(store, room);
+        var player = HandlerTestHelpers.CreatePlayer("NotBuilder");
+        world.MovePlayer(player, room);
+
+        var handler = new DescribeHandler(world);
+
+        var result = await handler.Handle(new DescribeCommand
+        {
+            Player = player,
+            Target = "here",
+            Description = "New description"
+        });
+
+        var message = Assert.IsType<SystemMessageEvent>(Assert.Single(result.Messages).Event);
+        Assert.Equal("You can only describe rooms you created.", message.Message);
+        Assert.NotEqual("New description", room.Description);
     }
 }
