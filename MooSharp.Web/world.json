@@ -2,7 +2,7 @@
   "Rooms": [
     {
       "Name": "atrium",
-      "Description": "A neon atrium humming with static.",
+      "Description": "You're in a neon atrium humming with static.",
       "LongDescription": "A neon atrium hums with static, light strips pulsing beneath translucent floors while holo-ads ripple across glass walls.",
       "EnterText": "You phase into the atrium.",
       "ExitText": "You slide out of the atrium.",
@@ -11,7 +11,7 @@
     },
     {
       "Name": "side-room",
-      "Description": "A pocket cafe of CRTs and cracked tiles.",
+      "Description": "You're in a pocket cafe of CRTs and cracked tiles.",
       "LongDescription": "A pocket cafe lined with humming CRTs and cracked ceramic tiles. A synth-coffee machine wheezes near stacks of neon zines.",
       "EnterText": "You shuffle into the side-room.",
       "ExitText": "You step out of the side-room.",
@@ -20,7 +20,7 @@
     },
     {
       "Name": "closet",
-      "Description": "A cramped cache full of forgotten gear.",
+      "Description": "You're in a cramped cache full of forgotten gear.",
       "LongDescription": "A cramped cache perfumed with dust and ozone. Shelves bow under piles of coiled cables, badge printers, and translucent floppies.",
       "EnterText": "You head into the closet.",
       "ExitText": "You leave the closet.",
@@ -29,7 +29,7 @@
     },
     {
       "Name": "dark world",
-      "Description": "A secret void of humming servers.",
+      "Description": "You're in a secret void of humming servers.",
       "LongDescription": "A secret void behind the closet, lit only by status LEDs that trace out horizon lines. The hum is felt more than heard.",
       "EnterText": "You cross over into the dark world.",
       "ExitText": "You slip away from the dark world.",
@@ -38,7 +38,7 @@
     },
     {
       "Name": "fiber hall",
-      "Description": "A corridor of glass fibers and scrolling glyphs.",
+      "Description": "You're in a corridor of glass fibers and scrolling glyphs.",
       "LongDescription": "A vaulted corridor where fiber bundles twist overhead like vines. Scrolling green glyphs run along the floor edges, whispering coordinates.",
       "EnterText": "You stride into the fiber hall.",
       "ExitText": "You slip out of the fiber hall.",
@@ -47,7 +47,7 @@
     },
     {
       "Name": "glitch market",
-      "Description": "An arcade flooded with pixelated stalls.",
+      "Description": "You're in an arcade flooded with pixelated stalls.",
       "LongDescription": "Vendors float on hovering platforms, their stalls flickering like broken sprites. The air smells like solder and artificial bubblegum.",
       "EnterText": "You drift into the glitch market.",
       "ExitText": "You fade from the glitch market.",
@@ -56,7 +56,7 @@
     },
     {
       "Name": "holo garden",
-      "Description": "A meadow of light, compiled on demand.",
+      "Description": "You're in a meadow of light, compiled on demand.",
       "LongDescription": "Projected grass waves beneath your feet while translucent trees render and unrender with every breeze. Firefly-sized pixels blink above a slow data stream.",
       "EnterText": "You step into the holo garden.",
       "ExitText": "You exit the holo garden.",
@@ -65,7 +65,7 @@
     },
     {
       "Name": "server overlook",
-      "Description": "A catwalk over endless racks.",
+      "Description": "You're in a catwalk over endless racks.",
       "LongDescription": "You stand on a catwalk above servers stacked like city blocks. Cooling mist drifts upward, bending rainbow lasers that map traffic flows.",
       "EnterText": "You climb up to the server overlook.",
       "ExitText": "You descend from the server overlook.",
@@ -74,7 +74,7 @@
     },
     {
       "Name": "debug sanctum",
-      "Description": "A quiet chamber of syntax and incense.",
+      "Description": "You're in a quiet chamber of syntax and incense.",
       "LongDescription": "Blank walls are overlaid with floating code traces that respond to your breath. Incense coils spiral around a central console that glows steady amber.",
       "EnterText": "You slip into the debug sanctum.",
       "ExitText": "You back away from the debug sanctum.",
