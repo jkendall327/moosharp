@@ -1,6 +1,8 @@
+using MooSharp.Actors;
+using MooSharp.Commands;
 using MooSharp.Messaging;
 
-namespace MooSharp;
+namespace MooSharp.World;
 
 public static class WorldExtensions
 {

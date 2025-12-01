@@ -1,6 +1,6 @@
 using MooSharp.Messaging;
 
-namespace MooSharp;
+namespace MooSharp.Actors;
 
 public readonly record struct PlayerId(Guid Value)
 {

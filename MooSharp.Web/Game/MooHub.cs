@@ -1,10 +1,11 @@
 using System.Threading.Channels;
-
-namespace MooSharp;
-
 using Microsoft.AspNetCore.SignalR;
+using MooSharp.Game;
+using MooSharp.Messaging;
 
-public class MooHub(ChannelWriter<GameInput> writer, ILogger<MooHub> logger, World world) : Hub
+namespace MooSharp.Web.Game;
+
+public class MooHub(ChannelWriter<GameInput> writer, ILogger<MooHub> logger, World.World world) : Hub
 {
     public override async Task OnConnectedAsync()
     {

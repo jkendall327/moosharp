@@ -1,6 +1,9 @@
 using Microsoft.Extensions.Options;
+using MooSharp.Actors;
 using MooSharp.Infrastructure;
 using MooSharp.Persistence;
+using MooSharp.Tests.Handlers;
+using Object = MooSharp.Actors.Object;
 
 namespace MooSharp.Tests;
 

@@ -1,5 +1,6 @@
 using System.Data;
 using Dapper;
+using MooSharp.Actors;
 
 namespace MooSharp.Persistence;
 

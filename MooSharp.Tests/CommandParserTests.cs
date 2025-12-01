@@ -1,4 +1,7 @@
 using Microsoft.Extensions.Logging.Abstractions;
+using MooSharp.Actors;
+using MooSharp.Commands.Machinery;
+using MooSharp.Tests.TestDoubles;
 using NSubstitute;
 
 namespace MooSharp.Tests;

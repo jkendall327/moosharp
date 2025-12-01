@@ -5,11 +5,16 @@ using MooSharp.Infrastructure;
 using MooSharp.Messaging;
 using MooSharp.Persistence;
 using Microsoft.Extensions.Options;
+using MooSharp.Actors;
+using MooSharp.Commands;
+using MooSharp.Commands.Commands;
+using MooSharp.Commands.Machinery;
+using Object = MooSharp.Actors.Object;
 
 namespace MooSharp;
 
 public class GameEngine(
-    World world,
+    World.World world,
     CommandParser parser,
     CommandExecutor executor,
     IPlayerStore playerStore,

@@ -1,7 +1,9 @@
 using Dapper;
 using Microsoft.Data.Sqlite;
 using Microsoft.Extensions.Options;
+using MooSharp.Actors;
 using MooSharp.Infrastructure;
+using Object = MooSharp.Actors.Object;
 
 namespace MooSharp.Persistence;
 

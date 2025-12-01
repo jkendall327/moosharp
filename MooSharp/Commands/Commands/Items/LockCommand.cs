@@ -1,6 +1,10 @@
+using MooSharp.Actors;
+using MooSharp.Commands.Machinery;
 using MooSharp.Messaging;
+using MooSharp.World;
+using Object = MooSharp.Actors.Object;
 
-namespace MooSharp;
+namespace MooSharp.Commands.Commands.Items;
 
 public class LockCommand : CommandBase<LockCommand>
 {
@@ -72,7 +76,7 @@ public class ItemUnlockedEventFormatter : IGameEventFormatter<ItemUnlockedEvent>
         $"{gameEvent.Player.Username} unlocks the {gameEvent.Object.Name}.";
 }
 
-public class LockHandler(World world, TargetResolver resolver) : IHandler<LockCommand>
+public class LockHandler(World.World world, Searching.TargetResolver resolver) : IHandler<LockCommand>
 {
     public Task<CommandResult> Handle(LockCommand command, CancellationToken cancellationToken = default)
     {
@@ -121,7 +125,7 @@ public class LockHandler(World world, TargetResolver resolver) : IHandler<LockCo
     }
 }
 
-public class UnlockHandler(World world, TargetResolver resolver) : IHandler<UnlockCommand>
+public class UnlockHandler(World.World world, Searching.TargetResolver resolver) : IHandler<UnlockCommand>
 {
     public Task<CommandResult> Handle(UnlockCommand command, CancellationToken cancellationToken = default)
     {

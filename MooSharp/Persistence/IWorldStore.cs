@@ -1,3 +1,5 @@
+using MooSharp.Actors;
+
 namespace MooSharp.Persistence;
 
 public interface IWorldStore

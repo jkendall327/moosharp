@@ -1,8 +1,8 @@
 using System.Text;
 using Microsoft.Extensions.Logging;
-using MooSharp;
 using MooSharp.Messaging;
-using MooSharp.Web;
+
+namespace MooSharp.Game;
 
 public sealed class GameClientViewModel : IDisposable
 {

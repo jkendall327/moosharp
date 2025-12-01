@@ -1,6 +1,7 @@
 using System.Text.Json;
+using MooSharp.Game;
 
-namespace MooSharp.Web;
+namespace MooSharp.Web.Game;
 
 public sealed class ClientStorageGameHistoryService : IGameHistoryService
 {

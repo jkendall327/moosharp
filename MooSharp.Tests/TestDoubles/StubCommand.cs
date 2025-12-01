@@ -1,6 +1,7 @@
+using MooSharp.Commands.Machinery;
 using MooSharp.Messaging;
 
-namespace MooSharp.Tests;
+namespace MooSharp.Tests.TestDoubles;
 
 public sealed class StubCommand : ICommand
 {

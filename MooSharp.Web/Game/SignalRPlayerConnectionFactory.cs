@@ -1,8 +1,9 @@
 using Microsoft.AspNetCore.SignalR;
+using MooSharp.Actors;
 using MooSharp.Infrastructure;
 using MooSharp.Messaging;
 
-namespace MooSharp.Web;
+namespace MooSharp.Web.Game;
 
 public class SignalRPlayerConnectionFactory(IHubContext<MooHub> hubContext) : IPlayerConnectionFactory
 {

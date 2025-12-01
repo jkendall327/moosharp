@@ -1,6 +1,6 @@
 using System.Collections.Frozen;
 
-namespace MooSharp;
+namespace MooSharp.Actors;
 
 public readonly record struct ObjectId(Guid Value)
 {

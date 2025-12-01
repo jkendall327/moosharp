@@ -1,6 +1,7 @@
 using System.Text.Json.Serialization;
+using MooSharp.Actors;
 
-namespace MooSharp;
+namespace MooSharp.Persistence.Dtos;
 
 public class RoomDto
 {

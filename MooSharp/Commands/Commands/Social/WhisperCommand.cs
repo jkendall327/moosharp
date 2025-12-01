@@ -1,6 +1,8 @@
+using MooSharp.Actors;
+using MooSharp.Commands.Machinery;
 using MooSharp.Messaging;
 
-namespace MooSharp;
+namespace MooSharp.Commands.Commands.Social;
 
 public class WhisperCommand : CommandBase<WhisperCommand>
 {
@@ -29,7 +31,7 @@ public class WhisperCommandDefinition : ICommandDefinition
     }
 }
 
-public class WhisperHandler(World world) : IHandler<WhisperCommand>
+public class WhisperHandler(World.World world) : IHandler<WhisperCommand>
 {
     public Task<CommandResult> Handle(WhisperCommand cmd, CancellationToken cancellationToken = default)
     {

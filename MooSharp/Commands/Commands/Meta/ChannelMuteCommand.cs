@@ -1,6 +1,8 @@
+using MooSharp.Actors;
+using MooSharp.Commands.Machinery;
 using MooSharp.Messaging;
 
-namespace MooSharp;
+namespace MooSharp.Commands.Commands.Meta;
 
 public class ChannelMuteCommand : CommandBase<ChannelMuteCommand>
 {

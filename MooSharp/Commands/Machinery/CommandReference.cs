@@ -1,6 +1,6 @@
 using System.Text;
 
-namespace MooSharp;
+namespace MooSharp.Commands.Machinery;
 
 public class CommandReference
 {

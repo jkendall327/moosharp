@@ -1,7 +1,10 @@
 using System.Text;
+using MooSharp.Actors;
+using MooSharp.Commands.Machinery;
 using MooSharp.Messaging;
+using Object = MooSharp.Actors.Object;
 
-namespace MooSharp;
+namespace MooSharp.Commands.Commands.Informational;
 
 public class InventoryCommand : CommandBase<InventoryCommand>
 {

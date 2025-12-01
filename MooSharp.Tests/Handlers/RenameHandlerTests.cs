@@ -1,4 +1,8 @@
-namespace MooSharp.Tests;
+using MooSharp.Commands;
+using MooSharp.Commands.Commands.Creative;
+using Object = MooSharp.Actors.Object;
+
+namespace MooSharp.Tests.Handlers;
 
 public class RenameHandlerTests
 {

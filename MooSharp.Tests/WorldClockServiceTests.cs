@@ -2,9 +2,11 @@ using NSubstitute;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Time.Testing;
+using MooSharp.Actors;
 using MooSharp.Infrastructure;
 using MooSharp.Messaging;
 using MooSharp.Persistence;
+using MooSharp.World;
 
 namespace MooSharp.Tests;
 
@@ -86,7 +88,7 @@ public class WorldClockServiceTests
     [Fact]
     public async Task TriggerTickAsync_UpdatesPeriodEvenWithNoPlayers()
     {
-        var world = new World(Substitute.For<IWorldStore>(), NullLogger<World>.Instance)
+        var world = new World.World(Substitute.For<IWorldStore>(), NullLogger<World.World>.Instance)
         {
             CurrentDayPeriod = DayPeriod.Morning
         };
@@ -106,7 +108,7 @@ public class WorldClockServiceTests
     }
 
     private static WorldClock CreateWorldClock(
-        World world,
+        World.World world,
         IGameMessagePresenter presenter,
         TimeProvider timeProvider,
         int dayPeriodMinutes = 10) => new(
@@ -120,9 +122,9 @@ public class WorldClockServiceTests
         timeProvider,
         NullLogger<WorldClock>.Instance);
 
-    private static World CreateWorldWithPlayers(out List<IPlayerConnection> connections)
+    private static World.World CreateWorldWithPlayers(out List<IPlayerConnection> connections)
     {
-        var world = new World(Substitute.For<IWorldStore>(), NullLogger<World>.Instance);
+        var world = new World.World(Substitute.For<IWorldStore>(), NullLogger<World.World>.Instance);
         connections = [];
 
         for (var i = 0; i < 2; i++)

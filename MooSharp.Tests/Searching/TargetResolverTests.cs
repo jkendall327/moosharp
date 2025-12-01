@@ -1,4 +1,7 @@
-namespace MooSharp.Tests;
+using MooSharp.Commands.Searching;
+using Object = MooSharp.Actors.Object;
+
+namespace MooSharp.Tests.Searching;
 
 public class TargetResolverTests
 {

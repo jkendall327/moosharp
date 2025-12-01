@@ -1,4 +1,6 @@
-namespace MooSharp;
+using MooSharp.Actors;
+
+namespace MooSharp.Persistence.Dtos;
 
 public class ObjectDto
 {

@@ -1,6 +1,12 @@
+using MooSharp.Actors;
+using MooSharp.Commands.Commands.Informational;
+using MooSharp.Commands.Machinery;
+using MooSharp.Commands.Searching;
 using MooSharp.Messaging;
+using MooSharp.World;
+using Object = MooSharp.Actors.Object;
 
-namespace MooSharp;
+namespace MooSharp.Commands.Commands.Creative;
 
 public class RenameCommand : CommandBase<RenameCommand>
 {
@@ -43,7 +49,7 @@ public class RenameCommandDefinition : ICommandDefinition
     }
 }
 
-public class RenameHandler(World world, TargetResolver resolver) : IHandler<RenameCommand>
+public class RenameHandler(World.World world, Searching.TargetResolver resolver) : IHandler<RenameCommand>
 {
     public async Task<CommandResult> Handle(RenameCommand cmd, CancellationToken cancellationToken = default)
     {

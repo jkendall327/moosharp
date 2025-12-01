@@ -1,5 +1,7 @@
 using Microsoft.AspNetCore.SignalR.Client;
-using MooSharp;
+using MooSharp.Game;
+
+namespace MooSharp.Web.Game;
 
 public sealed class SignalRGameConnectionService : IGameConnectionService
 {

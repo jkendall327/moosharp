@@ -1,9 +1,10 @@
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using MooSharp.Commands;
 using MooSharp.Infrastructure;
 using MooSharp.Messaging;
 
-namespace MooSharp;
+namespace MooSharp.World;
 
 public class WorldClock(
     World world,

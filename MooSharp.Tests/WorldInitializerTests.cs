@@ -1,5 +1,7 @@
 using Microsoft.Extensions.Logging.Abstractions;
+using MooSharp.Actors;
 using MooSharp.Tests.TestDoubles;
+using MooSharp.World;
 using NSubstitute;
 
 namespace MooSharp.Tests;
@@ -68,7 +70,7 @@ public class WorldInitializerTests
         };
     }
 
-    private static async Task<(WorldInitializer Initializer, InMemoryWorldStore Store, IWorldSeeder Seeder, World World)> CreateInitializerAsync(
+    private static async Task<(WorldInitializer Initializer, InMemoryWorldStore Store, IWorldSeeder Seeder, World.World World)> CreateInitializerAsync(
         IWorldSeeder? seeder = null,
         Room? existingRoomToPersist = null)
     {
@@ -80,7 +82,7 @@ public class WorldInitializerTests
         }
 
         var worldSeeder = seeder ?? Substitute.For<IWorldSeeder>();
-        var world = new World(store, NullLogger<World>.Instance);
+        var world = new World.World(store, NullLogger<World.World>.Instance);
         var initializer = new WorldInitializer(world, store, worldSeeder, NullLogger<WorldInitializer>.Instance);
 
         return (initializer, store, worldSeeder, world);

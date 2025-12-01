@@ -1,9 +1,14 @@
 using System.Reflection;
 using System.Threading.Channels;
 using MooSharp.Agents;
+using MooSharp.Commands.Machinery;
+using MooSharp.Commands.Searching;
+using MooSharp.Game;
 using MooSharp.Infrastructure;
 using MooSharp.Messaging;
 using MooSharp.Persistence;
+using MooSharp.Web.Game;
+using MooSharp.World;
 
 namespace MooSharp.Web;
 
@@ -24,7 +29,7 @@ public static class ServiceCollectionExtensions
             // World
             services.AddSingleton<IWorldSeeder, WorldSeeder>();
             services.AddSingleton<WorldInitializer>();
-            services.AddSingleton<World>();
+            services.AddSingleton<World.World>();
 
             // Commands
             services.AddSingleton<CommandParser>();

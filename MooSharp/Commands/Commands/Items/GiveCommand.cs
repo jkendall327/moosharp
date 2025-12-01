@@ -1,6 +1,12 @@
+using MooSharp.Actors;
+using MooSharp.Commands.Commands.Informational;
+using MooSharp.Commands.Machinery;
+using MooSharp.Commands.Searching;
 using MooSharp.Messaging;
+using MooSharp.World;
+using Object = MooSharp.Actors.Object;
 
-namespace MooSharp;
+namespace MooSharp.Commands.Commands.Items;
 
 public class GiveCommand : CommandBase<GiveCommand>
 {
@@ -32,7 +38,7 @@ public class GiveCommandDefinition : ICommandDefinition
     }
 }
 
-public class GiveHandler(World world, TargetResolver resolver) : IHandler<GiveCommand>
+public class GiveHandler(World.World world, Searching.TargetResolver resolver) : IHandler<GiveCommand>
 {
     public Task<CommandResult> Handle(GiveCommand cmd, CancellationToken cancellationToken = default)
     {
@@ -47,8 +53,8 @@ public class GiveHandler(World world, TargetResolver resolver) : IHandler<GiveCo
 
         var room = world.GetLocationOrThrow(player);
 
-        var recipient = room.PlayersInRoom
-            .FirstOrDefault(p => p.Username.Equals(cmd.Target, StringComparison.OrdinalIgnoreCase));
+        var recipient = Enumerable
+            .FirstOrDefault<Player>(room.PlayersInRoom, p => p.Username.Equals(cmd.Target, StringComparison.OrdinalIgnoreCase));
 
         if (recipient is null)
         {

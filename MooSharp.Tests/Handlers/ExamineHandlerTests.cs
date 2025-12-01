@@ -1,4 +1,8 @@
-namespace MooSharp.Tests;
+using MooSharp.Commands.Commands;
+using MooSharp.Commands.Commands.Informational;
+using Object = MooSharp.Actors.Object;
+
+namespace MooSharp.Tests.Handlers;
 
 public class ExamineHandlerTests
 {

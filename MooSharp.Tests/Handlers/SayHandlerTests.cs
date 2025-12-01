@@ -1,6 +1,8 @@
+using MooSharp.Commands;
+using MooSharp.Commands.Commands.Social;
 using MooSharp.Messaging;
 
-namespace MooSharp.Tests;
+namespace MooSharp.Tests.Handlers;
 
 public class SayHandlerTests
 {

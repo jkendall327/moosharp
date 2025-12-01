@@ -1,4 +1,4 @@
-namespace MooSharp;
+namespace MooSharp.World;
 
 public interface IWorldClock
 {

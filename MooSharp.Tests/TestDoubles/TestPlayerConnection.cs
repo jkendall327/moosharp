@@ -1,6 +1,6 @@
 using MooSharp.Messaging;
 
-namespace MooSharp.Tests;
+namespace MooSharp.Tests.TestDoubles;
 
 public sealed class TestPlayerConnection : IPlayerConnection
 {

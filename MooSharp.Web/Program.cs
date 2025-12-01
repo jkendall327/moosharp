@@ -2,6 +2,8 @@ using MooSharp;
 using MooSharp.Web;
 using MooSharp.Web.Components;
 using MooSharp.Web.Endpoints;
+using MooSharp.Web.Game;
+using MooSharp.World;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -41,6 +43,8 @@ app.MapHub<MooHub>("/moohub");
 
 await app.RunAsync();
 
+return;
+
 static async Task InitializeWorldAsync(IServiceProvider serviceProvider)
 {
     using var scope = serviceProvider.CreateScope();
@@ -48,5 +52,3 @@ static async Task InitializeWorldAsync(IServiceProvider serviceProvider)
 
     await initializer.InitializeAsync();
 }
-
-public partial class Program;

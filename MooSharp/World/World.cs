@@ -1,8 +1,10 @@
 using System.Collections.Concurrent;
-using MooSharp.Persistence;
 using Microsoft.Extensions.Logging;
+using MooSharp.Actors;
+using MooSharp.Persistence;
+using Object = MooSharp.Actors.Object;
 
-namespace MooSharp;
+namespace MooSharp.World;
 
 public class World(IWorldStore worldStore, ILogger<World> logger)
 {

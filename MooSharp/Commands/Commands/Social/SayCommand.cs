@@ -1,6 +1,9 @@
+using MooSharp.Actors;
+using MooSharp.Commands.Machinery;
 using MooSharp.Messaging;
+using MooSharp.World;
 
-namespace MooSharp;
+namespace MooSharp.Commands.Commands.Social;
 
 public class SayCommand : CommandBase<SayCommand>
 {
@@ -23,7 +26,7 @@ public class SayCommandDefinition : ICommandDefinition
         };
 }
 
-public class SayHandler(World world) : IHandler<SayCommand>
+public class SayHandler(World.World world) : IHandler<SayCommand>
 {
     public Task<CommandResult> Handle(SayCommand cmd, CancellationToken cancellationToken = default)
     {

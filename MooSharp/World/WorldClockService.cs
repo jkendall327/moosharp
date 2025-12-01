@@ -2,7 +2,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 using MooSharp.Infrastructure;
 
-namespace MooSharp;
+namespace MooSharp.World;
 
 public class WorldClockService(
     IWorldClock worldClock,

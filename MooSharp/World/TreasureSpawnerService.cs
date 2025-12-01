@@ -1,8 +1,9 @@
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 using MooSharp.Infrastructure;
+using Object = MooSharp.Actors.Object;
 
-namespace MooSharp;
+namespace MooSharp.World;
 
 public class TreasureSpawnerService(
     World world,

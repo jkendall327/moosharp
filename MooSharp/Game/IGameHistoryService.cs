@@ -1,4 +1,4 @@
-namespace MooSharp.Web;
+namespace MooSharp.Game;
 
 public interface IGameHistoryService
 {

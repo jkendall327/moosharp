@@ -1,6 +1,6 @@
 using MooSharp.Messaging;
 
-namespace MooSharp;
+namespace MooSharp.Commands.Machinery;
 
 /// <summary>
 /// An action that players can take in the game.

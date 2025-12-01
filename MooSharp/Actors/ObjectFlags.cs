@@ -1,4 +1,4 @@
-namespace MooSharp;
+namespace MooSharp.Actors;
 
 [Flags]
 public enum ObjectFlags

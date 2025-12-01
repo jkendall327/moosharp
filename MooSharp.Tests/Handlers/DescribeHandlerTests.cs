@@ -1,6 +1,8 @@
+using MooSharp.Commands;
+using MooSharp.Commands.Commands.Creative;
 using MooSharp.Tests.TestDoubles;
 
-namespace MooSharp.Tests;
+namespace MooSharp.Tests.Handlers;
 
 public class DescribeHandlerTests
 {

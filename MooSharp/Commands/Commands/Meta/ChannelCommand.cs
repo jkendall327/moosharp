@@ -1,6 +1,8 @@
+using MooSharp.Actors;
+using MooSharp.Commands.Machinery;
 using MooSharp.Messaging;
 
-namespace MooSharp;
+namespace MooSharp.Commands.Commands.Meta;
 
 public class ChannelCommand : CommandBase<ChannelCommand>
 {
@@ -78,7 +80,7 @@ public class ChannelCommandDefinition : ICommandDefinition
     }
 }
 
-public class ChannelHandler(World world) : IHandler<ChannelCommand>
+public class ChannelHandler(World.World world) : IHandler<ChannelCommand>
 {
     public Task<CommandResult> Handle(ChannelCommand cmd, CancellationToken cancellationToken = default)
     {

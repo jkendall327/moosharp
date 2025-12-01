@@ -2,9 +2,12 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using MooSharp.Actors;
 using MooSharp.Infrastructure;
+using MooSharp.Persistence.Dtos;
+using Object = MooSharp.Actors.Object;
 
-namespace MooSharp;
+namespace MooSharp.World;
 
 public interface IWorldSeeder
 {

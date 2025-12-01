@@ -1,6 +1,9 @@
+using MooSharp.Actors;
+using MooSharp.Commands.Machinery;
 using MooSharp.Messaging;
+using MooSharp.World;
 
-namespace MooSharp;
+namespace MooSharp.Commands.Commands.Social;
 
 public class EmoteCommand : CommandBase<EmoteCommand>
 {
@@ -23,7 +26,7 @@ public class EmoteCommandDefinition : ICommandDefinition
         };
 }
 
-public class EmoteHandler(World world) : IHandler<EmoteCommand>
+public class EmoteHandler(World.World world) : IHandler<EmoteCommand>
 {
     public Task<CommandResult> Handle(EmoteCommand cmd, CancellationToken cancellationToken = default)
     {

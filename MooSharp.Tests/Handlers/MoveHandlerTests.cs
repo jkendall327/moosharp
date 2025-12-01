@@ -1,7 +1,8 @@
 using Microsoft.Extensions.Logging.Abstractions;
+using MooSharp.Commands.Commands;
 using MooSharp.Messaging;
 
-namespace MooSharp.Tests;
+namespace MooSharp.Tests.Handlers;
 
 public class MoveHandlerTests
 {

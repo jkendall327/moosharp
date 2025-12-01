@@ -1,3 +1,5 @@
+using Object = MooSharp.Actors.Object;
+
 namespace MooSharp.Tests;
 
 public class ObjectStateTests

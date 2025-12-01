@@ -1,4 +1,6 @@
+using MooSharp.Actors;
 using MooSharp.Persistence;
+using Object = MooSharp.Actors.Object;
 
 namespace MooSharp.Tests.TestDoubles;
 

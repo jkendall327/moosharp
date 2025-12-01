@@ -1,6 +1,7 @@
+using MooSharp.Commands.Commands;
 using MooSharp.Messaging;
 
-namespace MooSharp.Tests;
+namespace MooSharp.Tests.Handlers;
 
 public class RecallHandlerTests
 {

@@ -1,7 +1,10 @@
+using MooSharp.Actors;
+using MooSharp.Commands.Machinery;
 using MooSharp.Infrastructure;
 using MooSharp.Messaging;
+using MooSharp.World;
 
-namespace MooSharp;
+namespace MooSharp.Commands.Commands.Creative;
 
 public class DigCommand : CommandBase<DigCommand>
 {
@@ -54,7 +57,7 @@ public class RoomAlreadyExistsEventFormatter : IGameEventFormatter<RoomAlreadyEx
     public string? FormatForObserver(RoomAlreadyExistsEvent gameEvent) => null;
 }
 
-public class DigHandler(World world, SlugCreator slugCreator) : IHandler<DigCommand>
+public class DigHandler(World.World world, SlugCreator slugCreator) : IHandler<DigCommand>
 {
     private const string DefaultEnterText = "You step inside.";
     private const string DefaultExitText = "You leave the room.";

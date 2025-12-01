@@ -1,6 +1,10 @@
+using MooSharp.Actors;
+using MooSharp.Commands.Machinery;
 using MooSharp.Messaging;
+using MooSharp.World;
+using Object = MooSharp.Actors.Object;
 
-namespace MooSharp;
+namespace MooSharp.Commands.Commands.Items;
 
 public class OpenCommand : CommandBase<OpenCommand>
 {
@@ -37,7 +41,7 @@ public class ItemOpenedEventEventFormatter : IGameEventFormatter<ItemOpenedEvent
         $"{gameEvent.Player.Username} opened the {gameEvent.Object.Name}.";
 }
 
-public class OpenHandler(World world, TargetResolver resolver) : IHandler<OpenCommand>
+public class OpenHandler(World.World world, Searching.TargetResolver resolver) : IHandler<OpenCommand>
 {
     public Task<CommandResult> Handle(OpenCommand command, CancellationToken cancellationToken = default)
     {

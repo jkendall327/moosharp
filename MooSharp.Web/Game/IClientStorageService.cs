@@ -1,6 +1,6 @@
-namespace MooSharp.Web;
-
 using Microsoft.JSInterop;
+
+namespace MooSharp.Web.Game;
 
 public interface IClientStorageService
 {

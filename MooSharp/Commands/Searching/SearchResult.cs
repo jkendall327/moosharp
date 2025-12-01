@@ -1,4 +1,6 @@
-namespace MooSharp;
+using Object = MooSharp.Actors.Object;
+
+namespace MooSharp.Commands.Searching;
 
 public class SearchResult
 {

@@ -1,5 +1,8 @@
 using System.Threading.Channels;
 using Microsoft.Extensions.DependencyInjection;
+using MooSharp.Actors;
+using MooSharp.Messaging;
+using MooSharp.Tests.TestDoubles;
 
 namespace MooSharp.Tests;
 
@@ -29,7 +32,7 @@ public class GameEngineIntegrationTests
 
         await SendAndWaitAsync(inputWriter, connectionId, move);
 
-        var world = app.Services.GetRequiredService<World>();
+        var world = app.Services.GetRequiredService<World.World>();
         var player = world.Players.Values.Single(p => p.Username == "Hero");
 
         var room = world.GetPlayerLocation(player)?.Id.Value;

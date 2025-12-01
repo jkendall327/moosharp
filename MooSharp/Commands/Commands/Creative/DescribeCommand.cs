@@ -1,6 +1,9 @@
+using MooSharp.Actors;
+using MooSharp.Commands.Machinery;
 using MooSharp.Messaging;
+using MooSharp.World;
 
-namespace MooSharp;
+namespace MooSharp.Commands.Commands.Creative;
 
 public class DescribeCommand : CommandBase<DescribeCommand>
 {
@@ -63,7 +66,7 @@ public class DescribeCommandDefinition : ICommandDefinition
     }
 }
 
-public class DescribeHandler(World world) : IHandler<DescribeCommand>
+public class DescribeHandler(World.World world) : IHandler<DescribeCommand>
 {
     public async Task<CommandResult> Handle(DescribeCommand cmd, CancellationToken cancellationToken = default)
     {

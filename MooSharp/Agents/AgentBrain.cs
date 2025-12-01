@@ -1,8 +1,8 @@
 using System.Threading.Channels;
 using Microsoft.Extensions.Options;
-using MooSharp;
-using MooSharp.Agents;
 using MooSharp.Messaging;
+
+namespace MooSharp.Agents;
 
 public sealed class AgentBrain(
     AgentCore core,

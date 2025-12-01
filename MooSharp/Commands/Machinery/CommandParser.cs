@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Logging;
+using MooSharp.Actors;
 
-namespace MooSharp;
+namespace MooSharp.Commands.Machinery;
 
 /// <summary>
 /// Parses raw text into commands.
