@@ -90,20 +90,19 @@ public class MooHub(ChannelWriter<GameInput> writer, ILogger<MooHub> logger, Wor
         {
             return null;
         }
-
-        if (context.Request.Query.TryGetValue("access_token", out var token))
+        
+        // .NET SignalR client: AccessTokenProvider -> Authorization: Bearer {token}
+        if (context.Request.Headers.TryGetValue("Authorization", out var authHeader))
         {
-            return GetFirstValue(token);
-        }
+            var value = authHeader.ToString();
+            const string bearerPrefix = "Bearer ";
 
-        if (context.Request.Headers.TryGetValue("x-session-id", out var headerToken))
-        {
-            return GetFirstValue(headerToken);
+            if (value.StartsWith(bearerPrefix, StringComparison.OrdinalIgnoreCase))
+            {
+                return value.Substring(bearerPrefix.Length).Trim();
+            }
         }
-
+        
         return null;
     }
-
-    private static string? GetFirstValue(StringValues values) =>
-        values.Count == 0 ? null : values[0];
 }
