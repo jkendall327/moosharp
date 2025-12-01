@@ -1,6 +1,7 @@
 using System.Threading.Channels;
+using MooSharp.Messaging;
 
-namespace MooSharp;
+namespace MooSharp.Web.Game;
 
 public class GameEngineBackgroundService(
     GameEngine engine,

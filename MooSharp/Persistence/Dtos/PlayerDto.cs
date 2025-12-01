@@ -1,9 +1,11 @@
-namespace MooSharp.Persistence;
+using MooSharp.Actors;
+
+namespace MooSharp.Persistence.Dtos;
 
 public class PlayerDto
 {
-    public RoomId CurrentLocation { get; set; }
-    public required string Username { get; set; }
-    public required string Password { get; set; }
+    public RoomId CurrentLocation { get; init; }
+    public required string Username { get; init; }
+    public required string Password { get; init; }
     public List<InventoryItemDto> Inventory { get; set; } = [];
 }

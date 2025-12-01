@@ -1,6 +1,11 @@
+using MooSharp.Actors;
+using MooSharp.Commands.Machinery;
+using MooSharp.Commands.Searching;
 using MooSharp.Messaging;
+using MooSharp.World;
+using Object = MooSharp.Actors.Object;
 
-namespace MooSharp;
+namespace MooSharp.Commands.Commands.Informational;
 
 public class ReadCommand : CommandBase<ReadCommand>
 {
@@ -22,7 +27,7 @@ public class ReadCommandDefinition : ICommandDefinition
     };
 }
 
-public class ReadHandler(World world, TargetResolver resolver) : IHandler<ReadCommand>
+public class ReadHandler(World.World world, TargetResolver resolver) : IHandler<ReadCommand>
 {
     public Task<CommandResult> Handle(ReadCommand cmd, CancellationToken cancellationToken = default)
     {

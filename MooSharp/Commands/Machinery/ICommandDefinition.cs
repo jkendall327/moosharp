@@ -1,4 +1,6 @@
-namespace MooSharp;
+using MooSharp.Actors;
+
+namespace MooSharp.Commands.Machinery;
 
 /// <summary>
 /// Defines how a command is parsed from raw text.

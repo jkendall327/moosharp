@@ -1,6 +1,8 @@
+using MooSharp.Commands;
+using MooSharp.Commands.Commands.Social;
 using MooSharp.Messaging;
 
-namespace MooSharp.Tests;
+namespace MooSharp.Tests.Handlers;
 
 public class SayHandlerTests
 {
@@ -17,7 +19,7 @@ public class SayHandlerTests
 
         var handler = new SayHandler(world);
 
-        var result = await handler.Handle(new SayCommand
+        var result = await handler.Handle(new()
         {
             Player = speaker,
             Message = " Hello there "
@@ -43,7 +45,7 @@ public class SayHandlerTests
 
         var handler = new SayHandler(world);
 
-        var result = await handler.Handle(new SayCommand
+        var result = await handler.Handle(new()
         {
             Player = speaker,
             Message = "   "

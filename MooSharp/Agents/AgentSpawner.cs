@@ -1,16 +1,22 @@
+using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Threading.Channels;
+using Microsoft.Extensions.Options;
+using MooSharp.Actors;
+using MooSharp.Messaging;
 
 namespace MooSharp.Agents;
 
-using System.Text.Json;
-using System.Threading;
-using System.Threading.Channels;
-using Microsoft.Extensions.Options;
-using MooSharp;
-using MooSharp.Messaging;
-
 public class AgentSpawner(AgentFactory factory, ChannelWriter<GameInput> writer, IOptions<AgentOptions> options)
 {
+    private static readonly JsonSerializerOptions JsonSerializerOptions = new()
+    {
+        Converters =
+        {
+            new JsonStringEnumConverter<AgentSource>()
+        }
+    };
+
     public async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         var identities = await LoadIdentitiesAsync(stoppingToken);
@@ -40,13 +46,7 @@ public class AgentSpawner(AgentFactory factory, ChannelWriter<GameInput> writer,
         await using var stream = File.OpenRead(path);
 
         var identities = await JsonSerializer.DeserializeAsync<List<AgentIdentity>>(stream,
-            new JsonSerializerOptions
-            {
-                Converters =
-                {
-                    new JsonStringEnumConverter<AgentSource>()
-                }
-            },
+            JsonSerializerOptions,
             cancellationToken: cancellationToken) ?? [];
 
         return identities;

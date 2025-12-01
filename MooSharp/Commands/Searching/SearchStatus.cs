@@ -1,4 +1,4 @@
-namespace MooSharp;
+namespace MooSharp.Commands.Searching;
 
 public enum SearchStatus
 {

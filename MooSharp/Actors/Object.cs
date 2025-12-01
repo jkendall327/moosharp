@@ -1,6 +1,6 @@
 using System.Collections.Frozen;
 
-namespace MooSharp;
+namespace MooSharp.Actors;
 
 public readonly record struct ObjectId(Guid Value)
 {
@@ -17,8 +17,8 @@ public class Object
     public IReadOnlyCollection<string> Keywords { get; } = new HashSet<string>(StringComparer.OrdinalIgnoreCase).ToFrozenSet();
     public string? TextContent { get; private set; }
     public ObjectFlags Flags { get; set; } = ObjectFlags.None;
-    public string? KeyId { get; set; }
-    public decimal Value { get; set; }
+    public string? KeyId { get; init; }
+    public decimal Value { get; init; }
 
     public IContainer? Container { get; private set; }
 
@@ -130,7 +130,7 @@ public class Object
         }
     }
 
-    public string? GetStateSummary()
+    private string? GetStateSummary()
     {
         var parts = new List<string>();
 
@@ -144,12 +144,7 @@ public class Object
             parts.Add(IsLocked ? "locked" : "unlocked");
         }
 
-        if (!parts.Any())
-        {
-            return null;
-        }
-
-        return $"It is {string.Join(" and ", parts)}.";
+        return parts.Any() ? $"It is {string.Join(" and ", parts)}." : null;
     }
 
     public string DescribeWithState()

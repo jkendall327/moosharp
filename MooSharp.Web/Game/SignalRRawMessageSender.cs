@@ -1,7 +1,8 @@
 using Microsoft.AspNetCore.SignalR;
+using MooSharp.Actors;
 using MooSharp.Infrastructure;
 
-namespace MooSharp.Web;
+namespace MooSharp.Web.Game;
 
 public class SignalRRawMessageSender(IHubContext<MooHub> hubContext) : IRawMessageSender
 {

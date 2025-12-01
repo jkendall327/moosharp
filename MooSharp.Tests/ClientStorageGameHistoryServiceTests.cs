@@ -1,7 +1,6 @@
-using System.Linq;
 using System.Text.Json;
 using Microsoft.Extensions.Logging.Abstractions;
-using MooSharp.Web;
+using MooSharp.Web.Game;
 using NSubstitute;
 
 namespace MooSharp.Tests;
@@ -20,7 +19,7 @@ public class ClientStorageGameHistoryServiceTests
 
         await service.InitializeAsync();
 
-        Assert.Equal(new[] { "second", "first" }, service.CommandHistory);
+        Assert.Equal(["second", "first"], service.CommandHistory);
     }
 
     [Fact]
@@ -105,6 +104,6 @@ public class ClientStorageGameHistoryServiceTests
 
     private static ClientStorageGameHistoryService CreateService(IClientStorageService storage)
     {
-        return new ClientStorageGameHistoryService(storage, NullLogger<ClientStorageGameHistoryService>.Instance);
+        return new(storage, NullLogger<ClientStorageGameHistoryService>.Instance);
     }
 }

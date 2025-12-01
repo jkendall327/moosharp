@@ -1,4 +1,8 @@
-namespace MooSharp.Tests;
+using MooSharp.Commands;
+using MooSharp.Commands.Commands.Informational;
+using Object = MooSharp.Actors.Object;
+
+namespace MooSharp.Tests.Handlers;
 
 public class ReadHandlerTests
 {
@@ -22,9 +26,9 @@ public class ReadHandlerTests
 
         item.MoveTo(room);
 
-        var handler = new ReadHandler(world, new TargetResolver());
+        var handler = new ReadHandler(world, new());
 
-        var result = await handler.Handle(new ReadCommand
+        var result = await handler.Handle(new()
         {
             Player = player,
             Target = "Note"
@@ -52,9 +56,9 @@ public class ReadHandlerTests
 
         item.MoveTo(room);
 
-        var handler = new ReadHandler(world, new TargetResolver());
+        var handler = new ReadHandler(world, new());
 
-        var result = await handler.Handle(new ReadCommand
+        var result = await handler.Handle(new()
         {
             Player = player,
             Target = "Note"

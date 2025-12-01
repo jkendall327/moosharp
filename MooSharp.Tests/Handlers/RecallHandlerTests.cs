@@ -1,6 +1,7 @@
+using MooSharp.Commands.Commands;
 using MooSharp.Messaging;
 
-namespace MooSharp.Tests;
+namespace MooSharp.Tests.Handlers;
 
 public class RecallHandlerTests
 {
@@ -17,7 +18,7 @@ public class RecallHandlerTests
 
         var handler = new RecallHandler(world);
 
-        var result = await handler.Handle(new RecallCommand
+        var result = await handler.Handle(new()
         {
             Player = player
         });
@@ -47,15 +48,15 @@ public class RecallHandlerTests
 
         var handler = new RecallHandler(world);
 
-        var result = await handler.Handle(new RecallCommand
+        var result = await handler.Handle(new()
         {
             Player = actor
         });
 
         Assert.Single(result.Messages, m =>
-            m.Player == originObserver && m.Audience == MessageAudience.Observer && m.Event is PlayerRecalledEvent);
+            m.Player == originObserver && m is {Audience: MessageAudience.Observer, Event: PlayerRecalledEvent});
 
         Assert.Single(result.Messages, m =>
-            m.Player == destinationObserver && m.Audience == MessageAudience.Observer && m.Event is PlayerArrivedEvent);
+            m.Player == destinationObserver && m is {Audience: MessageAudience.Observer, Event: PlayerArrivedEvent});
     }
 }

@@ -1,4 +1,4 @@
-namespace MooSharp;
+namespace MooSharp.Persistence.Dtos;
 
 public class WorldDto
 {

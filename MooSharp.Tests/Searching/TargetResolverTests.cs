@@ -1,4 +1,6 @@
-namespace MooSharp.Tests;
+using MooSharp.Commands.Searching;
+
+namespace MooSharp.Tests.Searching;
 
 public class TargetResolverTests
 {
@@ -10,7 +12,7 @@ public class TargetResolverTests
     {
         var resolver = new TargetResolver();
 
-        var result = resolver.FindObjects(Array.Empty<Object>(), query);
+        var result = resolver.FindObjects([], query);
 
         Assert.True(result.IsSelf);
         Assert.Equal(SearchStatus.Found, result.Status);

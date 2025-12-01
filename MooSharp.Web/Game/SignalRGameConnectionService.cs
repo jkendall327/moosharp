@@ -1,5 +1,7 @@
 using Microsoft.AspNetCore.SignalR.Client;
-using MooSharp;
+using MooSharp.Game;
+
+namespace MooSharp.Web.Game;
 
 public sealed class SignalRGameConnectionService : IGameConnectionService
 {
@@ -12,7 +14,7 @@ public sealed class SignalRGameConnectionService : IGameConnectionService
     public event Action? OnReconnected;
     public event Action? OnClosed;
 
-    public HubConnectionState State => _hubConnection?.State ?? HubConnectionState.Disconnected;
+    private HubConnectionState State => _hubConnection?.State ?? HubConnectionState.Disconnected;
 
     public async Task InitializeAsync(Uri hubUrl, Func<Task<string?>> accessTokenProvider)
     {

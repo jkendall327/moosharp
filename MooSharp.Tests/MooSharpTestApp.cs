@@ -1,18 +1,18 @@
 using Microsoft.AspNetCore.Hosting;
-using MooSharp.Agents;
-using MooSharp.Infrastructure;
-using MooSharp.Tests.TestDoubles;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using MooSharp.Agents;
+using MooSharp.Infrastructure;
+using MooSharp.Tests.TestDoubles;
 
 namespace MooSharp.Tests;
 
 public class MooSharpTestApp : WebApplicationFactory<Program>
 {
-    public string DbName { get; } = $"test_{Guid.NewGuid()}.db";
+    private string DbName { get; } = $"test_{Guid.NewGuid()}.db";
     public TestConnectionFactory ConnectionFactory { get; } = new();
-    public string? Motd { get; set; }
+    public string? Motd { get; init; }
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {

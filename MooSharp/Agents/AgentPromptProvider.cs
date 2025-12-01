@@ -1,6 +1,7 @@
 using HandlebarsDotNet;
 using Microsoft.Extensions.Options;
 using Microsoft.SemanticKernel.ChatCompletion;
+using MooSharp.Commands.Machinery;
 
 namespace MooSharp.Agents;
 

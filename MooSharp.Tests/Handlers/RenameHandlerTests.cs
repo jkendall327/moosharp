@@ -1,19 +1,24 @@
-namespace MooSharp.Tests;
+using MooSharp.Commands;
+using MooSharp.Commands.Commands.Creative;
+using MooSharp.Tests.TestDoubles;
+using Object = MooSharp.Actors.Object;
+
+namespace MooSharp.Tests.Handlers;
 
 public class RenameHandlerTests
 {
     [Fact]
     public async Task RenameHandler_RenamesOwnedRoom()
     {
-        var store = new TestDoubles.InMemoryWorldStore();
+        var store = new InMemoryWorldStore();
         var player = HandlerTestHelpers.CreatePlayer();
         var room = HandlerTestHelpers.CreateRoom("room", player.Username);
         var world = await HandlerTestHelpers.CreateWorld(store, room);
         world.MovePlayer(player, room);
 
-        var handler = new RenameHandler(world, new TargetResolver());
+        var handler = new RenameHandler(world, new());
 
-        var result = await handler.Handle(new RenameCommand
+        var result = await handler.Handle(new()
         {
             Player = player,
             Target = "here",
@@ -32,15 +37,15 @@ public class RenameHandlerTests
     [Fact]
     public async Task RenameHandler_PreventsRenamingRoomNotOwned()
     {
-        var store = new TestDoubles.InMemoryWorldStore();
+        var store = new InMemoryWorldStore();
         var player = HandlerTestHelpers.CreatePlayer();
         var room = HandlerTestHelpers.CreateRoom("room", "Other");
         var world = await HandlerTestHelpers.CreateWorld(store, room);
         world.MovePlayer(player, room);
 
-        var handler = new RenameHandler(world, new TargetResolver());
+        var handler = new RenameHandler(world, new());
 
-        var result = await handler.Handle(new RenameCommand
+        var result = await handler.Handle(new()
         {
             Player = player,
             Target = "here",
@@ -55,7 +60,7 @@ public class RenameHandlerTests
     [Fact]
     public async Task RenameHandler_RenamesOwnedItem()
     {
-        var store = new TestDoubles.InMemoryWorldStore();
+        var store = new InMemoryWorldStore();
         var player = HandlerTestHelpers.CreatePlayer();
         var room = HandlerTestHelpers.CreateRoom("room", player.Username);
         var item = new Object
@@ -69,9 +74,9 @@ public class RenameHandlerTests
         var world = await HandlerTestHelpers.CreateWorld(store, room);
         world.MovePlayer(player, room);
 
-        var handler = new RenameHandler(world, new TargetResolver());
+        var handler = new RenameHandler(world, new());
 
-        var result = await handler.Handle(new RenameCommand
+        var result = await handler.Handle(new()
         {
             Player = player,
             Target = "lantern",
@@ -87,7 +92,7 @@ public class RenameHandlerTests
     [Fact]
     public async Task RenameHandler_PreventsRenamingUnownedItem()
     {
-        var store = new TestDoubles.InMemoryWorldStore();
+        var store = new InMemoryWorldStore();
         var player = HandlerTestHelpers.CreatePlayer();
         var room = HandlerTestHelpers.CreateRoom("room", player.Username);
         var item = new Object
@@ -101,9 +106,9 @@ public class RenameHandlerTests
         var world = await HandlerTestHelpers.CreateWorld(store, room);
         world.MovePlayer(player, room);
 
-        var handler = new RenameHandler(world, new TargetResolver());
+        var handler = new RenameHandler(world, new());
 
-        var result = await handler.Handle(new RenameCommand
+        var result = await handler.Handle(new()
         {
             Player = player,
             Target = "book",

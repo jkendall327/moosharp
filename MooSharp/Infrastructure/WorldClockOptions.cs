@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using MooSharp.World;
 
 namespace MooSharp.Infrastructure;
 

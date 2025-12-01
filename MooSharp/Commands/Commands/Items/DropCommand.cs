@@ -1,6 +1,12 @@
+using MooSharp.Actors;
+using MooSharp.Commands.Commands.Informational;
+using MooSharp.Commands.Machinery;
+using MooSharp.Commands.Searching;
 using MooSharp.Messaging;
+using MooSharp.World;
+using Object = MooSharp.Actors.Object;
 
-namespace MooSharp;
+namespace MooSharp.Commands.Commands.Items;
 
 public class DropCommand : CommandBase<DropCommand>
 {
@@ -23,7 +29,7 @@ public class DropCommandDefinition : ICommandDefinition
         };
 }
 
-public class DropHandler(World world, TargetResolver resolver) : IHandler<DropCommand>
+public class DropHandler(World.World world, TargetResolver resolver) : IHandler<DropCommand>
 {
     public Task<CommandResult> Handle(DropCommand cmd, CancellationToken cancellationToken = default)
     {

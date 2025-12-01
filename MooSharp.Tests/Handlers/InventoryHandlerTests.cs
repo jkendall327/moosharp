@@ -1,4 +1,7 @@
-namespace MooSharp.Tests;
+using MooSharp.Commands.Commands.Informational;
+using Object = MooSharp.Actors.Object;
+
+namespace MooSharp.Tests.Handlers;
 
 public class InventoryHandlerTests
 {
@@ -17,7 +20,7 @@ public class InventoryHandlerTests
 
         var handler = new InventoryHandler();
 
-        var result = await handler.Handle(new InventoryCommand
+        var result = await handler.Handle(new()
         {
             Player = player
         });

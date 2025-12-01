@@ -1,6 +1,8 @@
+using MooSharp.Actors;
+using MooSharp.Commands.Machinery;
 using MooSharp.Messaging;
 
-namespace MooSharp;
+namespace MooSharp.Commands.Commands.Meta;
 
 public class WhoCommand : CommandBase<WhoCommand>
 {
@@ -20,7 +22,7 @@ public class WhoCommandDefinition : ICommandDefinition
     };
 }
 
-public class WhoHandler(World world) : IHandler<WhoCommand>
+public class WhoHandler(World.World world) : IHandler<WhoCommand>
 {
     public Task<CommandResult> Handle(WhoCommand cmd, CancellationToken cancellationToken = default)
     {

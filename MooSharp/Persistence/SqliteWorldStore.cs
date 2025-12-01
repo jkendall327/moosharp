@@ -1,8 +1,9 @@
 using Dapper;
 using Microsoft.Data.Sqlite;
 using Microsoft.Extensions.Options;
-using MooSharp;
+using MooSharp.Actors;
 using MooSharp.Infrastructure;
+using Object = MooSharp.Actors.Object;
 
 namespace MooSharp.Persistence;
 
@@ -89,7 +90,7 @@ public class SqliteWorldStore : IWorldStore
 
             var item = new Object
             {
-                Id = new ObjectId(Guid.Parse(obj.Id)),
+                Id = new(Guid.Parse(obj.Id)),
                 Name = obj.Name,
                 Description = obj.Description,
                 Flags = (ObjectFlags)obj.Flags,

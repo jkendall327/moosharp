@@ -1,7 +1,12 @@
 using System.Text;
+using MooSharp.Actors;
+using MooSharp.Commands.Machinery;
+using MooSharp.Commands.Searching;
 using MooSharp.Messaging;
+using MooSharp.World;
+using Object = MooSharp.Actors.Object;
 
-namespace MooSharp;
+namespace MooSharp.Commands.Commands.Informational;
 
 public class ExamineCommand : CommandBase<ExamineCommand>
 {
@@ -24,7 +29,7 @@ public class ExamineCommandDefinition : ICommandDefinition
         };
 }
 
-public class ExamineHandler(World world, TargetResolver resolver) : IHandler<ExamineCommand>
+public class ExamineHandler(World.World world, TargetResolver resolver) : IHandler<ExamineCommand>
 {
     public Task<CommandResult> Handle(ExamineCommand cmd, CancellationToken cancellationToken = default)
     {

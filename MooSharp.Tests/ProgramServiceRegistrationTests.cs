@@ -2,7 +2,6 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using MooSharp;
 using MooSharp.Web;
 
 namespace MooSharp.Tests;
@@ -20,10 +19,10 @@ public class ProgramServiceRegistrationTests
         builder.Configuration.AddInMemoryCollection(CreateRequiredConfiguration());
 
         builder.Services.AddSignalR();
-        builder.Services.AddMooSharpServices(builder.Configuration);
-        builder.Services.AddMooSharpOptions(builder.Configuration);
-        builder.Services.AddMooSharpHostedServices(builder.Configuration);
-        builder.Services.AddMooSharpMessaging(builder.Configuration);
+        builder.Services.AddMooSharpServices();
+        builder.Services.AddMooSharpOptions();
+        builder.Services.AddMooSharpHostedServices();
+        builder.Services.AddMooSharpMessaging();
 
         builder.RegisterCommandDefinitions();
         builder.RegisterCommandHandlers();

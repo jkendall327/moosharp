@@ -1,6 +1,6 @@
 using Microsoft.Extensions.Logging.Abstractions;
+using MooSharp.Game;
 using MooSharp.Messaging;
-using MooSharp.Web;
 using NSubstitute;
 
 namespace MooSharp.Tests;

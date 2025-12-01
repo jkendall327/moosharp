@@ -1,6 +1,12 @@
+using MooSharp.Actors;
+using MooSharp.Commands.Commands.Informational;
+using MooSharp.Commands.Machinery;
+using MooSharp.Commands.Searching;
 using MooSharp.Messaging;
+using MooSharp.World;
+using Object = MooSharp.Actors.Object;
 
-namespace MooSharp;
+namespace MooSharp.Commands.Commands.Creative;
 
 public class WriteCommand : CommandBase<WriteCommand>
 {
@@ -39,7 +45,7 @@ public class WriteCommandDefinition : ICommandDefinition
     }
 }
 
-public class WriteHandler(World world, TargetResolver resolver) : IHandler<WriteCommand>
+public class WriteHandler(World.World world, TargetResolver resolver) : IHandler<WriteCommand>
 {
     public Task<CommandResult> Handle(WriteCommand cmd, CancellationToken cancellationToken = default)
     {

@@ -1,6 +1,8 @@
 using System.Text.RegularExpressions;
+using MooSharp.Actors;
+using Object = MooSharp.Actors.Object;
 
-namespace MooSharp;
+namespace MooSharp.Commands.Searching;
 
 /// <summary>
 /// Binds raw text to game objects.
@@ -89,7 +91,7 @@ public partial class TargetResolver
             {
                 Match = candidates[0]
             },
-            _ => new()
+            var _ => new()
             {
                 Status = SearchStatus.Ambiguous,
                 Candidates = candidates

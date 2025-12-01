@@ -1,6 +1,6 @@
 using MooSharp.Messaging;
 
-namespace MooSharp;
+namespace MooSharp.Actors;
 
 public readonly record struct PlayerId(Guid Value)
 {
@@ -22,7 +22,7 @@ public class Player : IContainer
 
     void IContainer.AddToContents(Object item) => _inventory.Add(item);
 
-    bool IContainer.RemoveFromContents(Object item) => _inventory.Remove(item);
+    void IContainer.RemoveFromContents(Object item) => _inventory.Remove(item);
 
     public bool IsChannelMuted(string channel) => _mutedChannels.Contains(channel);
 

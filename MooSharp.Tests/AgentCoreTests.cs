@@ -3,6 +3,7 @@ using Microsoft.Extensions.Options;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.ChatCompletion;
 using MooSharp.Agents;
+using MooSharp.Messaging;
 using NSubstitute;
 
 namespace MooSharp.Tests;
@@ -33,8 +34,8 @@ public class AgentCoreTests
                 AnthropicModelId = string.Empty,
                 GeminiApiKey = string.Empty,
                 GeminiModelId = string.Empty,
-                OpenAIApiKey = string.Empty,
-                OpenAIModelId = string.Empty,
+                OpenAiApiKey = string.Empty,
+                OpenAiModelId = string.Empty,
                 OpenRouterApiKey = string.Empty,
                 OpenRouterModelId = string.Empty,
                 VolitionPrompt = string.Empty,

@@ -1,4 +1,4 @@
-namespace MooSharp;
+namespace MooSharp.Actors;
 
 public readonly record struct ConnectionId(string Value)
 {

@@ -1,4 +1,3 @@
-using System.Linq;
 using Microsoft.Extensions.Logging;
 
 namespace MooSharp.Messaging;
@@ -14,17 +13,19 @@ public class GameMessagePresenter(IEnumerable<IGameEventFormatter> formatters, I
     {
         var formatter = formatters.FirstOrDefault(f => f.CanFormat(message.Event));
 
-        if (formatter is null)
+        if (formatter is not null)
         {
-            logger.LogWarning("No formatter registered for event type {EventType}", message.Event.GetType().Name);
-            return string.Empty;
+            return message.Audience switch
+            {
+                MessageAudience.Actor => formatter.FormatForActor(message.Event),
+                MessageAudience.Observer => formatter.FormatForObserver(message.Event),
+                var _ => throw new InvalidOperationException(
+                    $"Invalid audience supplied for message: {message.Audience}")
+            };
         }
 
-        return message.Audience switch
-        {
-            MessageAudience.Actor => formatter.FormatForActor(message.Event),
-            MessageAudience.Observer => formatter.FormatForObserver(message.Event),
-            var _ => throw new InvalidOperationException($"Invalid audience supplied for message: {message.Audience}")
-        };
+        logger.LogWarning("No formatter registered for event type {EventType}", message.Event.GetType().Name);
+        return string.Empty;
+
     }
 }

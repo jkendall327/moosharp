@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Logging;
+using MooSharp.Actors;
 
-namespace MooSharp;
+namespace MooSharp.Commands.Machinery;
 
 /// <summary>
 /// Parses raw text into commands.
@@ -8,7 +9,7 @@ namespace MooSharp;
 public class CommandParser
 {
     private readonly ILogger<CommandParser> _logger;
-    private readonly IReadOnlyDictionary<string, ICommandDefinition> _verbs;
+    private readonly Dictionary<string, ICommandDefinition> _verbs;
     private static readonly Task<ICommand?> NullCommand = Task.FromResult<ICommand?>(null);
 
     public CommandParser(ILogger<CommandParser> logger, IEnumerable<ICommandDefinition> definitions)
@@ -65,7 +66,7 @@ public class CommandParser
     {
         var prefix = input[0];
 
-        if ((prefix == '"' || prefix == '\'') && _verbs.TryGetValue("say", out var sayDefinition))
+        if (prefix is '"' or '\'' && _verbs.TryGetValue("say", out var sayDefinition))
         {
             var args = NormalizeShortcutArgs(input[1..]);
 

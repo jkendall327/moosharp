@@ -1,7 +1,7 @@
+using MooSharp.Actors;
 using MooSharp.Agents;
-using MooSharp.Messaging;
 
-namespace MooSharp;
+namespace MooSharp.Messaging;
 
 public record GameInput(ConnectionId ConnectionId, InputCommand Command, string? SessionToken = null)
 {

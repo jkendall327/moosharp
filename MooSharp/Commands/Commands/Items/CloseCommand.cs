@@ -1,11 +1,16 @@
+using MooSharp.Actors;
+using MooSharp.Commands.Machinery;
+using MooSharp.Commands.Searching;
 using MooSharp.Messaging;
+using MooSharp.World;
+using Object = MooSharp.Actors.Object;
 
-namespace MooSharp;
+namespace MooSharp.Commands.Commands.Items;
 
 public class CloseCommand : CommandBase<CloseCommand>
 {
-    public required Player Player { get; set; }
-    public required string Target { get; set; }
+    public required Player Player { get; init; }
+    public required string Target { get; init; }
 }
 
 public class CloseCommandDefinition : ICommandDefinition
@@ -22,7 +27,7 @@ public class CloseCommandDefinition : ICommandDefinition
         return new CloseCommand
         {
             Player = player,
-            Target = args,
+            Target = args
         };
     }
 }
@@ -37,7 +42,7 @@ public class ItemClosedEventFormatter : IGameEventFormatter<ItemClosedEvent>
         $"{gameEvent.Player.Username} closes the {gameEvent.Object.Name}.";
 }
 
-public class CloseHandler(World world, TargetResolver resolver) : IHandler<CloseCommand>
+public class CloseHandler(World.World world, TargetResolver resolver) : IHandler<CloseCommand>
 {
     public Task<CommandResult> Handle(CloseCommand command, CancellationToken cancellationToken = default)
     {

@@ -1,4 +1,8 @@
-namespace MooSharp.Tests;
+using MooSharp.Commands.Commands.Informational;
+using MooSharp.Commands.Commands.Items;
+using Object = MooSharp.Actors.Object;
+
+namespace MooSharp.Tests.Handlers;
 
 public class TakeHandlerTests
 {
@@ -19,9 +23,9 @@ public class TakeHandlerTests
 
         item.MoveTo(room);
 
-        var handler = new TakeHandler(world, new TargetResolver());
+        var handler = new TakeHandler(world, new());
 
-        var result = await handler.Handle(new TakeCommand
+        var result = await handler.Handle(new()
         {
             Player = player,
             Target = "Lamp"
@@ -43,9 +47,9 @@ public class TakeHandlerTests
         var player = HandlerTestHelpers.CreatePlayer();
         world.MovePlayer(player, room);
 
-        var handler = new TakeHandler(world, new TargetResolver());
+        var handler = new TakeHandler(world, new());
 
-        var result = await handler.Handle(new TakeCommand
+        var result = await handler.Handle(new()
         {
             Player = player,
             Target = "MissingItem"
@@ -75,9 +79,9 @@ public class TakeHandlerTests
 
         item.MoveTo(owner);
 
-        var handler = new TakeHandler(world, new TargetResolver());
+        var handler = new TakeHandler(world, new());
 
-        var result = await handler.Handle(new TakeCommand
+        var result = await handler.Handle(new()
         {
             Player = seeker,
             Target = "Gem"
@@ -106,9 +110,9 @@ public class TakeHandlerTests
 
         item.MoveTo(player);
 
-        var handler = new TakeHandler(world, new TargetResolver());
+        var handler = new TakeHandler(world, new());
 
-        var result = await handler.Handle(new TakeCommand
+        var result = await handler.Handle(new()
         {
             Player = player,
             Target = "Gem"

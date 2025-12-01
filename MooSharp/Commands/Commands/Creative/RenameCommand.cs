@@ -1,6 +1,11 @@
+using MooSharp.Actors;
+using MooSharp.Commands.Commands.Informational;
+using MooSharp.Commands.Machinery;
+using MooSharp.Commands.Searching;
 using MooSharp.Messaging;
+using MooSharp.World;
 
-namespace MooSharp;
+namespace MooSharp.Commands.Commands.Creative;
 
 public class RenameCommand : CommandBase<RenameCommand>
 {
@@ -43,7 +48,7 @@ public class RenameCommandDefinition : ICommandDefinition
     }
 }
 
-public class RenameHandler(World world, TargetResolver resolver) : IHandler<RenameCommand>
+public class RenameHandler(World.World world, TargetResolver resolver) : IHandler<RenameCommand>
 {
     public async Task<CommandResult> Handle(RenameCommand cmd, CancellationToken cancellationToken = default)
     {
@@ -70,7 +75,7 @@ public class RenameHandler(World world, TargetResolver resolver) : IHandler<Rena
                 return result;
             }
 
-            var renameEvent = new RoomRenamedEvent(cmd.Player, targetRoom, targetRoom.Name, newName);
+            var renameEvent = new RoomRenamedEvent(cmd.Player, targetRoom.Name, newName);
 
             await world.RenameRoomAsync(targetRoom, newName, cancellationToken);
 
@@ -106,7 +111,7 @@ public class RenameHandler(World world, TargetResolver resolver) : IHandler<Rena
                     break;
                 }
 
-                var renameEvent = new ObjectRenamedEvent(cmd.Player, item, item.Name, newName);
+                var renameEvent = new ObjectRenamedEvent(cmd.Player, item.Name, newName);
 
                 await world.RenameObjectAsync(item, newName, cancellationToken);
 
@@ -130,17 +135,12 @@ public class RenameHandler(World world, TargetResolver resolver) : IHandler<Rena
             return currentRoom;
         }
 
-        if (!currentRoom.Exits.TryGetValue(target, out var exitRoomId))
-        {
-            return null;
-        }
-
-        return world.Rooms.TryGetValue(exitRoomId, out var room) ? room : null;
+        return currentRoom.Exits.TryGetValue(target, out var exitRoomId) ? world.Rooms.GetValueOrDefault(exitRoomId) : null;
     }
 
 }
 
-public record RoomRenamedEvent(Player Player, Room Room, string OldName, string NewName) : IGameEvent;
+public record RoomRenamedEvent(Player Player, string OldName, string NewName) : IGameEvent;
 
 public class RoomRenamedEventFormatter : IGameEventFormatter<RoomRenamedEvent>
 {
@@ -151,7 +151,7 @@ public class RoomRenamedEventFormatter : IGameEventFormatter<RoomRenamedEvent>
         $"{gameEvent.Player.Username} renames {gameEvent.OldName} to '{gameEvent.NewName}'.";
 }
 
-public record ObjectRenamedEvent(Player Player, Object Item, string OldName, string NewName) : IGameEvent;
+public record ObjectRenamedEvent(Player Player, string OldName, string NewName) : IGameEvent;
 
 public class ObjectRenamedEventFormatter : IGameEventFormatter<ObjectRenamedEvent>
 {

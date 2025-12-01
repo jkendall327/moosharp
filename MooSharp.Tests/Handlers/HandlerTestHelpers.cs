@@ -1,23 +1,24 @@
 using Microsoft.Extensions.Logging.Abstractions;
+using MooSharp.Actors;
 using MooSharp.Tests.TestDoubles;
 
-namespace MooSharp.Tests;
+namespace MooSharp.Tests.Handlers;
 
-public class HandlerTestHelpers
+public static class HandlerTestHelpers
 {
-    public static Task<World> CreateWorld(params Room[] rooms)
+    public static Task<World.World> CreateWorld(params Room[] rooms)
     {
         var store = new InMemoryWorldStore();
-        var world = new World(store, NullLogger<World>.Instance);
+        var world = new World.World(store, NullLogger<World.World>.Instance);
 
         world.Initialize(rooms);
 
         return Task.FromResult(world);
     }
 
-    public static async Task<World> CreateWorld(InMemoryWorldStore store, params Room[] rooms)
+    public static async Task<World.World> CreateWorld(InMemoryWorldStore store, params Room[] rooms)
     {
-        var world = new World(store, NullLogger<World>.Instance);
+        var world = new World.World(store, NullLogger<World.World>.Instance);
 
         world.Initialize(rooms);
 
@@ -28,7 +29,7 @@ public class HandlerTestHelpers
 
     public static Room CreateRoom(string slug, string? creator = null)
     {
-        return new Room
+        return new()
         {
             Id = slug,
             Name = $"{slug} name",
@@ -42,7 +43,7 @@ public class HandlerTestHelpers
 
     public static Player CreatePlayer(string? username = null)
     {
-        return new Player
+        return new()
         {
             Username = username ?? "Player",
             Connection = new TestPlayerConnection()

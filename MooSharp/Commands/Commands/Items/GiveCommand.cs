@@ -1,6 +1,12 @@
+using MooSharp.Actors;
+using MooSharp.Commands.Commands.Informational;
+using MooSharp.Commands.Machinery;
+using MooSharp.Commands.Searching;
 using MooSharp.Messaging;
+using MooSharp.World;
+using Object = MooSharp.Actors.Object;
 
-namespace MooSharp;
+namespace MooSharp.Commands.Commands.Items;
 
 public class GiveCommand : CommandBase<GiveCommand>
 {
@@ -32,7 +38,7 @@ public class GiveCommandDefinition : ICommandDefinition
     }
 }
 
-public class GiveHandler(World world, TargetResolver resolver) : IHandler<GiveCommand>
+public class GiveHandler(World.World world, TargetResolver resolver) : IHandler<GiveCommand>
 {
     public Task<CommandResult> Handle(GiveCommand cmd, CancellationToken cancellationToken = default)
     {

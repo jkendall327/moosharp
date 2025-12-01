@@ -1,4 +1,8 @@
-namespace MooSharp.Tests;
+using MooSharp.Commands;
+using MooSharp.Commands.Commands.Items;
+using Object = MooSharp.Actors.Object;
+
+namespace MooSharp.Tests.Handlers;
 
 public class LockHandlerTests
 {
@@ -16,25 +20,25 @@ public class LockHandlerTests
             Name = "Chest",
             Description = "A wooden chest",
             IsLockable = true,
-            KeyId = "key-1",
+            KeyId = "key-1"
         };
 
         var key = new Object
         {
             Name = "Key",
             Description = "A small key",
-            KeyId = "key-1",
+            KeyId = "key-1"
         };
 
         chest.MoveTo(room);
         key.MoveTo(player);
 
-        var handler = new LockHandler(world, new TargetResolver());
+        var handler = new LockHandler(world, new());
 
-        var result = await handler.Handle(new LockCommand
+        var result = await handler.Handle(new()
         {
             Player = player,
-            Target = "chest",
+            Target = "chest"
         });
 
         var message = Assert.Single(result.Messages);
@@ -56,17 +60,17 @@ public class LockHandlerTests
             Name = "Chest",
             Description = "A wooden chest",
             IsLockable = true,
-            KeyId = "key-1",
+            KeyId = "key-1"
         };
 
         chest.MoveTo(room);
 
-        var handler = new LockHandler(world, new TargetResolver());
+        var handler = new LockHandler(world, new());
 
-        var result = await handler.Handle(new LockCommand
+        var result = await handler.Handle(new()
         {
             Player = player,
-            Target = "chest",
+            Target = "chest"
         });
 
         var message = Assert.Single(result.Messages);
@@ -89,25 +93,25 @@ public class LockHandlerTests
             Description = "A wooden chest",
             IsLockable = true,
             IsLocked = true,
-            KeyId = "key-1",
+            KeyId = "key-1"
         };
 
         var key = new Object
         {
             Name = "Key",
             Description = "A small key",
-            KeyId = "key-1",
+            KeyId = "key-1"
         };
 
         chest.MoveTo(room);
         key.MoveTo(player);
 
-        var handler = new UnlockHandler(world, new TargetResolver());
+        var handler = new UnlockHandler(world, new());
 
-        var result = await handler.Handle(new UnlockCommand
+        var result = await handler.Handle(new()
         {
             Player = player,
-            Target = "chest",
+            Target = "chest"
         });
 
         var message = Assert.Single(result.Messages);
@@ -129,25 +133,25 @@ public class LockHandlerTests
             Name = "Chest",
             Description = "A wooden chest",
             IsLockable = true,
-            KeyId = "key-1",
+            KeyId = "key-1"
         };
 
         var key = new Object
         {
             Name = "Key",
             Description = "A small key",
-            KeyId = "key-1",
+            KeyId = "key-1"
         };
 
         chest.MoveTo(room);
         key.MoveTo(player);
 
-        var handler = new UnlockHandler(world, new TargetResolver());
+        var handler = new UnlockHandler(world, new());
 
-        var result = await handler.Handle(new UnlockCommand
+        var result = await handler.Handle(new()
         {
             Player = player,
-            Target = "chest",
+            Target = "chest"
         });
 
         var message = Assert.Single(result.Messages);

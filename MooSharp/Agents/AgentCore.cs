@@ -1,7 +1,8 @@
 using System.Runtime.CompilerServices;
-using Microsoft.SemanticKernel.ChatCompletion;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Microsoft.SemanticKernel.ChatCompletion;
+using MooSharp.Messaging;
 
 namespace MooSharp.Agents;
 
@@ -50,10 +51,12 @@ public class AgentCore(
             {
                 // Yield nothing and exit. 
                 // The lock is released in the finally block.
+                logger.LogDebug("Skipping agent turn due to action cooldown");
                 yield break;
             }
 
             // Yield "Thinking" immediately so the UI can update.
+            logger.LogDebug("Agent has begun thinking");
             yield return new AgentThinkingCommand();
 
             // Perform the slow LLM call.
@@ -67,6 +70,8 @@ public class AgentCore(
             {
                 yield break;
             }
+            
+            logger.LogInformation("Got agent response: {AgentResponse}", responseText);
 
             _history.AddAssistantMessage(responseText);
             TrimHistory();

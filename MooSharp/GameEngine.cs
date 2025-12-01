@@ -1,15 +1,20 @@
 using System.Text;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
+using MooSharp.Actors;
 using MooSharp.Agents;
+using MooSharp.Commands;
+using MooSharp.Commands.Commands;
+using MooSharp.Commands.Machinery;
 using MooSharp.Infrastructure;
 using MooSharp.Messaging;
 using MooSharp.Persistence;
-using Microsoft.Extensions.Options;
+using Object = MooSharp.Actors.Object;
 
 namespace MooSharp;
 
 public class GameEngine(
-    World world,
+    World.World world,
     CommandParser parser,
     CommandExecutor executor,
     IPlayerStore playerStore,
@@ -38,7 +43,7 @@ public class GameEngine(
                     break;
                 }
 
-                await ProcessWorldCommand(wc, ct, player);
+                await ProcessWorldCommand(wc, player, ct);
 
                 break;
             case DisconnectCommand:
@@ -112,7 +117,7 @@ public class GameEngine(
 
         if (oldConnection != null)
         {
-            world.Players.TryRemove(oldConnection, out _);
+            world.Players.TryRemove(oldConnection, out var _);
         }
 
         // 2. Refresh connection object on player
@@ -127,7 +132,7 @@ public class GameEngine(
         logger.LogInformation("Player {Player} reconnected successfully", player.Username);
     }
 
-    private async Task ProcessWorldCommand(WorldCommand command, CancellationToken ct, Player player)
+    private async Task ProcessWorldCommand(WorldCommand command, Player player, CancellationToken ct = default)
     {
         var parsed = await parser.ParseAsync(player, command.Command, ct);
 
@@ -203,14 +208,14 @@ public class GameEngine(
             var player = new Player
             {
                 Username = dto.Username,
-                Connection = connectionFactory.Create(connectionId),
+                Connection = connectionFactory.Create(connectionId)
             };
 
             foreach (var item in dto.Inventory)
             {
                 var obj = new Object
                 {
-                    Id = new ObjectId(Guid.Parse(item.Id)),
+                    Id = new(Guid.Parse(item.Id)),
                     Name = item.Name,
                     Description = item.Description,
                     Flags = item.Flags,
@@ -303,7 +308,7 @@ public class GameEngine(
             return;
         }
 
-        messages.Add(new GameMessage(player, new SystemMessageEvent(motd)));
+        messages.Add(new(player, new SystemMessageEvent(motd)));
     }
 
     private Task RegisterAgent(ConnectionId connectionId, RegisterAgentCommand command)

@@ -1,7 +1,8 @@
 using Microsoft.Extensions.Logging.Abstractions;
+using MooSharp.Commands.Commands;
 using MooSharp.Messaging;
 
-namespace MooSharp.Tests;
+namespace MooSharp.Tests.Handlers;
 
 public class MoveHandlerTests
 {
@@ -19,7 +20,7 @@ public class MoveHandlerTests
 
         var handler = new MoveHandler(world, NullLogger<MoveHandler>.Instance);
 
-        var result = await handler.Handle(new MoveCommand
+        var result = await handler.Handle(new()
         {
             Player = player,
             TargetExit = "north"
@@ -50,7 +51,7 @@ public class MoveHandlerTests
 
         var handler = new MoveHandler(world, NullLogger<MoveHandler>.Instance);
 
-        var result = await handler.Handle(new MoveCommand
+        var result = await handler.Handle(new()
         {
             Player = player,
             TargetExit = "south"
@@ -80,7 +81,7 @@ public class MoveHandlerTests
 
         var handler = new MoveHandler(world, NullLogger<MoveHandler>.Instance);
 
-        var result = await handler.Handle(new MoveCommand
+        var result = await handler.Handle(new()
         {
             Player = actor,
             TargetExit = "north"

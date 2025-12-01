@@ -1,5 +1,7 @@
 using System.Threading.Channels;
 using Microsoft.Extensions.DependencyInjection;
+using MooSharp.Actors;
+using MooSharp.Messaging;
 
 namespace MooSharp.Tests;
 
@@ -29,18 +31,12 @@ public class GameEngineIntegrationTests
 
         await SendAndWaitAsync(inputWriter, connectionId, move);
 
-        var world = app.Services.GetRequiredService<World>();
+        var world = app.Services.GetRequiredService<World.World>();
         var player = world.Players.Values.Single(p => p.Username == "Hero");
 
         var room = world.GetPlayerLocation(player)?.Id.Value;
 
         Assert.Equal("side-room", room);
-
-        var conn = player.Connection as TestPlayerConnection ??
-                   throw new InvalidOperationException("Test player didn't have a test connection - setup is wrong.");
-
-        // TODO: can probably do some tests based on these.
-        var messages = conn.Messages;
     }
 
     [Fact]

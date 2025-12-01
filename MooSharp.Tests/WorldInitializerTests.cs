@@ -1,5 +1,7 @@
 using Microsoft.Extensions.Logging.Abstractions;
+using MooSharp.Actors;
 using MooSharp.Tests.TestDoubles;
+using MooSharp.World;
 using NSubstitute;
 
 namespace MooSharp.Tests;
@@ -10,7 +12,7 @@ public class WorldInitializerTests
     public async Task InitializeAsync_LoadsExistingRooms()
     {
         var existingRoom = CreateRoom("existing");
-        var (initializer, store, seeder, world) = await CreateInitializerAsync(existingRoomToPersist: existingRoom);
+        (var initializer, var _, var seeder, var world) = await CreateInitializerAsync(existingRoomToPersist: existingRoom);
 
         await initializer.InitializeAsync();
 
@@ -25,7 +27,7 @@ public class WorldInitializerTests
         var seeder = Substitute.For<IWorldSeeder>();
         seeder.GetSeedRooms().Returns([seedRoom]);
 
-        var (initializer, store, _, world) = await CreateInitializerAsync(seeder: seeder);
+        (var initializer, var store, var _, var world) = await CreateInitializerAsync(seeder: seeder);
 
         await initializer.InitializeAsync();
 
@@ -42,9 +44,9 @@ public class WorldInitializerTests
     {
         var providedRoom = CreateRoom("provided");
         var seeder = Substitute.For<IWorldSeeder>();
-        seeder.GetSeedRooms().Returns(Array.Empty<Room>());
+        seeder.GetSeedRooms().Returns([]);
 
-        var (initializer, store, _, world) = await CreateInitializerAsync(seeder: seeder);
+        (var initializer, var store, var _, var world) = await CreateInitializerAsync(seeder: seeder);
 
         await initializer.InitializeAsync([providedRoom]);
 
@@ -57,7 +59,7 @@ public class WorldInitializerTests
 
     private static Room CreateRoom(string slug)
     {
-        return new Room
+        return new()
         {
             Id = slug,
             Name = $"{slug} name",
@@ -68,7 +70,7 @@ public class WorldInitializerTests
         };
     }
 
-    private static async Task<(WorldInitializer Initializer, InMemoryWorldStore Store, IWorldSeeder Seeder, World World)> CreateInitializerAsync(
+    private static async Task<(WorldInitializer Initializer, InMemoryWorldStore Store, IWorldSeeder Seeder, World.World World)> CreateInitializerAsync(
         IWorldSeeder? seeder = null,
         Room? existingRoomToPersist = null)
     {
@@ -80,7 +82,7 @@ public class WorldInitializerTests
         }
 
         var worldSeeder = seeder ?? Substitute.For<IWorldSeeder>();
-        var world = new World(store, NullLogger<World>.Instance);
+        var world = new World.World(store, NullLogger<World.World>.Instance);
         var initializer = new WorldInitializer(world, store, worldSeeder, NullLogger<WorldInitializer>.Instance);
 
         return (initializer, store, worldSeeder, world);

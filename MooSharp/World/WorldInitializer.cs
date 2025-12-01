@@ -1,7 +1,8 @@
 using Microsoft.Extensions.Logging;
+using MooSharp.Actors;
 using MooSharp.Persistence;
 
-namespace MooSharp;
+namespace MooSharp.World;
 
 public class WorldInitializer(World world, IWorldStore worldStore, IWorldSeeder worldSeeder,
     ILogger<WorldInitializer> logger)

@@ -1,4 +1,6 @@
-namespace MooSharp.Persistence;
+using MooSharp.Actors;
+
+namespace MooSharp.Persistence.Dtos;
 
 public class InventoryItemDto
 {

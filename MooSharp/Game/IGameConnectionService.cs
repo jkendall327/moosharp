@@ -1,4 +1,4 @@
-using MooSharp;
+namespace MooSharp.Game;
 
 public interface IGameConnectionService : IAsyncDisposable
 {

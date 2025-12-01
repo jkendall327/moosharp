@@ -1,8 +1,10 @@
 using System.Collections.Concurrent;
-using MooSharp.Persistence;
 using Microsoft.Extensions.Logging;
+using MooSharp.Actors;
+using MooSharp.Persistence;
+using Object = MooSharp.Actors.Object;
 
-namespace MooSharp;
+namespace MooSharp.World;
 
 public class World(IWorldStore worldStore, ILogger<World> logger)
 {
@@ -64,7 +66,7 @@ public class World(IWorldStore worldStore, ILogger<World> logger)
             location.RemovePlayer(player);
         }
 
-        Players.TryRemove(player.Connection.Id, out _);
+        Players.TryRemove(player.Connection.Id, out var _);
     }
 
     public IReadOnlyCollection<Player> GetActivePlayers()
@@ -78,7 +80,7 @@ public class World(IWorldStore worldStore, ILogger<World> logger)
         ArgumentException.ThrowIfNullOrWhiteSpace(slug);
         var room = new Room
         {
-            Id = new RoomId(slug),
+            Id = new(slug),
             Name = name,
             Description = description,
             LongDescription = longDescription,
@@ -148,13 +150,13 @@ public class World(IWorldStore worldStore, ILogger<World> logger)
         logger.LogInformation("Room {RoomName} ({RoomId}) description updated", room.Name, room.Id);
     }
 
-    public bool SpawnTreasureInEmptyRoom(IReadOnlyList<Object> treasurePool)
+    public void SpawnTreasureInEmptyRoom(IReadOnlyList<Object> treasurePool)
     {
         ArgumentNullException.ThrowIfNull(treasurePool);
 
         if (treasurePool.Count == 0)
         {
-            return false;
+            return;
         }
 
         var emptyRooms = _rooms.Values
@@ -164,7 +166,8 @@ public class World(IWorldStore worldStore, ILogger<World> logger)
         if (emptyRooms.Count == 0)
         {
             logger.LogDebug("No empty rooms available for treasure spawn");
-            return false;
+
+            return;
         }
 
         var room = emptyRooms[Random.Shared.Next(emptyRooms.Count)];
@@ -173,7 +176,5 @@ public class World(IWorldStore worldStore, ILogger<World> logger)
         treasure.MoveTo(room);
 
         logger.LogInformation("Spawned {TreasureName} in room {RoomName}", treasure.Name, room.Name);
-
-        return true;
     }
 }

@@ -1,6 +1,12 @@
+using MooSharp.Actors;
+using MooSharp.Commands.Commands.Informational;
+using MooSharp.Commands.Machinery;
+using MooSharp.Commands.Searching;
 using MooSharp.Messaging;
+using MooSharp.World;
+using Object = MooSharp.Actors.Object;
 
-namespace MooSharp;
+namespace MooSharp.Commands.Commands.Items;
 
 public class TakeCommand : CommandBase<TakeCommand>
 {
@@ -27,7 +33,7 @@ public class TakeCommandDefinition : ICommandDefinition
         };
 }
 
-public class TakeHandler(World world, TargetResolver resolver) : IHandler<TakeCommand>
+public class TakeHandler(World.World world, TargetResolver resolver) : IHandler<TakeCommand>
 {
     public Task<CommandResult> Handle(TakeCommand cmd, CancellationToken cancellationToken = default)
     {

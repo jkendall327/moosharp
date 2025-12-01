@@ -1,3 +1,5 @@
+using Object = MooSharp.Actors.Object;
+
 namespace MooSharp.Tests;
 
 public class ObjectStateTests
@@ -20,12 +22,11 @@ public class ObjectStateTests
         var obj = new Object
         {
             Name = "door",
-            Description = "A sturdy wooden door"
+            Description = "A sturdy wooden door",
+            IsOpenable = true,
+            IsLockable = true,
+            IsLocked = true
         };
-
-        obj.IsOpenable = true;
-        obj.IsLockable = true;
-        obj.IsLocked = true;
 
         var description = obj.DescribeWithState();
 

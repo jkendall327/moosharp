@@ -1,6 +1,8 @@
+using MooSharp.Actors;
+using MooSharp.Commands.Machinery;
 using MooSharp.Messaging;
 
-namespace MooSharp;
+namespace MooSharp.Commands.Commands;
 
 public class RecallCommand : CommandBase<RecallCommand>
 {
@@ -22,7 +24,7 @@ public class RecallCommandDefinition : ICommandDefinition
         };
 }
 
-public class RecallHandler(World world) : IHandler<RecallCommand>
+public class RecallHandler(World.World world) : IHandler<RecallCommand>
 {
     public Task<CommandResult> Handle(RecallCommand cmd, CancellationToken cancellationToken = default)
     {

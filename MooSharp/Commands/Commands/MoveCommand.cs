@@ -1,7 +1,10 @@
 using Microsoft.Extensions.Logging;
+using MooSharp.Actors;
+using MooSharp.Commands.Machinery;
 using MooSharp.Messaging;
+using MooSharp.World;
 
-namespace MooSharp;
+namespace MooSharp.Commands.Commands;
 
 public class MoveCommand : CommandBase<MoveCommand>
 {
@@ -25,7 +28,7 @@ public class MoveCommandDefinition : ICommandDefinition
         };
 }
 
-public class MoveHandler(World world, ILogger<MoveHandler> logger) : IHandler<MoveCommand>
+public class MoveHandler(World.World world, ILogger<MoveHandler> logger) : IHandler<MoveCommand>
 {
     public Task<CommandResult> Handle(MoveCommand cmd, CancellationToken cancellationToken = default)
     {

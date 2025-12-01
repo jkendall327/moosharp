@@ -1,26 +1,15 @@
-using MooSharp.Messaging;
+using MooSharp.Actors;
 
-namespace MooSharp;
+namespace MooSharp.World;
 
 public static class WorldExtensions
 {
-    public static Room GetLocationOrThrow(this World world, Player player)
+    extension(World world)
     {
-        return world.GetPlayerLocation(player)
-               ?? throw new InvalidOperationException($"Player {player.Username} has no location.");
-    }
-
-    public static bool TryGetLocation(this World world, Player player, out Room? room, out CommandResult? error)
-    {
-        room = world.GetPlayerLocation(player);
-        if (room is null)
+        public Room GetLocationOrThrow(Player player)
         {
-            error = new CommandResult();
-            error.Add(player, new SystemMessageEvent("You are floating in the void."));
-            return false;
+            return world.GetPlayerLocation(player)
+                   ?? throw new InvalidOperationException($"Player {player.Username} has no location.");
         }
-
-        error = null;
-        return true;
     }
 }

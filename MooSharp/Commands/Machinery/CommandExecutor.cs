@@ -2,7 +2,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using MooSharp.Messaging;
 
-namespace MooSharp;
+namespace MooSharp.Commands.Machinery;
 
 /// <summary>
 /// Routes commands to their appropriate handlers by utilising the visitor pattern.

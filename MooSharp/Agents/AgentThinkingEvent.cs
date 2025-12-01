@@ -1,3 +1,4 @@
+using MooSharp.Actors;
 using MooSharp.Messaging;
 
 namespace MooSharp.Agents;
@@ -8,5 +9,5 @@ public class AgentThinkingEventFormatter : IGameEventFormatter<AgentThinkingEven
 {
     public string FormatForActor(AgentThinkingEvent gameEvent) => $"{gameEvent.Player.Username} is thinking...";
 
-    public string? FormatForObserver(AgentThinkingEvent gameEvent) => FormatForActor(gameEvent);
+    public string FormatForObserver(AgentThinkingEvent gameEvent) => FormatForActor(gameEvent);
 }

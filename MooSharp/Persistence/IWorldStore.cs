@@ -1,4 +1,4 @@
-using MooSharp;
+using MooSharp.Actors;
 
 namespace MooSharp.Persistence;
 

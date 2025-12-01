@@ -2,7 +2,7 @@ using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace MooSharp;
+namespace MooSharp.Actors;
 
 public readonly record struct RoomId(string Value)
 {
@@ -32,8 +32,8 @@ public class Room : IContainer
     public required string EnterText { get; init; }
     public required string ExitText { get; init; }
     public string? CreatorUsername { get; init; }
-    private readonly List<Object> _contents = new();
-    private readonly List<Player> _playersInRoom = new();
+    private readonly List<Object> _contents = [];
+    private readonly List<Player> _playersInRoom = [];
     public IReadOnlyCollection<Object> Contents => _contents;
     public Dictionary<string, RoomId> Exits { get; } = new(StringComparer.OrdinalIgnoreCase);
     public IReadOnlyCollection<Player> PlayersInRoom => _playersInRoom;
@@ -84,19 +84,20 @@ public class Room : IContainer
 
     void IContainer.AddToContents(Object item) => _contents.Add(item);
 
-    bool IContainer.RemoveFromContents(Object item) => _contents.Remove(item);
+    void IContainer.RemoveFromContents(Object item) => _contents.Remove(item);
 
-    internal bool AddPlayer(Player player)
+    internal void AddPlayer(Player player)
     {
         if (_playersInRoom.Contains(player))
         {
-            return false;
+            return;
         }
 
         _playersInRoom.Add(player);
-
-        return true;
     }
 
-    internal bool RemovePlayer(Player player) => _playersInRoom.Remove(player);
+    internal void RemovePlayer(Player player)
+    {
+        _playersInRoom.Remove(player);
+    }
 }

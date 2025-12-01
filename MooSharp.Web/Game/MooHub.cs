@@ -1,12 +1,11 @@
 using System.Threading.Channels;
-using System.Linq;
-
-namespace MooSharp;
-
 using Microsoft.AspNetCore.SignalR;
-using Microsoft.Extensions.Primitives;
+using MooSharp.Game;
+using MooSharp.Messaging;
 
-public class MooHub(ChannelWriter<GameInput> writer, ILogger<MooHub> logger, World world) : Hub
+namespace MooSharp.Web.Game;
+
+public class MooHub(ChannelWriter<GameInput> writer, ILogger<MooHub> logger, World.World world) : Hub
 {
     public override async Task OnConnectedAsync()
     {
@@ -92,17 +91,14 @@ public class MooHub(ChannelWriter<GameInput> writer, ILogger<MooHub> logger, Wor
         }
         
         // .NET SignalR client: AccessTokenProvider -> Authorization: Bearer {token}
-        if (context.Request.Headers.TryGetValue("Authorization", out var authHeader))
+        if (!context.Request.Headers.TryGetValue("Authorization", out var authHeader))
         {
-            var value = authHeader.ToString();
-            const string bearerPrefix = "Bearer ";
-
-            if (value.StartsWith(bearerPrefix, StringComparison.OrdinalIgnoreCase))
-            {
-                return value.Substring(bearerPrefix.Length).Trim();
-            }
+            return null;
         }
-        
-        return null;
+
+        var value = authHeader.ToString();
+        const string bearerPrefix = "Bearer ";
+
+        return value.StartsWith(bearerPrefix, StringComparison.OrdinalIgnoreCase) ? value[bearerPrefix.Length..].Trim() : null;
     }
 }

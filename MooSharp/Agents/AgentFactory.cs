@@ -1,4 +1,3 @@
-using System.Threading;
 using System.Threading.Channels;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
