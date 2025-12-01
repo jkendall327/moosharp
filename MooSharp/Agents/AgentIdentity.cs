@@ -1,5 +1,8 @@
+using JetBrains.Annotations;
+
 namespace MooSharp.Agents;
 
+[UsedImplicitly]
 public class AgentIdentity
 {
     public required string Name { get; set; }

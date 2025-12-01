@@ -66,7 +66,7 @@ public class CommandParser
     {
         var prefix = input[0];
 
-        if ((prefix == '"' || prefix == '\'') && _verbs.TryGetValue("say", out var sayDefinition))
+        if (prefix is '"' or '\'' && _verbs.TryGetValue("say", out var sayDefinition))
         {
             var args = NormalizeShortcutArgs(input[1..]);
 

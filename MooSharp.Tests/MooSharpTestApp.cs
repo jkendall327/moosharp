@@ -1,10 +1,10 @@
 using Microsoft.AspNetCore.Hosting;
-using MooSharp.Agents;
-using MooSharp.Infrastructure;
-using MooSharp.Tests.TestDoubles;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using MooSharp.Agents;
+using MooSharp.Infrastructure;
+using MooSharp.Tests.TestDoubles;
 
 namespace MooSharp.Tests;
 

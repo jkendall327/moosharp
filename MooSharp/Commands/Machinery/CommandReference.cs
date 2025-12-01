@@ -2,14 +2,9 @@ using System.Text;
 
 namespace MooSharp.Commands.Machinery;
 
-public class CommandReference
+public class CommandReference(IEnumerable<ICommandDefinition> definitions)
 {
-    private readonly IReadOnlyCollection<ICommandDefinition> _definitions;
-
-    public CommandReference(IEnumerable<ICommandDefinition> definitions)
-    {
-        _definitions = definitions.ToArray();
-    }
+    private readonly IReadOnlyCollection<ICommandDefinition> _definitions = definitions.ToArray();
 
     public string BuildHelpText()
     {

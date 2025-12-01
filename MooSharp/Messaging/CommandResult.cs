@@ -15,7 +15,7 @@ public record GameMessage(Player Player, IGameEvent Event, MessageAudience Audie
 public class CommandResult
 {
     // Messages to be sent out
-    public List<GameMessage> Messages { get; } = new();
+    public List<GameMessage> Messages { get; } = [];
 
     // Helper to add a message to a specific player
     public void Add(Player player, IGameEvent @event, MessageAudience audience = MessageAudience.Actor)

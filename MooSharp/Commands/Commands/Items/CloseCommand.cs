@@ -1,5 +1,6 @@
 using MooSharp.Actors;
 using MooSharp.Commands.Machinery;
+using MooSharp.Commands.Searching;
 using MooSharp.Messaging;
 using MooSharp.World;
 using Object = MooSharp.Actors.Object;
@@ -41,7 +42,7 @@ public class ItemClosedEventFormatter : IGameEventFormatter<ItemClosedEvent>
         $"{gameEvent.Player.Username} closes the {gameEvent.Object.Name}.";
 }
 
-public class CloseHandler(World.World world, Searching.TargetResolver resolver) : IHandler<CloseCommand>
+public class CloseHandler(World.World world, TargetResolver resolver) : IHandler<CloseCommand>
 {
     public Task<CommandResult> Handle(CloseCommand command, CancellationToken cancellationToken = default)
     {

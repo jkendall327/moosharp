@@ -1,4 +1,3 @@
-using NSubstitute;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Time.Testing;
@@ -7,6 +6,7 @@ using MooSharp.Infrastructure;
 using MooSharp.Messaging;
 using MooSharp.Persistence;
 using MooSharp.World;
+using NSubstitute;
 
 namespace MooSharp.Tests;
 

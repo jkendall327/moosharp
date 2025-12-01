@@ -1,14 +1,14 @@
 using System.Text;
 using Microsoft.Extensions.Logging;
-using MooSharp.Agents;
-using MooSharp.Infrastructure;
-using MooSharp.Messaging;
-using MooSharp.Persistence;
 using Microsoft.Extensions.Options;
 using MooSharp.Actors;
+using MooSharp.Agents;
 using MooSharp.Commands;
 using MooSharp.Commands.Commands;
 using MooSharp.Commands.Machinery;
+using MooSharp.Infrastructure;
+using MooSharp.Messaging;
+using MooSharp.Persistence;
 using Object = MooSharp.Actors.Object;
 
 namespace MooSharp;

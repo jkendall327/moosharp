@@ -11,10 +11,10 @@ builder.Services.AddSignalR();
 builder.Services.AddHttpClient();
 
 builder.Services.AddMooSharpWebServices();
-builder.Services.AddMooSharpServices(builder.Configuration);
-builder.Services.AddMooSharpOptions(builder.Configuration);
-builder.Services.AddMooSharpHostedServices(builder.Configuration);
-builder.Services.AddMooSharpMessaging(builder.Configuration);
+builder.Services.AddMooSharpServices();
+builder.Services.AddMooSharpOptions();
+builder.Services.AddMooSharpHostedServices();
+builder.Services.AddMooSharpMessaging();
 
 builder.RegisterCommandDefinitions();
 builder.RegisterCommandHandlers();

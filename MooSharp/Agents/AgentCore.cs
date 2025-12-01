@@ -1,7 +1,7 @@
 using System.Runtime.CompilerServices;
-using Microsoft.SemanticKernel.ChatCompletion;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Microsoft.SemanticKernel.ChatCompletion;
 using MooSharp.Messaging;
 
 namespace MooSharp.Agents;

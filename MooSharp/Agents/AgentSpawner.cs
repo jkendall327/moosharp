@@ -1,13 +1,11 @@
+using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Threading.Channels;
+using Microsoft.Extensions.Options;
 using MooSharp.Actors;
 using MooSharp.Messaging;
 
 namespace MooSharp.Agents;
-
-using System.Text.Json;
-using System.Threading;
-using System.Threading.Channels;
-using Microsoft.Extensions.Options;
 
 public class AgentSpawner(AgentFactory factory, ChannelWriter<GameInput> writer, IOptions<AgentOptions> options)
 {

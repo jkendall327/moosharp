@@ -91,17 +91,14 @@ public class MooHub(ChannelWriter<GameInput> writer, ILogger<MooHub> logger, Wor
         }
         
         // .NET SignalR client: AccessTokenProvider -> Authorization: Bearer {token}
-        if (context.Request.Headers.TryGetValue("Authorization", out var authHeader))
+        if (!context.Request.Headers.TryGetValue("Authorization", out var authHeader))
         {
-            var value = authHeader.ToString();
-            const string bearerPrefix = "Bearer ";
-
-            if (value.StartsWith(bearerPrefix, StringComparison.OrdinalIgnoreCase))
-            {
-                return value.Substring(bearerPrefix.Length).Trim();
-            }
+            return null;
         }
-        
-        return null;
+
+        var value = authHeader.ToString();
+        const string bearerPrefix = "Bearer ";
+
+        return value.StartsWith(bearerPrefix, StringComparison.OrdinalIgnoreCase) ? value[bearerPrefix.Length..].Trim() : null;
     }
 }

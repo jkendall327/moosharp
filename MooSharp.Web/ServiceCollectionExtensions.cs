@@ -24,7 +24,7 @@ public static class ServiceCollectionExtensions
             services.AddScoped<GameClientViewModel>();
         }
 
-        public void AddMooSharpServices(IConfiguration config)
+        public void AddMooSharpServices()
         {
             // World
             services.AddSingleton<IWorldSeeder, WorldSeeder>();
@@ -61,7 +61,7 @@ public static class ServiceCollectionExtensions
             services.AddSingleton<GameEngine>();
         }
 
-        public void AddMooSharpMessaging(IConfiguration config)
+        public void AddMooSharpMessaging()
         {
             var channel = Channel.CreateUnbounded<GameInput>();
 
@@ -69,7 +69,7 @@ public static class ServiceCollectionExtensions
             services.AddSingleton(channel.Reader);
         }
 
-        public void AddMooSharpHostedServices(IConfiguration config)
+        public void AddMooSharpHostedServices()
         {
             services.AddHostedService<GameEngineBackgroundService>();
             services.AddHostedService<AgentBackgroundService>();
@@ -77,7 +77,7 @@ public static class ServiceCollectionExtensions
             services.AddHostedService<TreasureSpawnerService>();
         }
 
-        public void AddMooSharpOptions(IConfiguration config)
+        public void AddMooSharpOptions()
         {
             services
                 .AddOptionsWithValidateOnStart<AppOptions>()

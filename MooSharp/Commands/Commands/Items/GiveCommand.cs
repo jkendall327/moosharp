@@ -53,8 +53,8 @@ public class GiveHandler(World.World world, TargetResolver resolver) : IHandler<
 
         var room = world.GetLocationOrThrow(player);
 
-        var recipient = Enumerable
-            .FirstOrDefault<Player>(room.PlayersInRoom, p => p.Username.Equals(cmd.Target, StringComparison.OrdinalIgnoreCase));
+        var recipient = room.PlayersInRoom
+            .FirstOrDefault(p => p.Username.Equals(cmd.Target, StringComparison.OrdinalIgnoreCase));
 
         if (recipient is null)
         {
