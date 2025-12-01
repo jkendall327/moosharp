@@ -3,7 +3,7 @@ FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /src
 
 # Copy solution and project files
-COPY ["MooSharp.sln", "./"]
+COPY ["MooSharp.slnx", "./"]
 COPY ["MooSharp/MooSharp.csproj", "MooSharp/"]
 COPY ["MooSharp.Web/MooSharp.Web.csproj", "MooSharp.Web/"]
 COPY ["MooSharp.Tests/MooSharp.Tests.csproj", "MooSharp.Tests/"]

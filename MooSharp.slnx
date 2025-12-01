@@ -1,0 +1,17 @@
+<Solution>
+  <Configurations>
+    <Platform Name="Any CPU" />
+    <Platform Name="x64" />
+    <Platform Name="x86" />
+  </Configurations>
+  <Folder Name="/Files/">
+    <File Path="agent-docs/agent-system.md" />
+    <File Path="agent-docs/creating-commands.md" />
+    <File Path="AGENTS.md" />
+    <File Path="Dockerfile" />
+    <File Path="README.md" />
+  </Folder>
+  <Project Path="MooSharp.Tests/MooSharp.Tests.csproj" />
+  <Project Path="MooSharp.Web/MooSharp.Web.csproj" />
+  <Project Path="MooSharp/MooSharp.csproj" />
+</Solution>
