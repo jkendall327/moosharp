@@ -45,7 +45,7 @@ public class WriteCommandDefinition : ICommandDefinition
     }
 }
 
-public class WriteHandler(World.World world, Searching.TargetResolver resolver) : IHandler<WriteCommand>
+public class WriteHandler(World.World world, TargetResolver resolver) : IHandler<WriteCommand>
 {
     public Task<CommandResult> Handle(WriteCommand cmd, CancellationToken cancellationToken = default)
     {

@@ -27,7 +27,7 @@ public class ReadCommandDefinition : ICommandDefinition
     };
 }
 
-public class ReadHandler(World.World world, Searching.TargetResolver resolver) : IHandler<ReadCommand>
+public class ReadHandler(World.World world, TargetResolver resolver) : IHandler<ReadCommand>
 {
     public Task<CommandResult> Handle(ReadCommand cmd, CancellationToken cancellationToken = default)
     {

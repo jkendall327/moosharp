@@ -29,7 +29,7 @@ public class ExamineCommandDefinition : ICommandDefinition
         };
 }
 
-public class ExamineHandler(World.World world, Searching.TargetResolver resolver) : IHandler<ExamineCommand>
+public class ExamineHandler(World.World world, TargetResolver resolver) : IHandler<ExamineCommand>
 {
     public Task<CommandResult> Handle(ExamineCommand cmd, CancellationToken cancellationToken = default)
     {

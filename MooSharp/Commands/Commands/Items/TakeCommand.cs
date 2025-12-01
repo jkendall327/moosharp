@@ -33,7 +33,7 @@ public class TakeCommandDefinition : ICommandDefinition
         };
 }
 
-public class TakeHandler(World.World world, Searching.TargetResolver resolver) : IHandler<TakeCommand>
+public class TakeHandler(World.World world, TargetResolver resolver) : IHandler<TakeCommand>
 {
     public Task<CommandResult> Handle(TakeCommand cmd, CancellationToken cancellationToken = default)
     {

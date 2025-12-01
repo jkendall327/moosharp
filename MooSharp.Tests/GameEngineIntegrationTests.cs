@@ -2,7 +2,6 @@ using System.Threading.Channels;
 using Microsoft.Extensions.DependencyInjection;
 using MooSharp.Actors;
 using MooSharp.Messaging;
-using MooSharp.Tests.TestDoubles;
 
 namespace MooSharp.Tests;
 
@@ -38,11 +37,6 @@ public class GameEngineIntegrationTests
         var room = world.GetPlayerLocation(player)?.Id.Value;
 
         Assert.Equal("side-room", room);
-
-        var conn = player.Connection as TestPlayerConnection ??
-                   throw new InvalidOperationException("Test player didn't have a test connection - setup is wrong.");
-
-        // TODO: can probably do some tests based on these.
     }
 
     [Fact]

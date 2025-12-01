@@ -4,7 +4,7 @@ using MooSharp.Tests.TestDoubles;
 
 namespace MooSharp.Tests.Handlers;
 
-public class HandlerTestHelpers
+public static class HandlerTestHelpers
 {
     public static Task<World.World> CreateWorld(params Room[] rooms)
     {

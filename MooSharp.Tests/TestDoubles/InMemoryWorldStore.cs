@@ -6,8 +6,8 @@ namespace MooSharp.Tests.TestDoubles;
 
 public sealed class InMemoryWorldStore : IWorldStore
 {
-    private readonly List<Room> _rooms = new();
-    private readonly List<(RoomId From, RoomId To, string Direction)> _exits = new();
+    private readonly List<Room> _rooms = [];
+    private readonly List<(RoomId From, RoomId To, string Direction)> _exits = [];
 
     public Task<bool> HasRoomsAsync(CancellationToken cancellationToken = default)
         => Task.FromResult(_rooms.Any());
@@ -19,12 +19,8 @@ public sealed class InMemoryWorldStore : IWorldStore
         foreach (var exit in _exits)
         {
             var origin = rooms.SingleOrDefault(r => r.Id == exit.From);
-            if (origin is null)
-            {
-                continue;
-            }
 
-            origin.Exits[exit.Direction] = exit.To;
+            origin?.Exits[exit.Direction] = exit.To;
         }
 
         return Task.FromResult<IReadOnlyCollection<Room>>(rooms);
@@ -83,12 +79,7 @@ public sealed class InMemoryWorldStore : IWorldStore
     {
         var existing = _rooms.SingleOrDefault(r => r.Id == roomId);
 
-        if (existing is null)
-        {
-            return Task.CompletedTask;
-        }
-
-        existing.Name = name;
+        existing?.Name = name;
 
         return Task.CompletedTask;
     }
@@ -99,10 +90,7 @@ public sealed class InMemoryWorldStore : IWorldStore
             .SelectMany(r => r.Contents)
             .SingleOrDefault(o => o.Id == objectId);
 
-        if (existing is not null)
-        {
-            existing.Name = name;
-        }
+        existing?.Name = name;
 
         return Task.CompletedTask;
     }

@@ -49,7 +49,7 @@ public class RenameCommandDefinition : ICommandDefinition
     }
 }
 
-public class RenameHandler(World.World world, Searching.TargetResolver resolver) : IHandler<RenameCommand>
+public class RenameHandler(World.World world, TargetResolver resolver) : IHandler<RenameCommand>
 {
     public async Task<CommandResult> Handle(RenameCommand cmd, CancellationToken cancellationToken = default)
     {

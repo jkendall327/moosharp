@@ -8,7 +8,6 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Channels;
 using Microsoft.Extensions.Options;
-using MooSharp;
 
 public class AgentSpawner(AgentFactory factory, ChannelWriter<GameInput> writer, IOptions<AgentOptions> options)
 {

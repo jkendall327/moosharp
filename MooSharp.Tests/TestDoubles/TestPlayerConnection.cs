@@ -6,7 +6,7 @@ public sealed class TestPlayerConnection : IPlayerConnection
 {
     public string Id { get; } = Guid.NewGuid().ToString();
 
-    public List<string> Messages { get; } = new();
+    public List<string> Messages { get; } = [];
 
     public Task SendMessageAsync(string message, CancellationToken ct = default)
     {

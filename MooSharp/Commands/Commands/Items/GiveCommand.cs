@@ -38,7 +38,7 @@ public class GiveCommandDefinition : ICommandDefinition
     }
 }
 
-public class GiveHandler(World.World world, Searching.TargetResolver resolver) : IHandler<GiveCommand>
+public class GiveHandler(World.World world, TargetResolver resolver) : IHandler<GiveCommand>
 {
     public Task<CommandResult> Handle(GiveCommand cmd, CancellationToken cancellationToken = default)
     {

@@ -29,7 +29,7 @@ public class DropCommandDefinition : ICommandDefinition
         };
 }
 
-public class DropHandler(World.World world, Searching.TargetResolver resolver) : IHandler<DropCommand>
+public class DropHandler(World.World world, TargetResolver resolver) : IHandler<DropCommand>
 {
     public Task<CommandResult> Handle(DropCommand cmd, CancellationToken cancellationToken = default)
     {
