@@ -17,10 +17,9 @@
             </p>
             <div class="actions">
                 <button class="btn btn-accent" @onclick="NavigateToGame">Launch client</button>
-                <a class="btn btn-ghost" href="/game">Preview interface</a>
             </div>
             <div class="stat-line">
-                <span>Players online: @_playerCount?.ToString() ?? "—"</span>
+                <span>Players online: @(_playerCount?.ToString() ?? "—")</span>
                 <span>@_statusMessage</span>
             </div>
         </div>
@@ -46,18 +45,16 @@
     <div class="info-grid">
         <div class="info-card">
             <p class="tag">quickstart</p>
-            <h2>Join a room in seconds</h2>
+            <h2>How do I play?</h2>
             <p>
                 Head to the game page, choose a username and password, then issue commands. Your inventory and discoveries
                 persist between logins. Use '/help' to see all available commands.
             </p>
-            <a class="inline-link" href="/game">Open the /game terminal →</a>
         </div>
         <div class="info-card">
             <p class="tag">activity</p>
-            <h2>Who's online?</h2>
-            <p>Check the live connection count, then step in to say hello.</p>
-            <button class="btn btn-ghost" @onclick="NavigateToGame">Start playing</button>
+            <h2>News and updates</h2>
+            <p>v1.00 - initial public release</p>
         </div>
     </div>
 </div>
