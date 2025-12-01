@@ -11,7 +11,7 @@ public class DescribeCommand : CommandBase<DescribeCommand>
 
 public class DescribeCommandDefinition : ICommandDefinition
 {
-    public IReadOnlyCollection<string> Verbs { get; } = ["@describe", "@desc", "describe", "desc"];
+    public IReadOnlyCollection<string> Verbs { get; } = ["@describe", "@desc"];
 
     public string Description =>
         "Update a room description. Usage: @describe here <description> or @describe <exit> <description>.";
