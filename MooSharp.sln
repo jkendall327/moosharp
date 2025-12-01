@@ -6,12 +6,13 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MooSharp.Web", "MooSharp.We
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MooSharp.Tests", "MooSharp.Tests\MooSharp.Tests.csproj", "{F81A7B8F-8249-491A-9477-059D89E47BC0}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Docs", "Docs", "{11B306EF-DC45-4FA3-BD6B-EE1CC9557594}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Files", "Files", "{11B306EF-DC45-4FA3-BD6B-EE1CC9557594}"
 	ProjectSection(SolutionItems) = preProject
 		README.md = README.md
 		AGENTS.md = AGENTS.md
 		agent-docs\creating-commands.md = agent-docs\creating-commands.md
 		agent-docs\agent-system.md = agent-docs\agent-system.md
+		Dockerfile = Dockerfile
 	EndProjectSection
 EndProject
 Global
