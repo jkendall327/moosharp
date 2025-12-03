@@ -3,6 +3,7 @@ using Microsoft.Data.Sqlite;
 using Microsoft.Extensions.Options;
 using MooSharp.Actors;
 using MooSharp.Infrastructure;
+using MooSharp.Persistence.Dtos;
 using Object = MooSharp.Actors.Object;
 
 namespace MooSharp.Persistence;
@@ -21,7 +22,8 @@ public class SqliteWorldStore : IWorldStore
             DataSource = databasePath,
             Mode = SqliteOpenMode.ReadWriteCreate,
             // Ensure Foreign Keys are enforced
-            ForeignKeys = true
+            ForeignKeys = true,
+            Cache = SqliteCacheMode.Shared
         }.ToString();
 
         DapperTypeHandlerConfiguration.ConfigureRoomIdHandler();
@@ -112,13 +114,13 @@ public class SqliteWorldStore : IWorldStore
     public async Task SaveRoomAsync(Room room, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(room);
-        await SaveRoomsAsync([room], cancellationToken);
+        await SaveRoomSnapshotAsync(WorldSnapshotFactory.CreateSnapshot(room), cancellationToken);
     }
 
     public async Task SaveExitAsync(RoomId fromRoomId, RoomId toRoomId, string direction, CancellationToken cancellationToken = default)
     {
-        // Note: We ignore the 'direction' string parameter here because the schema 
-        // now treats the relationship purely as From->To. 
+        // Note: We ignore the 'direction' string parameter here because the schema
+        // now treats the relationship purely as From->To.
 
         await using var connection = new SqliteConnection(_connectionString);
 
@@ -133,7 +135,26 @@ public class SqliteWorldStore : IWorldStore
 
     public async Task SaveRoomsAsync(IEnumerable<Room> rooms, CancellationToken cancellationToken = default)
     {
+        var snapshots = WorldSnapshotFactory.CreateSnapshots(rooms);
+
+        await SaveRoomSnapshotsAsync(snapshots, cancellationToken);
+    }
+
+    public Task SaveRoomSnapshotAsync(RoomSnapshotDto room, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(room);
+
+        return SaveRoomSnapshotsAsync([room], cancellationToken);
+    }
+
+    public async Task SaveRoomSnapshotsAsync(IEnumerable<RoomSnapshotDto> rooms, CancellationToken cancellationToken = default)
+    {
         var roomList = rooms.ToList();
+
+        if (roomList.Count == 0)
+        {
+            return;
+        }
 
         await using var connection = new SqliteConnection(_connectionString);
         await connection.OpenAsync(cancellationToken);
@@ -173,18 +194,11 @@ public class SqliteWorldStore : IWorldStore
                 CreatorUsername = excluded.CreatorUsername;
             """;
 
-        // IMPORTANT FIX:
-        // We must save ALL rooms first. 
-        // If we save Room A and its exits immediately, Room A might point to Room B 
-        // which hasn't been inserted yet, triggering a Foreign Key violation.
-
-        // 1. Save all Rooms
         foreach (var room in roomList)
         {
             await connection.ExecuteAsync(insertRoomSql, room, transaction);
         }
 
-        // 2. Save all Exits
         foreach (var room in roomList)
         {
             var exits = room.Exits.Select(exit => new
@@ -199,22 +213,21 @@ public class SqliteWorldStore : IWorldStore
             }
         }
 
-        // 3. Save room objects
         foreach (var room in roomList)
         {
             await connection.ExecuteAsync(deleteObjectsSql, new { RoomId = room.Id }, transaction);
 
-                var objects = room.Contents.Select(o => new
-                {
-                    Id = o.Id.Value.ToString(),
-                    RoomId = room.Id,
-                    o.Name,
-                    o.Description,
-                    o.TextContent,
-                    Flags = (int)o.Flags,
-                    o.KeyId,
-                    o.CreatorUsername
-                });
+            var objects = room.Objects.Select(o => new
+            {
+                Id = o.Id.Value.ToString(),
+                RoomId = room.Id,
+                o.Name,
+                o.Description,
+                o.TextContent,
+                Flags = (int)o.Flags,
+                o.KeyId,
+                o.CreatorUsername
+            });
 
             if (objects.Any())
             {
@@ -279,10 +292,15 @@ public class SqliteWorldStore : IWorldStore
         {
             DataSource = databasePath,
             Mode = SqliteOpenMode.ReadWriteCreate,
-            ForeignKeys = true
+            ForeignKeys = true,
+            Cache = SqliteCacheMode.Shared
         }.ToString());
 
         connection.Open();
+
+        connection.Execute("PRAGMA journal_mode=WAL;");
+        connection.Execute("PRAGMA synchronous=NORMAL;");
+        connection.Execute("PRAGMA foreign_keys=ON;");
 
         connection.Execute(
             """
