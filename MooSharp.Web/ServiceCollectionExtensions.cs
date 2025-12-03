@@ -44,8 +44,10 @@ public static class ServiceCollectionExtensions
             services.AddSingleton<IAgentResponseProvider, AgentResponseProvider>();
 
             // Persistence
-            services.AddSingleton<IPlayerStore, SqlitePlayerStore>();
-            services.AddSingleton<IWorldStore, SqliteWorldStore>();
+            services.AddSingleton<SqlitePlayerStore>();
+            services.AddSingleton<IPlayerStore, QueuedPlayerStore>();
+            services.AddSingleton<SqliteWorldStore>();
+            services.AddSingleton<IWorldStore, QueuedWorldStore>();
 
             // Connections and message-sending
             services.AddSingleton<IPlayerConnectionFactory, SignalRPlayerConnectionFactory>();
@@ -64,9 +66,15 @@ public static class ServiceCollectionExtensions
         public void AddMooSharpMessaging()
         {
             var channel = Channel.CreateUnbounded<GameInput>();
+            var dbChannel = Channel.CreateUnbounded<DatabaseRequest>(new UnboundedChannelOptions
+            {
+                SingleReader = true
+            });
 
             services.AddSingleton(channel.Writer);
             services.AddSingleton(channel.Reader);
+            services.AddSingleton(dbChannel.Writer);
+            services.AddSingleton(dbChannel.Reader);
         }
 
         public void AddMooSharpHostedServices()
@@ -75,6 +83,7 @@ public static class ServiceCollectionExtensions
             services.AddHostedService<AgentBackgroundService>();
             services.AddHostedService<WorldClockService>();
             services.AddHostedService<TreasureSpawnerService>();
+            services.AddHostedService<DatabaseBackgroundService>();
         }
 
         public void AddMooSharpOptions()

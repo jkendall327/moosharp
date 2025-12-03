@@ -21,51 +21,32 @@ public class SqlitePlayerStore : IPlayerStore
         _connectionString = new SqliteConnectionStringBuilder
         {
             DataSource = databasePath,
-            Mode = SqliteOpenMode.ReadWriteCreate
+            Mode = SqliteOpenMode.ReadWriteCreate,
+            ForeignKeys = true,
+            Cache = SqliteCacheMode.Shared
         }.ToString();
 
         DapperTypeHandlerConfiguration.ConfigureRoomIdHandler();
         InitializeDatabase(databasePath);
     }
 
-    public async Task SaveNewPlayer(Player player,
+    public Task SaveNewPlayer(Player player,
         Room currentLocation,
         string password,
         CancellationToken ct = default)
     {
         var hashedPassword = BCrypt.Net.BCrypt.HashPassword(password);
 
-        var dto = new PlayerDto
-        {
-            Username = player.Username,
-            Password = hashedPassword,
-            CurrentLocation = currentLocation.Id
-        };
+        var dto = PlayerSnapshotFactory.CreateNewPlayerDto(player, currentLocation, hashedPassword);
 
-        await UpsertPlayerAsync(dto);
-        await ReplaceInventoryAsync(player);
+        return SaveNewPlayerSnapshotAsync(dto, ct);
     }
 
-    public async Task SavePlayer(Player player, Room currentLocation, CancellationToken ct = default)
+    public Task SavePlayer(Player player, Room currentLocation, CancellationToken ct = default)
     {
-        await using var connection = new SqliteConnection(_connectionString);
+        var snapshot = PlayerSnapshotFactory.CreateSnapshot(player, currentLocation);
 
-        await connection.OpenAsync(ct);
-
-        await using var transaction = await connection.BeginTransactionAsync(ct);
-
-        await connection.ExecuteAsync(
-            "UPDATE Players SET CurrentLocation = @CurrentLocation WHERE Username = @Username",
-            new
-            {
-                player.Username,
-                CurrentLocation = currentLocation.Id
-            },
-            transaction);
-
-        await ReplaceInventoryAsync(connection, player, transaction);
-
-        await transaction.CommitAsync(ct);
+        return SavePlayerSnapshotAsync(snapshot, ct);
     }
 
     public async Task<PlayerDto?> LoadPlayer(LoginCommand command, CancellationToken ct = default)
@@ -99,7 +80,35 @@ public class SqlitePlayerStore : IPlayerStore
         return player;
     }
 
-    private async Task UpsertPlayerAsync(PlayerDto player)
+    public async Task SaveNewPlayerSnapshotAsync(PlayerDto player, CancellationToken ct = default)
+    {
+        await UpsertPlayerAsync(player, ct);
+        await ReplaceInventoryAsync(player.Username, player.Inventory, ct);
+    }
+
+    public async Task SavePlayerSnapshotAsync(PlayerSnapshotDto snapshot, CancellationToken ct = default)
+    {
+        await using var connection = new SqliteConnection(_connectionString);
+
+        await connection.OpenAsync(ct);
+
+        await using var transaction = await connection.BeginTransactionAsync(ct);
+
+        await connection.ExecuteAsync(
+            "UPDATE Players SET CurrentLocation = @CurrentLocation WHERE Username = @Username",
+            new
+            {
+                snapshot.Username,
+                snapshot.CurrentLocation
+            },
+            transaction);
+
+        await ReplaceInventoryAsync(connection, snapshot.Username, snapshot.Inventory, transaction);
+
+        await transaction.CommitAsync(ct);
+    }
+
+    private async Task UpsertPlayerAsync(PlayerDto player, CancellationToken ct)
     {
         await using var connection = new SqliteConnection(_connectionString);
 
@@ -111,7 +120,9 @@ public class SqlitePlayerStore : IPlayerStore
                                CurrentLocation = excluded.CurrentLocation;
                            """;
 
-        await connection.ExecuteAsync(sql, player);
+        var command = new CommandDefinition(sql, player, cancellationToken: ct);
+
+        await connection.ExecuteAsync(command);
     }
 
     private static void InitializeDatabase(string databasePath)
@@ -126,10 +137,16 @@ public class SqlitePlayerStore : IPlayerStore
         using var connection = new SqliteConnection(new SqliteConnectionStringBuilder
         {
             DataSource = databasePath,
-            Mode = SqliteOpenMode.ReadWriteCreate
+            Mode = SqliteOpenMode.ReadWriteCreate,
+            ForeignKeys = true,
+            Cache = SqliteCacheMode.Shared
         }.ToString());
 
         connection.Open();
+
+        connection.Execute("PRAGMA journal_mode=WAL;");
+        connection.Execute("PRAGMA synchronous=NORMAL;");
+        connection.Execute("PRAGMA foreign_keys=ON;");
 
         connection.Execute("""
                            CREATE TABLE IF NOT EXISTS Players
@@ -160,20 +177,21 @@ public class SqlitePlayerStore : IPlayerStore
         EnsurePlayerInventoryColumns(connection);
     }
 
-    private async Task ReplaceInventoryAsync(Player player)
+    private async Task ReplaceInventoryAsync(string username, IEnumerable<InventoryItemDto> inventory, CancellationToken ct)
     {
         await using var connection = new SqliteConnection(_connectionString);
-        await connection.OpenAsync();
+        await connection.OpenAsync(ct);
 
-        await using var transaction = await connection.BeginTransactionAsync();
+        await using var transaction = await connection.BeginTransactionAsync(ct);
 
-        await ReplaceInventoryAsync(connection, player, transaction);
+        await ReplaceInventoryAsync(connection, username, inventory, transaction);
 
-        await transaction.CommitAsync();
+        await transaction.CommitAsync(ct);
     }
 
     private static async Task ReplaceInventoryAsync(SqliteConnection connection,
-        Player player,
+        string username,
+        IEnumerable<InventoryItemDto> inventory,
         IDbTransaction transaction)
     {
         const string deleteSql = "DELETE FROM PlayerInventory WHERE Username = @Username";
@@ -186,19 +204,19 @@ public class SqlitePlayerStore : IPlayerStore
         await connection.ExecuteAsync(deleteSql,
             new
             {
-                player.Username
+                Username = username
             },
             transaction);
 
-        if (!player.Inventory.Any())
+        if (!inventory.Any())
         {
             return;
         }
 
-        var items = player.Inventory.Select(o => new
+        var items = inventory.Select(o => new
         {
-            ItemId = o.Id.Value.ToString(),
-            player.Username,
+            ItemId = o.Id,
+            Username = username,
             o.Name,
             o.Description,
             o.TextContent,
