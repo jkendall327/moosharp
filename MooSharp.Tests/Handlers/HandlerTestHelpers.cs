@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Logging.Abstractions;
 using MooSharp.Actors;
+using MooSharp.Data.Mapping;
 using MooSharp.Tests.TestDoubles;
 
 namespace MooSharp.Tests.Handlers;
@@ -22,7 +23,7 @@ public static class HandlerTestHelpers
 
         world.Initialize(rooms);
 
-        await store.SaveRoomsAsync(rooms);
+        await store.SaveRoomsAsync(WorldSnapshotFactory.CreateSnapshots(rooms));
 
         return world;
     }

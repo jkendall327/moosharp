@@ -1,13 +1,14 @@
 using System.Threading.Channels;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using MooSharp.Data.EntityFramework;
 
-namespace MooSharp.Persistence;
+namespace MooSharp.Data.Queueing;
 
-public class DatabaseBackgroundService(
+internal sealed class DatabaseBackgroundService(
     ChannelReader<DatabaseRequest> reader,
-    SqlitePlayerStore playerStore,
-    SqliteWorldStore worldStore,
+    EfPlayerStore playerStore,
+    EfWorldStore worldStore,
     ILogger<DatabaseBackgroundService> logger) : BackgroundService
 {
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -19,16 +20,16 @@ public class DatabaseBackgroundService(
                 switch (request)
                 {
                     case SaveNewPlayerRequest newPlayerRequest:
-                        await playerStore.SaveNewPlayerSnapshotAsync(newPlayerRequest.Player, stoppingToken);
+                        await playerStore.SaveNewPlayerAsync(newPlayerRequest.Player, stoppingToken);
                         break;
                     case SavePlayerRequest savePlayerRequest:
-                        await playerStore.SavePlayerSnapshotAsync(savePlayerRequest.Snapshot, stoppingToken);
+                        await playerStore.SavePlayerAsync(savePlayerRequest.Snapshot, stoppingToken);
                         break;
                     case SaveRoomRequest saveRoomRequest:
-                        await worldStore.SaveRoomSnapshotAsync(saveRoomRequest.Room, stoppingToken);
+                        await worldStore.SaveRoomAsync(saveRoomRequest.Room, stoppingToken);
                         break;
                     case SaveRoomsRequest saveRoomsRequest:
-                        await worldStore.SaveRoomSnapshotsAsync(saveRoomsRequest.Rooms, stoppingToken);
+                        await worldStore.SaveRoomsAsync(saveRoomsRequest.Rooms, stoppingToken);
                         break;
                     case SaveExitRequest saveExitRequest:
                         await worldStore.SaveExitAsync(saveExitRequest.FromRoomId, saveExitRequest.ToRoomId, string.Empty, stoppingToken);

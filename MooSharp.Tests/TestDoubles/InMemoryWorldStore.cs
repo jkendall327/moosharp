@@ -1,138 +1,130 @@
-using MooSharp.Actors;
-using MooSharp.Persistence;
-using Object = MooSharp.Actors.Object;
+using MooSharp.Data;
+using MooSharp.Data.Dtos;
 
 namespace MooSharp.Tests.TestDoubles;
 
 public sealed class InMemoryWorldStore : IWorldStore
 {
-    private readonly List<Room> _rooms = [];
-    private readonly List<(RoomId From, RoomId To, string Direction)> _exits = [];
+    private readonly List<RoomSnapshotDto> _rooms = [];
 
     public Task<bool> HasRoomsAsync(CancellationToken cancellationToken = default)
         => Task.FromResult(_rooms.Any());
 
-    public Task<IReadOnlyCollection<Room>> LoadRoomsAsync(CancellationToken cancellationToken = default)
+    public Task<IReadOnlyCollection<RoomSnapshotDto>> LoadRoomsAsync(CancellationToken cancellationToken = default)
     {
-        var rooms = _rooms.Select(CloneRoom).ToList();
-
-        foreach (var exit in _exits)
-        {
-            var origin = rooms.SingleOrDefault(r => r.Id == exit.From);
-
-            origin?.Exits[exit.Direction] = exit.To;
-        }
-
-        return Task.FromResult<IReadOnlyCollection<Room>>(rooms);
+        return Task.FromResult<IReadOnlyCollection<RoomSnapshotDto>>(_rooms.Select(Clone).ToList());
     }
 
-    public Task SaveRoomAsync(Room room, CancellationToken cancellationToken = default)
+    public Task SaveRoomAsync(RoomSnapshotDto room, CancellationToken cancellationToken = default)
     {
-        _rooms.RemoveAll(r => r.Id == room.Id);
-        _rooms.Add(CloneRoom(room));
+        UpsertRoom(room);
         return Task.CompletedTask;
     }
 
-    public Task SaveExitAsync(RoomId fromRoomId, RoomId toRoomId, string direction,
-        CancellationToken cancellationToken = default)
+    public Task SaveExitAsync(string fromRoomId, string toRoomId, string direction, CancellationToken cancellationToken = default)
     {
-        _exits.RemoveAll(e => e.From == fromRoomId && string.Equals(e.Direction, direction, StringComparison.OrdinalIgnoreCase));
-        _exits.Add((fromRoomId, toRoomId, direction));
-        return Task.CompletedTask;
-    }
-
-    public Task SaveRoomsAsync(IEnumerable<Room> rooms, CancellationToken cancellationToken = default)
-    {
-        _rooms.Clear();
-        _rooms.AddRange(rooms.Select(CloneRoom));
-
-        _exits.Clear();
-
-        foreach (var room in rooms)
-        {
-            foreach (var exit in room.Exits)
-            {
-                _exits.Add((room.Id, exit.Value, exit.Key));
-            }
-        }
-
-        return Task.CompletedTask;
-    }
-
-    public Task UpdateRoomDescriptionAsync(RoomId roomId, string description, string longDescription,
-        CancellationToken cancellationToken = default)
-    {
-        var existing = _rooms.SingleOrDefault(r => r.Id == roomId);
+        var existing = _rooms.FirstOrDefault(r => r.Id == fromRoomId);
 
         if (existing is null)
         {
             return Task.CompletedTask;
         }
 
-        existing.Description = description;
-        existing.LongDescription = longDescription;
-
-        return Task.CompletedTask;
-    }
-
-    public Task RenameRoomAsync(RoomId roomId, string name, CancellationToken cancellationToken = default)
-    {
-        var existing = _rooms.SingleOrDefault(r => r.Id == roomId);
-
-        existing?.Name = name;
-
-        return Task.CompletedTask;
-    }
-
-    public Task RenameObjectAsync(ObjectId objectId, string name, CancellationToken cancellationToken = default)
-    {
-        var existing = _rooms
-            .SelectMany(r => r.Contents)
-            .SingleOrDefault(o => o.Id == objectId);
-
-        existing?.Name = name;
-
-        return Task.CompletedTask;
-    }
-
-    private static Room CloneRoom(Room room)
-    {
-        var clone = new Room
+        var exits = new Dictionary<string, string>(existing.Exits, StringComparer.OrdinalIgnoreCase)
         {
-            Id = room.Id,
-            Name = room.Name,
-            Description = room.Description,
-            LongDescription = room.LongDescription,
-            EnterText = room.EnterText,
-            ExitText = room.ExitText,
-            CreatorUsername = room.CreatorUsername
+            [direction] = toRoomId
         };
 
-        foreach (var exit in room.Exits)
+        ReplaceRoom(existing, existing with { Exits = exits });
+        return Task.CompletedTask;
+    }
+
+    public Task SaveRoomsAsync(IEnumerable<RoomSnapshotDto> rooms, CancellationToken cancellationToken = default)
+    {
+        _rooms.Clear();
+        _rooms.AddRange(rooms.Select(Clone));
+        return Task.CompletedTask;
+    }
+
+    public Task UpdateRoomDescriptionAsync(string roomId, string description, string longDescription,
+        CancellationToken cancellationToken = default)
+    {
+        var existing = _rooms.FirstOrDefault(r => r.Id == roomId);
+
+        if (existing is not null)
         {
-            clone.Exits[exit.Key] = exit.Value;
+            ReplaceRoom(existing, existing with { Description = description, LongDescription = longDescription });
         }
 
-        foreach (var item in room.Contents)
-        {
-            var clonedItem = new Object
-            {
-                Id = item.Id,
-                Name = item.Name,
-                Description = item.Description,
-                Flags = item.Flags,
-                KeyId = item.KeyId,
-                CreatorUsername = item.CreatorUsername
-            };
+        return Task.CompletedTask;
+    }
 
-            if (!string.IsNullOrWhiteSpace(item.TextContent))
+    public Task RenameRoomAsync(string roomId, string name, CancellationToken cancellationToken = default)
+    {
+        var existing = _rooms.FirstOrDefault(r => r.Id == roomId);
+
+        if (existing is not null)
+        {
+            ReplaceRoom(existing, existing with { Name = name });
+        }
+
+        return Task.CompletedTask;
+    }
+
+    public Task RenameObjectAsync(string objectId, string name, CancellationToken cancellationToken = default)
+    {
+        for (var i = 0; i < _rooms.Count; i++)
+        {
+            var room = _rooms[i];
+            var objects = room.Objects.ToList();
+            var index = objects.FindIndex(o => o.Id == objectId);
+
+            if (index < 0)
             {
-                clonedItem.WriteText(item.TextContent);
+                continue;
             }
 
-            clonedItem.MoveTo(clone);
+            var updated = objects[index] with { Name = name };
+            objects[index] = updated;
+            _rooms[i] = room with { Objects = objects };
+            break;
         }
 
-        return clone;
+        return Task.CompletedTask;
+    }
+
+    private void UpsertRoom(RoomSnapshotDto room)
+    {
+        var existingIndex = _rooms.FindIndex(r => r.Id == room.Id);
+        var clone = Clone(room);
+
+        if (existingIndex >= 0)
+        {
+            _rooms[existingIndex] = clone;
+        }
+        else
+        {
+            _rooms.Add(clone);
+        }
+    }
+
+    private void ReplaceRoom(RoomSnapshotDto original, RoomSnapshotDto replacement)
+    {
+        var index = _rooms.FindIndex(r => r.Id == original.Id);
+
+        if (index >= 0)
+        {
+            _rooms[index] = Clone(replacement);
+        }
+    }
+
+    private static RoomSnapshotDto Clone(RoomSnapshotDto room)
+    {
+        var exits = new Dictionary<string, string>(room.Exits, StringComparer.OrdinalIgnoreCase);
+        var objects = room.Objects
+            .Select(o => o with { })
+            .ToList();
+
+        return room with { Exits = exits, Objects = objects };
     }
 }

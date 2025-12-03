@@ -1,7 +1,11 @@
+using Microsoft.Data.Sqlite;
 using Microsoft.Extensions.Options;
 using MooSharp.Actors;
+using MooSharp.Data;
+using MooSharp.Data.Dapper;
+using MooSharp.Data.Dtos;
+using MooSharp.Data.Mapping;
 using MooSharp.Infrastructure;
-using MooSharp.Persistence;
 using MooSharp.Tests.Handlers;
 using Object = MooSharp.Actors.Object;
 
@@ -16,13 +20,15 @@ public class SqlitePlayerStoreObjectPersistenceTests
 
         try
         {
-            var options = Options.Create(new AppOptions
+            var connectionString = new SqliteConnectionStringBuilder
             {
-                DatabaseFilepath = databasePath,
-                WorldDataFilepath = "world.json"
-            });
+                DataSource = databasePath,
+                Mode = SqliteOpenMode.ReadWriteCreate,
+                ForeignKeys = true,
+                Cache = SqliteCacheMode.Shared
+            }.ToString();
 
-            var store = new SqlitePlayerStore(options);
+            var store = new SqlitePlayerStore(new DatabaseConfiguration(connectionString));
 
             var player = HandlerTestHelpers.CreatePlayer("player");
             var room = HandlerTestHelpers.CreateRoom("room");
@@ -38,20 +44,18 @@ public class SqlitePlayerStoreObjectPersistenceTests
 
             item.MoveTo(player);
 
-            await store.SaveNewPlayer(player, room, "password");
+            var snapshot = PlayerSnapshotFactory.CreateNewPlayer(player, room, "password");
 
-            var loaded = await store.LoadPlayer(new()
-            {
-                Username = player.Username,
-                Password = "password"
-            });
+            await store.SaveNewPlayerAsync(snapshot);
+
+            var loaded = await store.LoadPlayerAsync(new LoginRequest(player.Username, "password"));
 
             Assert.NotNull(loaded);
 
             var loadedItem = Assert.Single(loaded.Inventory);
 
             Assert.Equal(item.Id.Value.ToString(), loadedItem.Id);
-            Assert.Equal(item.Flags, loadedItem.Flags);
+            Assert.Equal(item.Flags, (ObjectFlags)loadedItem.Flags);
             Assert.Equal(item.KeyId, loadedItem.KeyId);
         }
         finally
@@ -73,13 +77,15 @@ public class SqliteWorldStoreObjectPersistenceTests
 
         try
         {
-            var options = Options.Create(new AppOptions
+            var connectionString = new SqliteConnectionStringBuilder
             {
-                DatabaseFilepath = databasePath,
-                WorldDataFilepath = "world.json"
-            });
+                DataSource = databasePath,
+                Mode = SqliteOpenMode.ReadWriteCreate,
+                ForeignKeys = true,
+                Cache = SqliteCacheMode.Shared
+            }.ToString();
 
-            var store = new SqliteWorldStore(options);
+            var store = new SqliteWorldStore(new DatabaseConfiguration(connectionString));
 
             var room = HandlerTestHelpers.CreateRoom("room");
 
@@ -94,9 +100,10 @@ public class SqliteWorldStoreObjectPersistenceTests
 
             item.MoveTo(room);
 
-            await store.SaveRoomsAsync([room]);
+            await store.SaveRoomsAsync(WorldSnapshotFactory.CreateSnapshots([room]));
 
-            var loadedRooms = await store.LoadRoomsAsync();
+            var loadedSnapshots = await store.LoadRoomsAsync();
+            var loadedRooms = WorldSnapshotFactory.CreateRooms(loadedSnapshots);
             var loadedRoom = Assert.Single(loadedRooms);
             var loadedItem = Assert.Single(loadedRoom.Contents);
 

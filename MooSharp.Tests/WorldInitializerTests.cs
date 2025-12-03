@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Logging.Abstractions;
 using MooSharp.Actors;
+using MooSharp.Data.Mapping;
 using MooSharp.Tests.TestDoubles;
 using MooSharp.World;
 using NSubstitute;
@@ -78,7 +79,7 @@ public class WorldInitializerTests
 
         if (existingRoomToPersist is not null)
         {
-            await store.SaveRoomsAsync([existingRoomToPersist]);
+            await store.SaveRoomsAsync(WorldSnapshotFactory.CreateSnapshots([existingRoomToPersist]));
         }
 
         var worldSeeder = seeder ?? Substitute.For<IWorldSeeder>();

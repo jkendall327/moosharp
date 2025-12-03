@@ -14,5 +14,6 @@
   </Folder>
   <Project Path="MooSharp.Tests/MooSharp.Tests.csproj" />
   <Project Path="MooSharp.Web/MooSharp.Web.csproj" />
+  <Project Path="MooSharp.Data/MooSharp.Data.csproj" />
   <Project Path="MooSharp/MooSharp.csproj" />
 </Solution>
