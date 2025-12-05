@@ -18,7 +18,7 @@ public class WorldSeeder(IOptions<AppOptions> options, ILogger<WorldSeeder> logg
 {
     private static readonly JsonSerializerOptions JsonSerializerOptions = new()
     {
-        Converters = { new JsonStringEnumConverter<ObjectFlags>() }
+        Converters = { new JsonStringEnumConverter<ObjectFlags>(), new RoomIdJsonConverter() }
     };
 
     public IReadOnlyCollection<Room> GetSeedRooms()
