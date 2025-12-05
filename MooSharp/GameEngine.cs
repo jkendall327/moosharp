@@ -129,10 +129,10 @@ public class GameEngine(
 
         // 3. Add back to World map
         world.Players[newConnectionId.Value] = player;
-        
+
         // Tell the client we have logged in.
         await rawMessageSender.SendLoginResultAsync(newConnectionId, true, "Session restored.");
-        
+
         logger.LogInformation("Player {Player} reconnected successfully", player.Username);
     }
 
@@ -142,7 +142,10 @@ public class GameEngine(
 
         if (parsed is null)
         {
-            _ = rawMessageSender.SendGameMessagesAsync([new(player, new SystemMessageEvent("That command wasn't recognised."))], ct);
+            _ = rawMessageSender.SendGameMessagesAsync([
+                    new(player, new SystemMessageEvent("That command wasn't recognised."))
+                ],
+                ct);
 
             return;
         }
@@ -156,7 +159,11 @@ public class GameEngine(
         catch (Exception ex)
         {
             logger.LogError(ex, "Error processing world command {Command}", command.Command);
-            _ = rawMessageSender.SendGameMessagesAsync([new(player, new SystemMessageEvent("An unexpected error occurred."))], ct);
+
+            _ = rawMessageSender.SendGameMessagesAsync([
+                    new(player, new SystemMessageEvent("An unexpected error occurred."))
+                ],
+                ct);
         }
     }
 
@@ -209,25 +216,27 @@ public class GameEngine(
             return;
         }
 
-        var startingRoom = world.Rooms.TryGetValue(new RoomId(dto.CurrentLocation), out var r) ? r : world.GetDefaultRoom();
+        var startingRoom = world.Rooms.TryGetValue(new RoomId(dto.CurrentLocation), out var r)
+            ? r
+            : world.GetDefaultRoom();
 
-            var player = new Player
+        var player = new Player
+        {
+            Username = dto.Username,
+            Connection = connectionFactory.Create(connectionId)
+        };
+
+        foreach (var item in dto.Inventory)
+        {
+            var obj = new Object
             {
-                Username = dto.Username,
-                Connection = connectionFactory.Create(connectionId)
+                Id = new(Guid.Parse(item.Id)),
+                Name = item.Name,
+                Description = item.Description,
+                Flags = (ObjectFlags) item.Flags,
+                KeyId = item.KeyId,
+                CreatorUsername = item.CreatorUsername
             };
-
-            foreach (var item in dto.Inventory)
-            {
-                var obj = new Object
-                {
-                    Id = new(Guid.Parse(item.Id)),
-                    Name = item.Name,
-                    Description = item.Description,
-                    Flags = (ObjectFlags)item.Flags,
-                    KeyId = item.KeyId,
-                    CreatorUsername = item.CreatorUsername
-                };
 
             if (!string.IsNullOrWhiteSpace(item.TextContent))
             {
