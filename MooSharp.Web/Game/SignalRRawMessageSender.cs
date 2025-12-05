@@ -1,10 +1,14 @@
 using Microsoft.AspNetCore.SignalR;
 using MooSharp.Actors;
 using MooSharp.Infrastructure;
+using MooSharp.Messaging;
 
 namespace MooSharp.Web.Game;
 
-public class SignalRRawMessageSender(IHubContext<MooHub> hubContext) : IRawMessageSender
+public class SignalRRawMessageSender(
+    IHubContext<MooHub> hubContext,
+    IGameMessagePresenter presenter,
+    ILogger<SignalRRawMessageSender> logger) : IRawMessageSender
 {
     public async Task SendLoginRequiredMessageAsync(ConnectionId connectionId, CancellationToken ct = default)
     {
@@ -27,11 +31,31 @@ public class SignalRRawMessageSender(IHubContext<MooHub> hubContext) : IRawMessa
             .SendAsync("ReceiveMessage", message, cancellationToken: ct);
     }
 
-    public Task SendLoginResultAsync(ConnectionId connectionId, bool success, string message, CancellationToken ct = default)
+    public Task SendLoginResultAsync(ConnectionId connectionId,
+        bool success,
+        string message,
+        CancellationToken ct = default)
     {
         return hubContext
             .Clients
             .Client(connectionId.Value)
             .SendAsync("LoginResult", success, message, cancellationToken: ct);
+    }
+
+    public async Task SendGameMessagesAsync(List<GameMessage> messages, CancellationToken ct = default)
+    {
+        var tasks = messages
+            .Select(msg => (msg.Player, Content: presenter.Present(msg)))
+            .Where(msg => !string.IsNullOrWhiteSpace(msg.Content))
+            .Select(msg => msg.Player.Connection.SendMessageAsync(msg.Content!, ct));
+
+        try
+        {
+            await Task.WhenAll(tasks);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Error sending messages");
+        }
     }
 }

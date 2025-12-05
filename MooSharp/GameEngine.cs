@@ -142,7 +142,7 @@ public class GameEngine(
 
         if (parsed is null)
         {
-            _ = SendGameMessagesAsync([new(player, new SystemMessageEvent("That command wasn't recognised."))], ct);
+            _ = rawMessageSender.SendGameMessagesAsync([new(player, new SystemMessageEvent("That command wasn't recognised."))], ct);
 
             return;
         }
@@ -151,12 +151,12 @@ public class GameEngine(
         {
             var result = await executor.Handle(parsed, ct);
 
-            _ = SendGameMessagesAsync(result.Messages, ct);
+            _ = rawMessageSender.SendGameMessagesAsync(result.Messages, ct);
         }
         catch (Exception ex)
         {
             logger.LogError(ex, "Error processing world command {Command}", command.Command);
-            _ = SendGameMessagesAsync([new(player, new SystemMessageEvent("An unexpected error occurred."))], ct);
+            _ = rawMessageSender.SendGameMessagesAsync([new(player, new SystemMessageEvent("An unexpected error occurred."))], ct);
         }
     }
 
@@ -194,7 +194,7 @@ public class GameEngine(
             true,
             $"Registered and logged in as {player.Username}.");
 
-        _ = SendGameMessagesAsync(messages);
+        _ = rawMessageSender.SendGameMessagesAsync(messages);
     }
 
     private async Task Login(ConnectionId connectionId, LoginCommand lc, string? sessionToken)
@@ -255,7 +255,7 @@ public class GameEngine(
 
         await rawMessageSender.SendLoginResultAsync(connectionId, true, $"Logged in as {player.Username}.");
 
-        _ = SendGameMessagesAsync(messages);
+        _ = rawMessageSender.SendGameMessagesAsync(messages);
     }
 
     private void TrackSession(string? sessionToken, Player player, ConnectionId connectionId)
@@ -266,23 +266,6 @@ public class GameEngine(
         }
 
         sessionManager.RegisterSession(sessionToken, player, connectionId);
-    }
-
-    private async Task SendGameMessagesAsync(List<GameMessage> messages, CancellationToken ct = default)
-    {
-        var tasks = messages
-            .Select(msg => (msg.Player, Content: presenter.Present(msg)))
-            .Where(msg => !string.IsNullOrWhiteSpace(msg.Content))
-            .Select(msg => msg.Player.Connection.SendMessageAsync(msg.Content!, ct));
-
-        try
-        {
-            await Task.WhenAll(tasks);
-        }
-        catch (Exception ex)
-        {
-            logger.LogError(ex, "Error sending messages");
-        }
     }
 
     private StringBuilder BuildCurrentRoomDescription(Player player)
@@ -371,6 +354,6 @@ public class GameEngine(
         result.Add(player, gameEvent);
         result.BroadcastToAllButPlayer(room, player, gameEvent);
 
-        await SendGameMessagesAsync(result.Messages, ct);
+        await rawMessageSender.SendGameMessagesAsync(result.Messages, ct);
     }
 }
