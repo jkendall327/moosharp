@@ -2,9 +2,10 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Time.Testing;
 using MooSharp.Actors;
+using MooSharp.Data;
+using MooSharp.Data.Mapping;
 using MooSharp.Infrastructure;
 using MooSharp.Messaging;
-using MooSharp.Persistence;
 using MooSharp.World;
 using NSubstitute;
 

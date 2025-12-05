@@ -29,6 +29,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\MooSharp.Web\MooSharp.Web.csproj" />
+    <ProjectReference Include="..\MooSharp.Data\MooSharp.Data.csproj" />
   </ItemGroup>
 
 </Project>

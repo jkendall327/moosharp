@@ -6,9 +6,11 @@ using MooSharp.Agents;
 using MooSharp.Commands;
 using MooSharp.Commands.Commands;
 using MooSharp.Commands.Machinery;
+using MooSharp.Data;
+using MooSharp.Data.Dtos;
+using MooSharp.Data.Mapping;
 using MooSharp.Infrastructure;
 using MooSharp.Messaging;
-using MooSharp.Persistence;
 using Object = MooSharp.Actors.Object;
 
 namespace MooSharp;
@@ -84,7 +86,9 @@ public class GameEngine(
             world.MovePlayer(player, location);
         }
 
-        await playerStore.SavePlayer(player, location);
+        var snapshot = PlayerSnapshotFactory.CreateSnapshot(player, location);
+
+        await playerStore.SavePlayerAsync(snapshot);
 
         world.RemovePlayer(player);
 
@@ -168,7 +172,9 @@ public class GameEngine(
 
         world.MovePlayer(player, defaultRoom);
 
-        await playerStore.SaveNewPlayer(player, defaultRoom, rc.Password);
+        var newPlayerRequest = PlayerSnapshotFactory.CreateNewPlayer(player, defaultRoom, rc.Password);
+
+        await playerStore.SaveNewPlayerAsync(newPlayerRequest);
 
         world.Players[connectionId.Value] = player;
         TrackSession(sessionToken, player, connectionId);
@@ -193,7 +199,7 @@ public class GameEngine(
 
     private async Task Login(ConnectionId connectionId, LoginCommand lc, string? sessionToken)
     {
-        var dto = await playerStore.LoadPlayer(lc);
+        var dto = await playerStore.LoadPlayerAsync(new LoginRequest(lc.Username, lc.Password));
 
         if (dto is null)
         {
@@ -203,7 +209,7 @@ public class GameEngine(
             return;
         }
 
-        var startingRoom = world.Rooms.TryGetValue(dto.CurrentLocation, out var r) ? r : world.GetDefaultRoom();
+        var startingRoom = world.Rooms.TryGetValue(new RoomId(dto.CurrentLocation), out var r) ? r : world.GetDefaultRoom();
 
             var player = new Player
             {
@@ -218,7 +224,7 @@ public class GameEngine(
                     Id = new(Guid.Parse(item.Id)),
                     Name = item.Name,
                     Description = item.Description,
-                    Flags = item.Flags,
+                    Flags = (ObjectFlags)item.Flags,
                     KeyId = item.KeyId,
                     CreatorUsername = item.CreatorUsername
                 };

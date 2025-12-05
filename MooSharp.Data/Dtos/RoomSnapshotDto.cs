@@ -1,24 +1,22 @@
-using MooSharp.Actors;
-
-namespace MooSharp.Persistence.Dtos;
+namespace MooSharp.Data.Dtos;
 
 public sealed record RoomSnapshotDto(
-    RoomId Id,
+    string Id,
     string Name,
     string Description,
     string LongDescription,
     string EnterText,
     string ExitText,
     string? CreatorUsername,
-    IReadOnlyDictionary<string, RoomId> Exits,
+    IReadOnlyDictionary<string, string> Exits,
     IReadOnlyCollection<ObjectSnapshotDto> Objects);
 
 public sealed record ObjectSnapshotDto(
-    ObjectId Id,
-    RoomId RoomId,
+    string Id,
+    string RoomId,
     string Name,
     string Description,
     string? TextContent,
-    ObjectFlags Flags,
+    int Flags,
     string? KeyId,
     string? CreatorUsername);

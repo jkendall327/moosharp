@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Logging;
 using MooSharp.Actors;
-using MooSharp.Persistence;
+using MooSharp.Data;
+using MooSharp.Data.Mapping;
 
 namespace MooSharp.World;
 
@@ -12,7 +13,7 @@ public class WorldInitializer(World world, IWorldStore worldStore, IWorldSeeder 
         if (await worldStore.HasRoomsAsync(cancellationToken))
         {
             var rooms = await worldStore.LoadRoomsAsync(cancellationToken);
-            world.Initialize(rooms);
+            world.Initialize(WorldSnapshotFactory.CreateRooms(rooms));
 
             logger.LogInformation("World loaded with {RoomCount} rooms from persistent storage", rooms.Count);
             return;
@@ -20,7 +21,7 @@ public class WorldInitializer(World world, IWorldStore worldStore, IWorldSeeder 
 
         var seedRooms = worldSeeder.GetSeedRooms().ToList();
 
-        await worldStore.SaveRoomsAsync(seedRooms, cancellationToken);
+        await worldStore.SaveRoomsAsync(WorldSnapshotFactory.CreateSnapshots(seedRooms), cancellationToken);
         world.Initialize(seedRooms);
 
         logger.LogInformation("World seeded with {RoomCount} rooms from configuration", seedRooms.Count);
@@ -32,7 +33,7 @@ public class WorldInitializer(World world, IWorldStore worldStore, IWorldSeeder 
 
         var roomList = rooms.ToList();
 
-        await worldStore.SaveRoomsAsync(roomList, cancellationToken);
+        await worldStore.SaveRoomsAsync(WorldSnapshotFactory.CreateSnapshots(roomList), cancellationToken);
         world.Initialize(roomList);
 
         logger.LogInformation("World initialized with {RoomCount} provided rooms", roomList.Count);

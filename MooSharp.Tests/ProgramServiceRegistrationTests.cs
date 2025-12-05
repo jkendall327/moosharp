@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using MooSharp.Data;
 using MooSharp.Web;
 
 namespace MooSharp.Tests;
@@ -23,6 +24,7 @@ public class ProgramServiceRegistrationTests
         builder.Services.AddMooSharpOptions();
         builder.Services.AddMooSharpHostedServices();
         builder.Services.AddMooSharpMessaging();
+        builder.Services.AddMooSharpData("game.db");
 
         builder.RegisterCommandDefinitions();
         builder.RegisterCommandHandlers();

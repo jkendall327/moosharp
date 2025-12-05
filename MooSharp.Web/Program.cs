@@ -1,3 +1,4 @@
+using MooSharp.Data;
 using MooSharp.Web;
 using MooSharp.Web.Components;
 using MooSharp.Web.Endpoints;
@@ -10,9 +11,14 @@ builder.Services.AddRazorComponents().AddInteractiveServerComponents();
 builder.Services.AddSignalR();
 builder.Services.AddHttpClient();
 
-builder.Services.AddMooSharpWebServices();
-builder.Services.AddMooSharpServices();
 builder.Services.AddMooSharpOptions();
+builder.Services.AddMooSharpWebServices();
+
+var databasePath = builder.Configuration.GetValue<string>("AppOptions:DatabaseFilepath")
+                   ?? throw new InvalidOperationException("DatabaseFilepath is not configured.");
+
+builder.Services.AddMooSharpData(databasePath);
+builder.Services.AddMooSharpServices();
 builder.Services.AddMooSharpHostedServices();
 builder.Services.AddMooSharpMessaging();
 
@@ -21,6 +27,11 @@ builder.RegisterCommandHandlers();
 builder.RegisterPresenters();
 
 var app = builder.Build();
+
+if (!app.Environment.IsProduction())
+{
+    await app.EnsureMooSharpDatabaseCreatedAsync();
+}
 
 await InitializeWorldAsync(app.Services);
 

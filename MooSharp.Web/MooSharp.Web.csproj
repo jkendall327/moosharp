@@ -7,9 +7,10 @@
         <UserSecretsId>0e7a343a-2087-4f6e-84c2-ecbad42474ad</UserSecretsId>
     </PropertyGroup>
 
-    <ItemGroup>
-      <ProjectReference Include="..\MooSharp\MooSharp.csproj" />
-    </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\MooSharp\MooSharp.csproj" />
+    <ProjectReference Include="..\MooSharp.Data\MooSharp.Data.csproj" />
+  </ItemGroup>
 
     <ItemGroup>
       <PackageReference Include="Microsoft.AspNetCore.SignalR.Client" Version="10.0.0" />

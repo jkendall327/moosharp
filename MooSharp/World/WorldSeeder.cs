@@ -4,7 +4,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using MooSharp.Actors;
 using MooSharp.Infrastructure;
-using MooSharp.Persistence.Dtos;
+using MooSharp.World.Dtos;
 using Object = MooSharp.Actors.Object;
 
 namespace MooSharp.World;
@@ -18,7 +18,7 @@ public class WorldSeeder(IOptions<AppOptions> options, ILogger<WorldSeeder> logg
 {
     private static readonly JsonSerializerOptions JsonSerializerOptions = new()
     {
-        Converters = { new JsonStringEnumConverter<ObjectFlags>() }
+        Converters = { new JsonStringEnumConverter<ObjectFlags>(), new RoomIdJsonConverter() }
     };
 
     public IReadOnlyCollection<Room> GetSeedRooms()
@@ -124,7 +124,7 @@ public class WorldSeeder(IOptions<AppOptions> options, ILogger<WorldSeeder> logg
     {
         foreach (var objectDto in dto.Objects.Where(s => s.RoomSlug is not null))
         {
-            if (!rooms.TryGetValue(objectDto.RoomSlug!, out var room))
+            if (!rooms.TryGetValue(objectDto.RoomSlug!.Value, out var room))
             {
                 continue;
             }
