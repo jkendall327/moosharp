@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace MooSharp.Data.EntityFramework;
 
-public sealed class MooSharpDbContext(DbContextOptions<MooSharpDbContext> options) : DbContext(options)
+internal sealed class MooSharpDbContext(DbContextOptions<MooSharpDbContext> options) : DbContext(options)
 {
     public DbSet<PlayerEntity> Players => Set<PlayerEntity>();
     public DbSet<InventoryItemEntity> PlayerInventory => Set<InventoryItemEntity>();
