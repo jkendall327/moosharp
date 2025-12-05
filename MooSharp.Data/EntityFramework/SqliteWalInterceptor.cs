@@ -15,13 +15,8 @@ internal sealed class SqliteWalInterceptor : DbConnectionInterceptor
         }
 
         await using var pragma = sqliteConnection.CreateCommand();
-        pragma.CommandText = "PRAGMA journal_mode=WAL;";
-        await pragma.ExecuteNonQueryAsync(cancellationToken);
 
         pragma.CommandText = "PRAGMA synchronous=NORMAL;";
-        await pragma.ExecuteNonQueryAsync(cancellationToken);
-
-        pragma.CommandText = "PRAGMA foreign_keys=ON;";
         await pragma.ExecuteNonQueryAsync(cancellationToken);
     }
 }
