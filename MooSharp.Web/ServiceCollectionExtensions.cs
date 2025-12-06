@@ -9,6 +9,7 @@ using MooSharp.Commands.Searching;
 using MooSharp.Game;
 using MooSharp.Infrastructure;
 using MooSharp.Messaging;
+using MooSharp.Web.Endpoints;
 using MooSharp.Web.Game;
 using MooSharp.Web.Services;
 using MooSharp.World;
@@ -26,6 +27,21 @@ public static class ServiceCollectionExtensions
             services.AddScoped<IGameHistoryService, ClientStorageGameHistoryService>();
             services.AddScoped<IGameConnectionService, SignalRGameConnectionService>();
             services.AddScoped<GameClientViewModel>();
+            services.AddSingleton<JwtTokenService>();
+
+            services.AddHttpContextAccessor();
+
+            services.AddHttpClient(nameof(AuthEndpoints),
+                (sp, client) =>
+                {
+                    var accessor = sp.GetRequiredService<IHttpContextAccessor>();
+                    var http = accessor.HttpContext!;
+
+                    // Builds: "https://yoursite.com"
+                    var baseUri = new Uri($"{http.Request.Scheme}://{http.Request.Host}");
+
+                    client.BaseAddress = baseUri;
+                });
         }
 
         public void AddMooSharpServices()

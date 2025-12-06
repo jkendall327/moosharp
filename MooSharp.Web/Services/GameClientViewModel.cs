@@ -35,10 +35,7 @@ public sealed class GameClientViewModel : IDisposable
     public bool IsLoggedIn { get; private set; }
 
     // Derived properties for UI state
-    public bool IsConnected => _connection.IsConnected();
-
-    public bool CanSubmitCredentials =>
-        IsConnected && !string.IsNullOrWhiteSpace(Username) && !string.IsNullOrWhiteSpace(Password);
+    public bool CanSubmitCredentials => !string.IsNullOrWhiteSpace(Username) && !string.IsNullOrWhiteSpace(Password);
 
     // Channel preferences
     public Dictionary<string, bool> ChannelMuteState { get; } = new(StringComparer.OrdinalIgnoreCase);
@@ -142,7 +139,7 @@ public sealed class GameClientViewModel : IDisposable
 
         try
         {
-            var client = _factory.CreateClient();
+            var client = _factory.CreateClient(nameof(AuthEndpoints));
 
             var request = new LoginRequest(Username, Password);
 
@@ -161,7 +158,7 @@ public sealed class GameClientViewModel : IDisposable
 
             LoginStatus = "Logged in.";
             IsLoggedIn = true;
-            
+
             await StartConnection();
         }
         catch (Exception ex)
@@ -184,7 +181,7 @@ public sealed class GameClientViewModel : IDisposable
 
         try
         {
-            var client = _factory.CreateClient();
+            var client = _factory.CreateClient(nameof(AuthEndpoints));
 
             var request = new RegisterRequest(Username, Password);
 
@@ -203,7 +200,7 @@ public sealed class GameClientViewModel : IDisposable
             _jwt = result.Token;
             LoginStatus = "Registered.";
             IsLoggedIn = true;
-            
+
             await StartConnection();
         }
         catch (Exception ex)
@@ -358,7 +355,7 @@ public sealed class GameClientViewModel : IDisposable
 
         ChannelMuteState[channel] = isMuted;
 
-        if (IsLoggedIn && IsConnected)
+        if (IsLoggedIn)
         {
             var command = isMuted ? $"mute {channel}" : $"unmute {channel}";
 
