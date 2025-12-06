@@ -1,5 +1,6 @@
 using System.Reflection;
 using System.Threading.Channels;
+using MooSharp.Actors;
 using MooSharp.Agents;
 using MooSharp.Commands.Machinery;
 using MooSharp.Commands.Searching;
@@ -29,6 +30,7 @@ public static class ServiceCollectionExtensions
             services.AddSingleton<IWorldSeeder, WorldSeeder>();
             services.AddSingleton<WorldInitializer>();
             services.AddSingleton<World.World>();
+            services.AddSingleton<PlayerHydrator>();
 
             // Commands
             services.AddSingleton<CommandParser>();
