@@ -8,7 +8,13 @@ using MooSharp.World;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddRazorComponents().AddInteractiveServerComponents();
-builder.Services.AddSignalR();
+
+builder.Services.AddSignalR(hubOptions =>
+{
+    // 32KB. This is the framework default, but set it explicitly to prevent it changing from under us in future .NET versions etc.
+    hubOptions.MaximumReceiveMessageSize = 32 * 1024;
+});
+
 builder.Services.AddHttpClient();
 
 builder.Services.AddMooSharpOptions();
