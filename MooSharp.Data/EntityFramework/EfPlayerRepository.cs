@@ -37,8 +37,8 @@ internal sealed class EfPlayerRepository(
         }
     }
 
-    public Task<PlayerDto?> LoadPlayerAsync(LoginRequest command, CancellationToken ct) =>
-        store.LoadPlayerAsync(command, ct);
+    public Task<PlayerDto?> LoadPlayerAsync(string username, string password, CancellationToken ct) =>
+        store.LoadPlayerAsync(username, password, ct);
 
     private async Task EnqueueAsync(DatabaseRequest request, CancellationToken ct)
     {

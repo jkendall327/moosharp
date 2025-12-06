@@ -206,7 +206,7 @@ public class GameEngine(
 
     private async Task Login(ConnectionId connectionId, LoginCommand lc, string? sessionToken)
     {
-        var dto = await playerRepository.LoadPlayerAsync(new LoginRequest(lc.Username, lc.Password));
+        var dto = await playerRepository.LoadPlayerAsync(lc.Username, lc.Password);
 
         if (dto is null)
         {
