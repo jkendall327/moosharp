@@ -182,13 +182,7 @@ public class GameEngine(
 
         await playerRepository.SaveNewPlayerAsync(newPlayerRequest);
 
-        world.Players[connectionId.Value] = player;
-        TrackSession(sessionToken, player, connectionId);
-
-        var messages = await messageProvider.GetMessagesForLogin(player);
-
-        await sender.SendLoginResultAsync(connectionId, true, $"Registered and logged in as {player.Username}.");
-        _ = sender.SendGameMessagesAsync(messages);
+        await DealWithPlayerConnectionBookkeeping(connectionId, sessionToken, player);
     }
 
     private async Task Login(ConnectionId connectionId, LoginCommand lc, string? sessionToken)
@@ -229,24 +223,22 @@ public class GameEngine(
 
         await hydrator.RehydrateAsync(player, dto);
 
+        await DealWithPlayerConnectionBookkeeping(connectionId, sessionToken, player);
+    }
+    
+    private async Task DealWithPlayerConnectionBookkeeping(ConnectionId connectionId, string? sessionToken, Player player)
+    {
         world.Players[connectionId.Value] = player;
-        TrackSession(sessionToken, player, connectionId);
+        
+        if (!string.IsNullOrWhiteSpace(sessionToken))
+        {
+            sessionManager.RegisterSession(sessionToken, player, connectionId);
+        }
 
         var messages = await messageProvider.GetMessagesForLogin(player);
 
-        await sender.SendLoginResultAsync(connectionId, true, $"Logged in as {player.Username}.");
-
+        await sender.SendLoginResultAsync(connectionId, true, $"Registered and logged in as {player.Username}.");
         _ = sender.SendGameMessagesAsync(messages);
-    }
-
-    private void TrackSession(string? sessionToken, Player player, ConnectionId connectionId)
-    {
-        if (string.IsNullOrWhiteSpace(sessionToken))
-        {
-            return;
-        }
-
-        sessionManager.RegisterSession(sessionToken, player, connectionId);
     }
 
     private Task RegisterAgent(ConnectionId connectionId, RegisterAgentCommand command)

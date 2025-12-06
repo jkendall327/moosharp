@@ -11,7 +11,7 @@ public static class PlayerSnapshotFactory
         ArgumentNullException.ThrowIfNull(currentLocation);
         ArgumentException.ThrowIfNullOrWhiteSpace(password);
 
-        return new NewPlayerRequest(player.Username, password, currentLocation.Id.Value, CreateInventorySnapshot(player));
+        return new(player.Username, password, currentLocation.Id.Value, CreateInventorySnapshot(player));
     }
 
     public static PlayerSnapshotDto CreateSnapshot(Player player, Room currentLocation)
@@ -19,7 +19,7 @@ public static class PlayerSnapshotFactory
         ArgumentNullException.ThrowIfNull(player);
         ArgumentNullException.ThrowIfNull(currentLocation);
 
-        return new PlayerSnapshotDto(player.Username, currentLocation.Id.Value, CreateInventorySnapshot(player));
+        return new(player.Username, currentLocation.Id.Value, CreateInventorySnapshot(player));
     }
 
     private static List<InventoryItemDto> CreateInventorySnapshot(Player player)
