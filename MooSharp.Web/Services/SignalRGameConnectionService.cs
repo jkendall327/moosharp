@@ -61,16 +61,6 @@ public sealed class SignalRGameConnectionService : IGameConnectionService
         }
     }
 
-    public Task Login(string username, string password)
-    {
-        throw new NotImplementedException();
-    }
-
-    public Task Register(string username, string password)
-    {
-        throw new NotImplementedException();
-    }
-
     public async Task SendCommandAsync(string command)
     {
         if (_hubConnection is null)
