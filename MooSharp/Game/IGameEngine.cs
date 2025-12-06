@@ -1,5 +1,7 @@
 using System.Threading.Channels;
 using MooSharp.Actors;
+using MooSharp.Data;
+using MooSharp.Data.Mapping;
 using MooSharp.Messaging;
 
 namespace MooSharp.Game;
@@ -33,7 +35,7 @@ public interface IGameEngine
     Task<AutocompleteOptions> GetAutocompleteOptions(Guid actorId, CancellationToken ct = default);
 }
 
-public class GameEngine(World.World world, ChannelWriter<NewGameInput> writer) : IGameEngine
+public class GameEngine(World.World world, IPlayerRepository playerRepository, ChannelWriter<NewGameInput> writer) : IGameEngine
 {
     public async Task ProcessInputAsync(Guid actorId, string commandText, CancellationToken ct = default)
     {
@@ -59,7 +61,26 @@ public class GameEngine(World.World world, ChannelWriter<NewGameInput> writer) :
 
     public async Task DespawnActorAsync(Guid actorId, CancellationToken ct = default)
     {
-        throw new NotImplementedException();
+        if (!world.Players.TryGetValue(actorId.ToString(), out var player))
+        {
+            return ;
+        }
+        
+        // If they've somehow ended up in a broken state, restore them to the default location.
+        var location = world.GetPlayerLocation(player);
+
+        if (location is null)
+        {
+            location = world.GetDefaultRoom();
+
+            world.MovePlayer(player, location);
+        }
+        
+        var snapshot = PlayerSnapshotFactory.CreateSnapshot(player, location);
+
+        await playerRepository.SavePlayerAsync(snapshot, WriteType.Deferred, ct);
+
+        world.RemovePlayer(player);
     }
 
     public bool IsActorSpawned(Guid actorId)
