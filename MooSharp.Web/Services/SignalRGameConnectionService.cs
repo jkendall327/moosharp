@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.SignalR.Client;
 using MooSharp.Game;
+using MooSharp.Web.Services;
 
 namespace MooSharp.Web.Game;
 
@@ -60,24 +61,14 @@ public sealed class SignalRGameConnectionService : IGameConnectionService
         }
     }
 
-    public async Task Login(string username, string password)
+    public Task Login(string username, string password)
     {
-        if (_hubConnection is null)
-        {
-            throw new InvalidOperationException("Hub not initialized.");
-        }
-
-        await _hubConnection.SendAsync("Login", username, password);
+        throw new NotImplementedException();
     }
 
-    public async Task Register(string username, string password)
+    public Task Register(string username, string password)
     {
-        if (_hubConnection is null)
-        {
-            throw new InvalidOperationException("Hub not initialized.");
-        }
-
-        await _hubConnection.SendAsync("Register", username, password);
+        throw new NotImplementedException();
     }
 
     public async Task SendCommandAsync(string command)
@@ -87,7 +78,7 @@ public sealed class SignalRGameConnectionService : IGameConnectionService
             throw new InvalidOperationException("Hub not initialized.");
         }
 
-        await _hubConnection.SendAsync("SendCommand", command);
+        await _hubConnection.SendAsync(nameof(MooHub.SendCommand), command);
     }
 
     public async Task<AutocompleteOptions> GetAutocompleteOptions()
@@ -97,7 +88,7 @@ public sealed class SignalRGameConnectionService : IGameConnectionService
             throw new InvalidOperationException("Hub connection not initialized");
         }
 
-        return await _hubConnection.InvokeAsync<AutocompleteOptions>("GetAutocompleteOptions");
+        return await _hubConnection.InvokeAsync<AutocompleteOptions>(nameof(MooHub.GetAutocompleteOptions));
     }
 
     public bool IsConnected()
