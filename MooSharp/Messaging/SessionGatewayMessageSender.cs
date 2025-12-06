@@ -1,5 +1,4 @@
 using Microsoft.Extensions.Logging;
-using MooSharp.Actors;
 using MooSharp.Infrastructure;
 
 namespace MooSharp.Messaging;
@@ -9,24 +8,6 @@ public class SessionGatewayMessageSender(
     IGameMessagePresenter presenter,
     ILogger<SessionGatewayMessageSender> logger) : IRawMessageSender
 {
-    public Task SendLoginRequiredMessageAsync(ConnectionId connectionId, CancellationToken ct = default)
-    {
-        return Task.CompletedTask;
-    }
-
-    public async Task SendSystemMessageAsync(ConnectionId connectionId, string message, CancellationToken ct = default)
-    {
-        await gateway.DispatchToActorAsync(Guid.NewGuid(), message, ct);
-    }
-
-    public Task SendLoginResultAsync(ConnectionId connectionId,
-        bool success,
-        string message,
-        CancellationToken ct = default)
-    {
-        return Task.CompletedTask;
-    }
-
     public async Task SendGameMessagesAsync(IEnumerable<GameMessage> messages, CancellationToken ct = default)
     {
         var tasks = messages

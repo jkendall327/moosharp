@@ -52,7 +52,6 @@ public static class ServiceCollectionExtensions
 
             // Connections and message-sending
             services.AddSingleton<IRawMessageSender, SessionGatewayMessageSender>();
-            services.AddSingleton<PlayerSessionManager>();
 
             // Generic infrastructure
             services.AddSingleton<SlugCreator>();
