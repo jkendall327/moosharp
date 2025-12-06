@@ -22,8 +22,6 @@ public class GameEngine(
 
     public async Task SpawnActorAsync(Guid actorId, CancellationToken ct = default)
     {
-        var defaultRoom = world.GetDefaultRoom();
-
         var dto = await playerRepository.LoadPlayerAsync(actorId, ct);
 
         if (dto is null)
@@ -32,9 +30,7 @@ public class GameEngine(
         }
         
         var player = await hydrator.RehydrateAsync(dto);
-
-        world.MovePlayer(player, defaultRoom);
-
+        
         world.Players[player.Id.Value.ToString()] = player;
 
         var messages = await messageProvider.GetMessagesForLogin(player, ct);

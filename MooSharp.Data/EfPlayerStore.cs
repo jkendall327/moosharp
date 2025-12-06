@@ -100,11 +100,18 @@ internal class EfPlayerStore(IDbContextFactory<MooSharpDbContext> contextFactory
         return new(player.Id, player.Username, player.CurrentLocation, inventory);
     }
 
-    public async Task<bool> PlayerWithUsernameExistsAsync(string username, CancellationToken ct)
+    public async Task<PlayerDto?> GetPlayerByUsernameAsync(string username, CancellationToken ct)
     {
         await using var context = await contextFactory.CreateDbContextAsync(ct);
 
-        return await context.Players.AnyAsync(p => p.Username == username, ct);
+        var player = await context.Players.SingleOrDefaultAsync(p => p.Username == username, ct);
+
+        if (player is null)
+        {
+            return null;
+        }
+        
+        return new(player.Id, player.Username, player.CurrentLocation, []);
     }
 
     public async Task<LoginResult> LoginIsValidAsync(string username, string password, CancellationToken ct = default)

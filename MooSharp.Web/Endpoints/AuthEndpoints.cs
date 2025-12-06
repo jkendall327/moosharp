@@ -27,9 +27,9 @@ public static class AuthEndpoints
                 [FromServices] IPlayerRepository store,
                 [FromServices] JwtTokenService tokenService) =>
             {
-                var alreadyExists = await store.PlayerWithUsernameExistsAsync(rc.Username);
+                var player = await store.GetPlayerByUsername(rc.Username);
 
-                if (alreadyExists)
+                if (player is not null)
                 {
                     return Results.ValidationProblem([
                         new("Username", ["A player with that username already exists."])

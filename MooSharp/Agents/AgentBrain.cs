@@ -19,10 +19,12 @@ public sealed class AgentBrain(
     private Task? _processingTask;
     private Task? _volitionTask;
     
-    public PlayerId Id { get; } = PlayerId.New();
+    public PlayerId Id { get; private set; }
     
-    public async Task StartAsync(CancellationToken cancellationToken = default)
+    public async Task StartAsync(Guid id, CancellationToken cancellationToken = default)
     {
+        Id = new(id);
+        
         _cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
 
         // Wire up the connection to the internal channel

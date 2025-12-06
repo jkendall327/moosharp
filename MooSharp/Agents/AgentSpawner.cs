@@ -65,14 +65,16 @@ public class AgentSpawner(
     {
         var brain = factory.Build(identity);
 
-        await brain.StartAsync(cancellationToken);
+        var id = Guid.NewGuid();
 
-        var alreadyExists = await playerRepository.PlayerWithUsernameExistsAsync(identity.Name, cancellationToken);
+        var player = await playerRepository.GetPlayerByUsername(identity.Name, cancellationToken);
 
-        if (!alreadyExists)
+        if (player is null)
         {
-            await PersistAgentToDatabase(brain.Id.Value, identity, cancellationToken);
+            await PersistAgentToDatabase(id, identity, cancellationToken);
         }
+
+        await brain.StartAsync(id, cancellationToken);
 
         var channel = new AgentOutputChannel(brain.WriteToInternalQueue);
         await gateway.OnSessionStartedAsync(brain.Id.Value, channel);
