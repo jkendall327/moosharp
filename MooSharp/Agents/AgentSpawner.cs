@@ -3,6 +3,8 @@ using System.Text.Json.Serialization;
 using System.Threading.Channels;
 using Microsoft.Extensions.Options;
 using MooSharp.Actors;
+using MooSharp.Data;
+using MooSharp.Data.Dtos;
 using MooSharp.Infrastructure;
 using MooSharp.Messaging;
 using MooSharp.Web.Services;
@@ -12,7 +14,8 @@ namespace MooSharp.Agents;
 public class AgentSpawner(
     AgentFactory factory,
     ISessionGateway gateway,
-    ChannelWriter<GameInput> writer,
+    World.World world,
+    IPlayerRepository playerRepository,
     IOptions<AgentOptions> options)
 {
     private static readonly JsonSerializerOptions JsonSerializerOptions = new()
@@ -63,7 +66,15 @@ public class AgentSpawner(
         var brain = factory.Build(identity);
 
         await brain.StartAsync(cancellationToken);
+
+        // Stick the agent in the database so they are spawned into the world properly.
+        // TODO: unsure if this feels like a hack or not?
+        var startingRoom = identity.StartingRoomSlug ?? world.GetDefaultRoom().Id.Value;
         
+        var req = new NewPlayerRequest(identity.Name, Random.Shared.GetHexString(12), startingRoom);
+        
+        await playerRepository.SaveNewPlayerAsync(req, WriteType.Immediate, cancellationToken);
+
         var channel = new AgentOutputChannel(brain.WriteToInternalQueue);
         await gateway.OnSessionStartedAsync(brain.Id.Value, channel);
     }
