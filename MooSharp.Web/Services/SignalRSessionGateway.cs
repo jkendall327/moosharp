@@ -1,6 +1,5 @@
 using System.Collections.Concurrent;
 using MooSharp.Infrastructure;
-using MooSharp.Messaging;
 
 namespace MooSharp.Web.Services;
 
@@ -27,13 +26,22 @@ public class SignalRSessionGateway : ISessionGateway
         throw new NotImplementedException();
     }
 
-    public async Task DispatchToActorAsync(Guid actorId, IGameEvent gameEvent)
+    public async Task DispatchToActorAsync(Guid actorId, string message, CancellationToken ct = default)
     {
-        throw new NotImplementedException();
+        if (!_channels.TryGetValue(actorId, out var channel))
+        {
+            return;
+        }
+        
+        await channel.WriteOutputAsync(message, ct);
     }
 
-    public async Task BroadcastAsync(IGameEvent gameEvent)
+    public async Task BroadcastAsync(string message, CancellationToken ct = default)
     {
-        throw new NotImplementedException();
+        var all = _channels.Values.ToArray();
+        
+        var tasks = all.Select(s => s.WriteOutputAsync(message, ct));
+        
+        await Task.WhenAll(tasks);
     }
 }

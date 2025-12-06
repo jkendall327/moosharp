@@ -37,10 +37,10 @@ public interface ISessionGateway
     /// The Gateway looks up the active IOutputChannel for this ActorId and forwards the message.
     /// If the user is Linkdead, this might buffer the message or drop it.
     /// </summary>
-    Task DispatchToActorAsync(Guid actorId, IGameEvent gameEvent);
+    Task DispatchToActorAsync(Guid actorId, string message, CancellationToken ct = default);
     
     /// <summary>
     /// Sends a message to everyone currently connected (e.g. shutdown announcements).
     /// </summary>
-    Task BroadcastAsync(IGameEvent gameEvent);
+    Task BroadcastAsync(string message, CancellationToken ct = default);
 }
