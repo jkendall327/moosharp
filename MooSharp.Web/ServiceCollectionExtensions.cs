@@ -10,6 +10,7 @@ using MooSharp.Game;
 using MooSharp.Infrastructure;
 using MooSharp.Messaging;
 using MooSharp.Web.Game;
+using MooSharp.Web.Services;
 using MooSharp.World;
 
 namespace MooSharp.Web;

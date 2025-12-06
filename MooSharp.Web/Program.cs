@@ -3,6 +3,7 @@ using MooSharp.Web;
 using MooSharp.Web.Components;
 using MooSharp.Web.Endpoints;
 using MooSharp.Web.Game;
+using MooSharp.Web.Services;
 using MooSharp.World;
 
 var builder = WebApplication.CreateBuilder(args);

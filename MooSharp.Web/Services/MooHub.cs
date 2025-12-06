@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.SignalR;
 using MooSharp.Game;
 using MooSharp.Messaging;
 
-namespace MooSharp.Web.Game;
+namespace MooSharp.Web.Services;
 
 public class MooHub(ChannelWriter<GameInput> writer, ILogger<MooHub> logger, World.World world) : Hub
 {

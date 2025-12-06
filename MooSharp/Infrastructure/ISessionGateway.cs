@@ -1,7 +1,6 @@
-using MooSharp.Infrastructure;
 using MooSharp.Messaging;
 
-namespace MooSharp.Gateway;
+namespace MooSharp.Infrastructure;
 
 /// <summary>
 /// Manages the lifecycle of active sessions.

@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.SignalR;
 using MooSharp.Actors;
 using MooSharp.Messaging;
+using MooSharp.Web.Services;
 
 namespace MooSharp.Web.Game;
 
