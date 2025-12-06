@@ -34,7 +34,6 @@ public class GameInputProcessor(
         {
             case RegisterCommand rc: await CreateNewPlayer(input.ConnectionId, rc, input.SessionToken); break;
             case LoginCommand lc: await Login(input.ConnectionId, lc, input.SessionToken); break;
-            case RegisterAgentCommand ra: await RegisterAgent(input.ConnectionId, ra); break;
             case WorldCommand wc:
                 if (!world.Players.TryGetValue(input.ConnectionId.Value, out var player))
                 {
@@ -238,34 +237,5 @@ public class GameInputProcessor(
 
         await sender.SendLoginResultAsync(connectionId, true, $"Registered and logged in as {player.Username}.");
         _ = sender.SendGameMessagesAsync(messages);
-    }
-
-    private Task RegisterAgent(ConnectionId connectionId, RegisterAgentCommand command)
-    {
-        var startingRoom = world.GetDefaultRoom();
-
-        var slug = command.Identity.StartingRoomSlug;
-
-        if (slug is not null)
-        {
-            if (world.Rooms.TryGetValue(slug, out var found))
-            {
-                startingRoom = found;
-            }
-        }
-
-        var player = new Player
-        {
-            Username = command.Identity.Name,
-            Connection = command.Connection
-        };
-
-        world.MovePlayer(player, startingRoom);
-
-        world.Players[connectionId.Value] = player;
-
-        logger.LogInformation("Agent {AgentName} registered", player.Username);
-
-        return Task.CompletedTask;
     }
 }

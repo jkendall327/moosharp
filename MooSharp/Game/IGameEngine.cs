@@ -23,7 +23,7 @@ public interface IGameEngine
     /// Saves the player to DB, removes from Room, removes from World loop.
     /// </summary>
     Task DespawnActorAsync(Guid actorId, CancellationToken ct = default);
-    
+
     /// <summary>
     /// Returns true if the actor is currently spawned in the world simulation.
     /// Used by the Gateway to decide whether to call SpawnActorAsync on reconnect.
@@ -42,6 +42,18 @@ public class GameEngine(World.World world, ChannelWriter<NewGameInput> writer) :
 
     public async Task SpawnActorAsync(Guid actorId, CancellationToken ct = default)
     {
+        var defaultRoom = world.GetDefaultRoom();
+
+        var player = new Player
+        {
+            Username = null,
+            Connection = null
+        };
+
+        world.MovePlayer(player, defaultRoom);
+
+        world.Players[null] = player;
+        
         throw new NotImplementedException();
     }
 
