@@ -24,14 +24,14 @@ public class PlayerMessageProvider(
             new(player, new SystemMessageEvent($"Welcome, {player.Username}."))
         };
 
-        AddMotdMessage(messages, player);
+        AddMessageOfTheDay(messages, player);
 
         messages.Add(new(player, new RoomDescriptionEvent(description.ToString())));
 
         return Task.FromResult(messages);
     }
 
-    private void AddMotdMessage(List<GameMessage> messages, Player player)
+    private void AddMessageOfTheDay(List<GameMessage> messages, Player player)
     {
         var motd = MessageOfTheDay;
 

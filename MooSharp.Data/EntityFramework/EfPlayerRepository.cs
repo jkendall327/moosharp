@@ -37,8 +37,8 @@ internal sealed class EfPlayerRepository(
         }
     }
 
-    public Task<PlayerDto?> LoadPlayerAsync(string username, CancellationToken ct) =>
-        store.LoadPlayerAsync(username, ct);
+    public Task<PlayerDto?> LoadPlayerAsync(Guid id, CancellationToken ct) =>
+        store.LoadPlayerAsync(id, ct);
 
     public Task<bool> PlayerWithUsernameExistsAsync(string username, CancellationToken ct = default) =>
         store.PlayerWithUsernameExistsAsync(username, ct);

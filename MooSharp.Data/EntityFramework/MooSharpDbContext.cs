@@ -123,6 +123,7 @@ internal sealed class MooSharpDbContext(DbContextOptions<MooSharpDbContext> opti
 
 public sealed class PlayerEntity
 {
+    public Guid Id { get; init; }
     [MaxLength(100)] public string Username { get; init; } = string.Empty;
     [MaxLength(100)] public string Password { get; set; } = string.Empty;
     [MaxLength(100)] public string CurrentLocation { get; set; } = string.Empty;

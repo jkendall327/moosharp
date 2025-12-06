@@ -86,14 +86,14 @@ internal class EfPlayerStore(IDbContextFactory<MooSharpDbContext> contextFactory
         await context.SaveChangesAsync(ct);
     }
 
-    public async Task<PlayerDto?> LoadPlayerAsync(string username, CancellationToken ct = default)
+    public async Task<PlayerDto?> LoadPlayerAsync(Guid id, CancellationToken ct = default)
     {
         await using var context = await contextFactory.CreateDbContextAsync(ct);
 
         var player = await context
             .Players
             .Include(p => p.Inventory)
-            .FirstOrDefaultAsync(p => p.Username == username, ct);
+            .SingleOrDefaultAsync(p => p.Id == id, ct);
         
         if (player is null)
         {

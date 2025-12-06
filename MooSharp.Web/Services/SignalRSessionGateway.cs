@@ -35,8 +35,6 @@ public class SignalRSessionGateway(IGameEngine engine, ILogger<SignalRSessionGat
         {
             await engine.SpawnActorAsync(actorId);
         }
-
-        throw new NotImplementedException();
     }
 
     public Task OnSessionEndedAsync(Guid actorId)

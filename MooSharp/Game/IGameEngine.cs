@@ -2,6 +2,7 @@ using System.Threading.Channels;
 using MooSharp.Actors;
 using MooSharp.Data;
 using MooSharp.Data.Mapping;
+using MooSharp.Infrastructure;
 using MooSharp.Messaging;
 
 namespace MooSharp.Game;
@@ -35,8 +36,13 @@ public interface IGameEngine
     Task<AutocompleteOptions> GetAutocompleteOptions(Guid actorId, CancellationToken ct = default);
 }
 
-public class GameEngine(World.World world, IPlayerRepository playerRepository, ChannelWriter<GameInput> writer)
-    : IGameEngine
+public class GameEngine(
+    World.World world,
+    PlayerHydrator hydrator,
+    IPlayerRepository playerRepository,
+    PlayerMessageProvider messageProvider,
+    IGameMessageEmitter emitter,
+    ChannelWriter<GameInput> writer) : IGameEngine
 {
     public async Task ProcessInputAsync(Guid actorId, string commandText, CancellationToken ct = default)
     {
@@ -47,23 +53,22 @@ public class GameEngine(World.World world, IPlayerRepository playerRepository, C
     {
         var defaultRoom = world.GetDefaultRoom();
 
-        var player = new Player
+        var dto = await playerRepository.LoadPlayerAsync(actorId, ct);
+
+        if (dto is null)
         {
-            Username = null,
-        };
+            throw new InvalidOperationException($"Details for actor {actorId} were not found in database.");
+        }
+        
+        var player = await hydrator.RehydrateAsync(dto);
 
         world.MovePlayer(player, defaultRoom);
 
-        world.Players[null] = player;
+        world.Players[player.Id.Value.ToString()] = player;
 
-        throw new NotImplementedException();
-
-        // await hydrator.RehydrateAsync(player, dto);
-
-        // var messages = await messageProvider.GetMessagesForLogin(player);
-        //
-        // await sender.SendLoginResultAsync(connectionId, true, $"Registered and logged in as {player.Username}.");
-        // _ = sender.SendGameMessagesAsync(messages);    
+        var messages = await messageProvider.GetMessagesForLogin(player, ct);
+        
+        _ = emitter.SendGameMessagesAsync(messages, ct);    
     }
 
     public async Task DespawnActorAsync(Guid actorId, CancellationToken ct = default)
