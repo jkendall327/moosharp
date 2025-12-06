@@ -12,41 +12,27 @@ internal class EfPlayerStore(IDbContextFactory<MooSharpDbContext> contextFactory
     {
         await using var context = await contextFactory.CreateDbContextAsync(ct);
 
-        var existing = await context
-            .Players
-            .Include(p => p.Inventory)
-            .FirstOrDefaultAsync(p => p.Username == player.Username, ct);
+        // Hash unconditionally to mitigate timing side-channels.
+        var hashed = BCrypt.Net.BCrypt.HashPassword(player.Password);
 
-        if (existing is null)
+        var existing = await context.Players.AnyAsync(p =>
+                string.Equals(p.Username, player.Username, StringComparison.OrdinalIgnoreCase),
+            ct);
+
+        if (existing)
         {
-            existing = new()
-            {
-                Username = player.Username
-            };
-
-            context.Players.Add(existing);
+            throw new InvalidOperationException($"Player record with username {player.Username} already exists.");
         }
 
-        existing.Password = BCrypt.Net.BCrypt.HashPassword(player.Password);
-        existing.CurrentLocation = player.CurrentLocation;
+        var newPlayer = new PlayerEntity
+        {
+            Username = player.Username,
+            Password = hashed,
+            CurrentLocation = player.CurrentLocation,
+            Inventory = []
+        };
 
-        context.PlayerInventory.RemoveRange(existing.Inventory);
-
-        existing.Inventory = player
-            .Inventory
-            .Select(i => new InventoryItemEntity
-            {
-                ItemId = i.Id,
-                Username = player.Username,
-                Name = i.Name,
-                Description = i.Description,
-                TextContent = i.TextContent,
-                Flags = i.Flags,
-                KeyId = i.KeyId,
-                CreatorUsername = i.CreatorUsername
-            })
-            .ToList();
-
+        context.Players.Add(newPlayer);
         await context.SaveChangesAsync(ct);
     }
 
@@ -57,11 +43,11 @@ internal class EfPlayerStore(IDbContextFactory<MooSharpDbContext> contextFactory
         var player = await context
             .Players
             .Include(p => p.Inventory)
-            .FirstOrDefaultAsync(p => p.Username == snapshot.Username, ct);
+            .FirstOrDefaultAsync(p => string.Equals(p.Username, snapshot.Username, StringComparison.OrdinalIgnoreCase), ct);
 
         if (player is null)
         {
-            return;
+            throw new InvalidOperationException($"No player record was found for username {snapshot.Username}");
         }
 
         player.CurrentLocation = snapshot.CurrentLocation;
@@ -94,7 +80,7 @@ internal class EfPlayerStore(IDbContextFactory<MooSharpDbContext> contextFactory
             .Players
             .Include(p => p.Inventory)
             .SingleOrDefaultAsync(p => p.Id == id, ct);
-        
+
         if (player is null)
         {
             return null;
@@ -118,10 +104,10 @@ internal class EfPlayerStore(IDbContextFactory<MooSharpDbContext> contextFactory
     public async Task<bool> PlayerWithUsernameExistsAsync(string username, CancellationToken ct)
     {
         await using var context = await contextFactory.CreateDbContextAsync(ct);
-        
-        return await context
-            .Players
-            .AnyAsync(p => string.Equals(p.Username, username, StringComparison.OrdinalIgnoreCase), ct);
+
+        return await context.Players.AnyAsync(p =>
+                string.Equals(p.Username, username, StringComparison.OrdinalIgnoreCase),
+            ct);
     }
 
     public async Task<LoginResult> LoginIsValidAsync(string username, string password, CancellationToken ct = default)
