@@ -51,7 +51,6 @@ public static class ServiceCollectionExtensions
             services.AddSingleton<IAgentResponseProvider, AgentResponseProvider>();
 
             // Connections and message-sending
-            services.AddSingleton<IPlayerConnectionFactory, SignalRPlayerConnectionFactory>();
             services.AddSingleton<IRawMessageSender, SessionGatewayMessageSender>();
             services.AddSingleton<PlayerSessionManager>();
 

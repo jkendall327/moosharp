@@ -136,7 +136,7 @@ public sealed class GameClientViewModel : IDisposable
 
         try
         {
-            await _connection.Login(Username, Password);
+            throw new NotImplementedException("Call API here.");
         }
         catch (Exception ex)
         {
@@ -158,7 +158,7 @@ public sealed class GameClientViewModel : IDisposable
 
         try
         {
-            await _connection.Register(Username, Password);
+            throw new NotImplementedException("Call API here.");
         }
         catch (Exception ex)
         {

@@ -12,8 +12,6 @@ public interface IGameConnectionService : IAsyncDisposable
     Task StartAsync();
     Task StopAsync();
 
-    Task Login(string username, string password);
-    Task Register(string username, string password);
     Task SendCommandAsync(string command);
     Task<AutocompleteOptions> GetAutocompleteOptions();
 
