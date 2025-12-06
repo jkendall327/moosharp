@@ -33,7 +33,7 @@ public sealed class AgentBrain(
         _volitionTask = VolitionLoopAsync();
     }
 
-    private async Task WriteToInternalQueue(string msg)
+    public async Task WriteToInternalQueue(string msg)
     {
         ArgumentNullException.ThrowIfNull(_cts);
         await _incomingMessages.Writer.WriteAsync(msg, _cts.Token);

@@ -3,11 +3,17 @@ using System.Text.Json.Serialization;
 using System.Threading.Channels;
 using Microsoft.Extensions.Options;
 using MooSharp.Actors;
+using MooSharp.Infrastructure;
 using MooSharp.Messaging;
+using MooSharp.Web.Services;
 
 namespace MooSharp.Agents;
 
-public class AgentSpawner(AgentFactory factory, ChannelWriter<GameInput> writer, IOptions<AgentOptions> options)
+public class AgentSpawner(
+    AgentFactory factory,
+    ISessionGateway gateway,
+    ChannelWriter<GameInput> writer,
+    IOptions<AgentOptions> options)
 {
     private static readonly JsonSerializerOptions JsonSerializerOptions = new()
     {
@@ -64,8 +70,13 @@ public class AgentSpawner(AgentFactory factory, ChannelWriter<GameInput> writer,
             Connection = brain.Connection
         };
 
+        var channel = new AgentOutputChannel(brain.WriteToInternalQueue);
+        await gateway.OnSessionStartedAsync(Guid.NewGuid(), channel);
+
         var connectionId = new ConnectionId(brain.Connection.Id);
 
         await writer.WriteAsync(new(connectionId, registerAgentCommand), cancellationToken);
+
+        throw new NotImplementedException("Remove the old connection stuff here.");
     }
 }
