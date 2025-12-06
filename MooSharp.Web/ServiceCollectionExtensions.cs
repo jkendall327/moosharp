@@ -1,5 +1,7 @@
 using System.Reflection;
+using System.Text;
 using System.Threading.Channels;
+using Microsoft.IdentityModel.Tokens;
 using MooSharp.Actors;
 using MooSharp.Agents;
 using MooSharp.Commands.Machinery;
@@ -30,7 +32,7 @@ public static class ServiceCollectionExtensions
             services.AddSingleton<IWorldSeeder, WorldSeeder>();
             services.AddSingleton<WorldInitializer>();
             services.AddSingleton<World.World>();
-            
+
             // Players
             services.AddSingleton<PlayerHydrator>();
             services.AddSingleton<PlayerMessageProvider>();
@@ -105,6 +107,49 @@ public static class ServiceCollectionExtensions
                 s.ValidateScopes = true;
             });
         }
+
+        public void AddMooSharpAuth(IConfiguration config)
+        {
+            services
+                .AddAuthentication("Bearer")
+                .AddJwtBearer("Bearer",
+                    options =>
+                    {
+                        var jwtSettings = config.GetSection("Jwt");
+
+                        var keyString = jwtSettings["Key"] ??
+                                        throw new InvalidOperationException("JWT key is not configured.");
+
+                        options.TokenValidationParameters = new()
+                        {
+                            ValidateIssuer = true,
+                            ValidIssuer = jwtSettings["Issuer"],
+                            ValidateAudience = true,
+                            ValidAudience = jwtSettings["Audience"],
+                            ValidateIssuerSigningKey = true,
+                            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(keyString)),
+                            ValidateLifetime = true
+                        };
+
+                        // For SignalR, read the token from the query string.
+                        // SignalR browsers cannot send headers in WebSockets, so they send it in ?access_token=...
+                        options.Events = new()
+                        {
+                            OnMessageReceived = context =>
+                            {
+                                var accessToken = context.Request.Query["access_token"];
+                                var path = context.HttpContext.Request.Path;
+
+                                if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments("/moohub"))
+                                {
+                                    context.Token = accessToken;
+                                }
+
+                                return Task.CompletedTask;
+                            }
+                        };
+                    });
+        }
     }
 
     extension(WebApplicationBuilder webApplicationBuilder)
@@ -120,11 +165,12 @@ public static class ServiceCollectionExtensions
 
             foreach (var assembly in assemblies)
             {
-                var handlerTypes = assembly.GetTypes()
-                    .Where(t => t is { IsAbstract: false, IsInterface: false })
-                    .SelectMany(t => t.GetInterfaces()
-                        .Where(i => i.IsGenericType && i.GetGenericTypeDefinition() ==
-                            handlerInterfaceType)
+                var handlerTypes = assembly
+                    .GetTypes()
+                    .Where(t => t is {IsAbstract: false, IsInterface: false})
+                    .SelectMany(t => t
+                        .GetInterfaces()
+                        .Where(i => i.IsGenericType && i.GetGenericTypeDefinition() == handlerInterfaceType)
                         .Select(i => new
                         {
                             Implementation = t,
@@ -145,18 +191,16 @@ public static class ServiceCollectionExtensions
         {
             var assemblies = new[]
             {
-                Assembly.GetExecutingAssembly(),
-                typeof(CommandParser).Assembly
+                Assembly.GetExecutingAssembly(), typeof(CommandParser).Assembly
             };
 
             var definitionType = typeof(ICommandDefinition);
 
             foreach (var assembly in assemblies)
             {
-                var types = assembly.GetTypes()
-                    .Where(t =>
-                        t is { IsAbstract: false, IsInterface: false } &&
-                        definitionType.IsAssignableFrom(t));
+                var types = assembly
+                    .GetTypes()
+                    .Where(t => t is {IsAbstract: false, IsInterface: false} && definitionType.IsAssignableFrom(t));
 
                 foreach (var type in types)
                 {
@@ -170,14 +214,20 @@ public static class ServiceCollectionExtensions
         /// </summary>
         public void RegisterPresenters()
         {
-            var assemblies = new[] { Assembly.GetExecutingAssembly(), typeof(CommandExecutor).Assembly };
+            var assemblies = new[]
+            {
+                Assembly.GetExecutingAssembly(), typeof(CommandExecutor).Assembly
+            };
+
             var formatterInterfaceType = typeof(IGameEventFormatter<>);
 
             foreach (var assembly in assemblies)
             {
-                var formatterTypes = assembly.GetTypes()
-                    .Where(t => t is { IsAbstract: false, IsInterface: false })
-                    .SelectMany(t => t.GetInterfaces()
+                var formatterTypes = assembly
+                    .GetTypes()
+                    .Where(t => t is {IsAbstract: false, IsInterface: false})
+                    .SelectMany(t => t
+                        .GetInterfaces()
                         .Where(i => i.IsGenericType && i.GetGenericTypeDefinition() == formatterInterfaceType)
                         .Select(i => new
                         {

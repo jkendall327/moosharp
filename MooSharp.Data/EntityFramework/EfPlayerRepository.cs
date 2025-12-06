@@ -40,6 +40,9 @@ internal sealed class EfPlayerRepository(
     public Task<PlayerDto?> LoadPlayerAsync(string username, CancellationToken ct) =>
         store.LoadPlayerAsync(username, ct);
 
+    public Task<bool> PlayerWithUsernameExistsAsync(string username, CancellationToken ct = default) =>
+        store.PlayerWithUsernameExistsAsync(username, ct);
+
     private async Task EnqueueAsync(DatabaseRequest request, CancellationToken ct)
     {
         try

@@ -115,6 +115,15 @@ internal class EfPlayerStore(IDbContextFactory<MooSharpDbContext> contextFactory
         return new(player.Username, player.Password, player.CurrentLocation, inventory);
     }
 
+    public async Task<bool> PlayerWithUsernameExistsAsync(string username, CancellationToken ct)
+    {
+        await using var context = await contextFactory.CreateDbContextAsync(ct);
+        
+        return await context
+            .Players
+            .AnyAsync(p => string.Equals(p.Username, username, StringComparison.OrdinalIgnoreCase), ct);
+    }
+
     public async Task<LoginResult> LoginIsValidAsync(string username, string password, CancellationToken ct = default)
     {
         await using var context = await contextFactory.CreateDbContextAsync(ct);
@@ -122,7 +131,7 @@ internal class EfPlayerStore(IDbContextFactory<MooSharpDbContext> contextFactory
         var player = await context
             .Players
             .Include(p => p.Inventory)
-            .FirstOrDefaultAsync(p => string.Equals(p.Username, username, StringComparison.Ordinal), ct);
+            .FirstOrDefaultAsync(p => string.Equals(p.Username, username, StringComparison.OrdinalIgnoreCase), ct);
 
         // Always perform hash verification to mitigate timing side-channel.
         // This method isn't constant-time or anything but might as well go partway.
