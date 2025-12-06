@@ -15,9 +15,7 @@ internal class EfPlayerStore(IDbContextFactory<MooSharpDbContext> contextFactory
         // Hash unconditionally to mitigate timing side-channels.
         var hashed = BCrypt.Net.BCrypt.HashPassword(player.Password);
 
-        var existing = await context.Players.AnyAsync(p =>
-                string.Equals(p.Username, player.Username, StringComparison.OrdinalIgnoreCase),
-            ct);
+        var existing = await context.Players.AnyAsync(p => p.Username == player.Username, ct);
 
         if (existing)
         {
@@ -43,7 +41,7 @@ internal class EfPlayerStore(IDbContextFactory<MooSharpDbContext> contextFactory
         var player = await context
             .Players
             .Include(p => p.Inventory)
-            .FirstOrDefaultAsync(p => string.Equals(p.Username, snapshot.Username, StringComparison.OrdinalIgnoreCase), ct);
+            .FirstOrDefaultAsync(p => p.Username == snapshot.Username, ct);
 
         if (player is null)
         {
@@ -105,9 +103,7 @@ internal class EfPlayerStore(IDbContextFactory<MooSharpDbContext> contextFactory
     {
         await using var context = await contextFactory.CreateDbContextAsync(ct);
 
-        return await context.Players.AnyAsync(p =>
-                string.Equals(p.Username, username, StringComparison.OrdinalIgnoreCase),
-            ct);
+        return await context.Players.AnyAsync(p => p.Username == username, ct);
     }
 
     public async Task<LoginResult> LoginIsValidAsync(string username, string password, CancellationToken ct = default)
@@ -117,7 +113,7 @@ internal class EfPlayerStore(IDbContextFactory<MooSharpDbContext> contextFactory
         var player = await context
             .Players
             .Include(p => p.Inventory)
-            .FirstOrDefaultAsync(p => string.Equals(p.Username, username, StringComparison.OrdinalIgnoreCase), ct);
+            .FirstOrDefaultAsync(p => p.Username == username, ct);
 
         // Always perform hash verification to mitigate timing side-channel.
         // This method isn't constant-time or anything but might as well go partway.
