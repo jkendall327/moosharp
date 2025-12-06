@@ -32,7 +32,7 @@ public sealed class SignalRGameConnectionService : IGameConnectionService
             .WithAutomaticReconnect()
             .Build();
 
-        _hubConnection.On<string>("ReceiveMessage", msg => OnMessageReceived?.Invoke(msg));
+        _hubConnection.On<string>(MooHub.ReceiveMessage, msg => OnMessageReceived?.Invoke(msg));
         _hubConnection.On<bool, string>("LoginResult", (success, msg) => OnLoginResult?.Invoke(success, msg));
 
         _hubConnection.Reconnecting += _ => { OnReconnecting?.Invoke(); return Task.CompletedTask; };

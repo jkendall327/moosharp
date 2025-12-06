@@ -13,6 +13,7 @@ public class MooHub(
     ILogger<MooHub> logger) : Hub
 {
     public const string HubName = "/moohub";
+    public const string ReceiveMessage = "ReceiveMessage";
 
     public override async Task OnConnectedAsync()
     {

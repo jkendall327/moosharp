@@ -7,7 +7,6 @@ public class SignalROutputChannel(ISingleClientProxy client) : IOutputChannel
 {
     public async Task WriteOutputAsync(string message, CancellationToken ct = default)
     {
-        throw new NotImplementedException("Use constants for the method names.");
-        await client.SendAsync("output", message, ct);
+        await client.SendAsync(MooHub.ReceiveMessage, message, ct);
     }
 }
