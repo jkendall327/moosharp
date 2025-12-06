@@ -35,7 +35,8 @@ public interface IGameEngine
     Task<AutocompleteOptions> GetAutocompleteOptions(Guid actorId, CancellationToken ct = default);
 }
 
-public class GameEngine(World.World world, IPlayerRepository playerRepository, ChannelWriter<GameInput> writer) : IGameEngine
+public class GameEngine(World.World world, IPlayerRepository playerRepository, ChannelWriter<GameInput> writer)
+    : IGameEngine
 {
     public async Task ProcessInputAsync(Guid actorId, string commandText, CancellationToken ct = default)
     {
@@ -56,7 +57,7 @@ public class GameEngine(World.World world, IPlayerRepository playerRepository, C
         world.Players[null] = player;
 
         throw new NotImplementedException();
-        
+
         // await hydrator.RehydrateAsync(player, dto);
 
         // var messages = await messageProvider.GetMessagesForLogin(player);
@@ -69,9 +70,9 @@ public class GameEngine(World.World world, IPlayerRepository playerRepository, C
     {
         if (!world.Players.TryGetValue(actorId.ToString(), out var player))
         {
-            return ;
+            return;
         }
-        
+
         // If they've somehow ended up in a broken state, restore them to the default location.
         var location = world.GetPlayerLocation(player);
 
@@ -81,7 +82,7 @@ public class GameEngine(World.World world, IPlayerRepository playerRepository, C
 
             world.MovePlayer(player, location);
         }
-        
+
         var snapshot = PlayerSnapshotFactory.CreateSnapshot(player, location);
 
         await playerRepository.SavePlayerAsync(snapshot, WriteType.Deferred, ct);
@@ -94,8 +95,20 @@ public class GameEngine(World.World world, IPlayerRepository playerRepository, C
         return world.Players.TryGetValue(actorId.ToString(), out var _);
     }
 
-    public async Task<AutocompleteOptions> GetAutocompleteOptions(Guid actorId, CancellationToken ct = default)
+    public Task<AutocompleteOptions> GetAutocompleteOptions(Guid actorId, CancellationToken ct = default)
     {
-        throw new NotImplementedException();
+        if (!world.Players.TryGetValue(actorId.ToString(), out var player))
+        {
+            return Task.FromResult(new AutocompleteOptions([], []));
+        }
+
+        var room = world.GetPlayerLocation(player);
+
+        var exits = room?.Exits.Keys ?? Enumerable.Empty<string>();
+        var inventory = player.Inventory.Select(item => item.Name);
+
+        var options = new AutocompleteOptions(exits.ToList(), inventory.ToList());
+
+        return Task.FromResult(options);
     }
 }
