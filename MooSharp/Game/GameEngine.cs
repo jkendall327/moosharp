@@ -12,7 +12,7 @@ public class GameEngine(
     PlayerHydrator hydrator,
     IPlayerRepository playerRepository,
     PlayerMessageProvider messageProvider,
-    IGameMessageEmitter emitter,
+    //IGameMessageEmitter emitter,
     ChannelWriter<GameInput> writer) : IGameEngine
 {
     public async Task ProcessInputAsync(Guid actorId, string commandText, CancellationToken ct = default)
@@ -39,7 +39,9 @@ public class GameEngine(
 
         var messages = await messageProvider.GetMessagesForLogin(player, ct);
         
-        _ = emitter.SendGameMessagesAsync(messages, ct);    
+        // TODO: figure out how ot break circular dependency here.
+        
+       // _ = emitter.SendGameMessagesAsync(messages, ct);    
     }
 
     public async Task DespawnActorAsync(Guid actorId, CancellationToken ct = default)
