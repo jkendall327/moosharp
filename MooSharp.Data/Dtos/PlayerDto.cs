@@ -14,5 +14,4 @@ public sealed record PlayerSnapshotDto(
 public sealed record NewPlayerRequest(
     string Username,
     string Password,
-    string CurrentLocation,
-    List<InventoryItemDto> Inventory);
+    string CurrentLocation);

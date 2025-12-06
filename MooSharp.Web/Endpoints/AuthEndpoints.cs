@@ -1,4 +1,5 @@
 using MooSharp.Data;
+using MooSharp.Data.Dtos;
 using MooSharp.Data.Mapping;
 using MooSharp.Web.Services;
 
@@ -31,11 +32,11 @@ public static class AuthEndpoints
 
                 var defaultRoom = world.GetDefaultRoom();
 
-                var newPlayerRequest = PlayerSnapshotFactory.CreateNewPlayer(rc.Username, defaultRoom, rc.Password);
+                var request = new NewPlayerRequest(rc.Username, rc.Password, defaultRoom.Id.Value);
 
-                await store.SaveNewPlayerAsync(newPlayerRequest, WriteType.Immediate);
+                await store.SaveNewPlayerAsync(request, WriteType.Immediate);
 
-                var token = tokenService.GenerateToken(newPlayerRequest.Username);
+                var token = tokenService.GenerateToken(rc.Username);
 
                 return Results.Ok(new RegisterResult(token));
             });
