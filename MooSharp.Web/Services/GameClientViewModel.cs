@@ -75,6 +75,11 @@ public sealed class GameClientViewModel : IDisposable
         // TODO: try to get JWT from client storage to support refreshes again.
         await _connection.InitializeAsync(hub, () => Task.FromResult(_jwt));
 
+        NotifyStateChanged();
+    }
+
+    private async Task StartConnection()
+    {
         try
         {
             await _connection.StartAsync();
@@ -84,8 +89,6 @@ public sealed class GameClientViewModel : IDisposable
             _outputBuffer.AppendLine($"Starting hub failed: {ex.Message}");
             _logger.LogError(ex, "Failed to start hub connection");
         }
-
-        NotifyStateChanged();
     }
 
     public async Task SubmitCommandAsync()
@@ -155,6 +158,11 @@ public sealed class GameClientViewModel : IDisposable
             }
 
             _jwt = result.Token;
+
+            LoginStatus = "Logged in.";
+            IsLoggedIn = true;
+            
+            await StartConnection();
         }
         catch (Exception ex)
         {
@@ -193,6 +201,10 @@ public sealed class GameClientViewModel : IDisposable
 
             // TODO: store JWT in history so it survives refreshes again.
             _jwt = result.Token;
+            LoginStatus = "Registered.";
+            IsLoggedIn = true;
+            
+            await StartConnection();
         }
         catch (Exception ex)
         {
