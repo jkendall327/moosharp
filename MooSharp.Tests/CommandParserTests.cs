@@ -106,6 +106,7 @@ public class CommandParserTests
     {
         return new()
         {
+            Id = PlayerId.New(),
             Username = "Player"
         };
     }

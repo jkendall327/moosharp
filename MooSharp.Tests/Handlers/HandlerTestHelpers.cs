@@ -46,6 +46,7 @@ public static class HandlerTestHelpers
     {
         return new()
         {
+            Id = PlayerId.New(),
             Username = username ?? "Player"
         };
     }

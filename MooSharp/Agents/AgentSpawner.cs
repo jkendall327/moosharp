@@ -67,15 +67,26 @@ public class AgentSpawner(
 
         await brain.StartAsync(cancellationToken);
 
-        // Stick the agent in the database so they are spawned into the world properly.
-        // TODO: unsure if this feels like a hack or not?
-        var startingRoom = identity.StartingRoomSlug ?? world.GetDefaultRoom().Id.Value;
-        
-        var req = new NewPlayerRequest(identity.Name, Random.Shared.GetHexString(12), startingRoom);
-        
-        await playerRepository.SaveNewPlayerAsync(req, WriteType.Immediate, cancellationToken);
+        var alreadyExists = await playerRepository.PlayerWithUsernameExistsAsync(identity.Name, cancellationToken);
+
+        if (!alreadyExists)
+        {
+            await PersistAgentToDatabase(brain.Id.Value, identity, cancellationToken);
+        }
 
         var channel = new AgentOutputChannel(brain.WriteToInternalQueue);
         await gateway.OnSessionStartedAsync(brain.Id.Value, channel);
+    }
+
+    private async Task PersistAgentToDatabase(Guid id, AgentIdentity identity, CancellationToken cancellationToken)
+    {
+        // Stick the agent in the database so they are spawned into the world properly.
+        // TODO: unsure if this feels like a hack or not?
+        var startingRoom = identity.StartingRoomSlug ?? world.GetDefaultRoom()
+            .Id.Value;
+
+        var req = new NewPlayerRequest(id, identity.Name, Random.Shared.GetHexString(12), startingRoom);
+
+        await playerRepository.SaveNewPlayerAsync(req, WriteType.Immediate, cancellationToken);
     }
 }

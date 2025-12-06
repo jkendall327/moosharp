@@ -12,7 +12,7 @@ public class Player : IContainer
     private readonly List<Object> _inventory = [];
     private readonly HashSet<string> _mutedChannels = new(StringComparer.OrdinalIgnoreCase);
 
-    public PlayerId Id { get; } = PlayerId.New();
+    public required PlayerId Id { get; init; }
     
     public IReadOnlyCollection<Object> Inventory => _inventory;
     public required string Username { get; init; }

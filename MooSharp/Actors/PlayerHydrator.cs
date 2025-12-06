@@ -11,6 +11,7 @@ public class PlayerHydrator(World.World world)
     {
         var player = new Player
         {
+            Id = new(dto.Id),
             Username = dto.Username
         };
         

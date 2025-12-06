@@ -24,6 +24,7 @@ internal class EfPlayerStore(IDbContextFactory<MooSharpDbContext> contextFactory
 
         var newPlayer = new PlayerEntity
         {
+            Id = player.Id,
             Username = player.Username,
             Password = hashed,
             CurrentLocation = player.CurrentLocation,
@@ -96,7 +97,7 @@ internal class EfPlayerStore(IDbContextFactory<MooSharpDbContext> contextFactory
                 i.CreatorUsername))
             .ToList();
 
-        return new(player.Username, player.Password, player.CurrentLocation, inventory);
+        return new(player.Id, player.Username, player.CurrentLocation, inventory);
     }
 
     public async Task<bool> PlayerWithUsernameExistsAsync(string username, CancellationToken ct)

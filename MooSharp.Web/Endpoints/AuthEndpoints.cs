@@ -38,7 +38,7 @@ public static class AuthEndpoints
 
                 var defaultRoom = world.GetDefaultRoom();
 
-                var request = new NewPlayerRequest(rc.Username, rc.Password, defaultRoom.Id.Value);
+                var request = new NewPlayerRequest(Guid.NewGuid(), rc.Username, rc.Password, defaultRoom.Id.Value);
 
                 await store.SaveNewPlayerAsync(request, WriteType.Immediate);
 

@@ -105,14 +105,15 @@ public class WorldClockServiceTests
 
         // Period should still advance even with no players
         Assert.Equal(DayPeriod.Afternoon, world.CurrentDayPeriod);
+
         // But no messages should be sent
 
         throw new NotImplementedException();
+
         //presenter.DidNotReceive().SendGameMessagesAsync(Arg.Any<GameMessage>());
     }
 
-    private static WorldClock CreateWorldClock(
-        World.World world,
+    private static WorldClock CreateWorldClock(World.World world,
         IGameMessageEmitter emitter,
         TimeProvider timeProvider,
         int dayPeriodMinutes = 10)
@@ -137,10 +138,14 @@ public class WorldClockServiceTests
         {
             var connection = Substitute.For<IPlayerConnection>();
             connection.Id.Returns($"conn-{i}");
-            connection.SendMessageAsync(Arg.Any<string>()).Returns(Task.CompletedTask);
+
+            connection
+                .SendMessageAsync(Arg.Any<string>())
+                .Returns(Task.CompletedTask);
 
             var player = new Player
             {
+                Id = PlayerId.New(),
                 Username = $"Player {i}"
             };
 
