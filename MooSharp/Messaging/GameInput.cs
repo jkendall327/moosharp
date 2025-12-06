@@ -13,18 +13,6 @@ public record GameInput(ConnectionId ConnectionId, InputCommand Command, string?
 
 public abstract class InputCommand;
 
-public class RegisterCommand : InputCommand
-{
-    public required string Username { get; init; }
-    public required string Password { get; init; }
-}
-
-public class LoginCommand : InputCommand
-{
-    public required string Username { get; init; }
-    public required string Password { get; init; }
-}
-
 public class WorldCommand : InputCommand
 {
     public required string Command { get; init; }

@@ -55,8 +55,15 @@ public class GameEngine(World.World world, IPlayerRepository playerRepository, C
         world.MovePlayer(player, defaultRoom);
 
         world.Players[null] = player;
-        
+
         throw new NotImplementedException();
+        
+        // await hydrator.RehydrateAsync(player, dto);
+
+        // var messages = await messageProvider.GetMessagesForLogin(player);
+        //
+        // await sender.SendLoginResultAsync(connectionId, true, $"Registered and logged in as {player.Username}.");
+        // _ = sender.SendGameMessagesAsync(messages);    
     }
 
     public async Task DespawnActorAsync(Guid actorId, CancellationToken ct = default)
