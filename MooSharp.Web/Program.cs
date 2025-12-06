@@ -28,6 +28,7 @@ builder.Services.AddMooSharpData(databasePath);
 builder.Services.AddMooSharpServices();
 builder.Services.AddMooSharpHostedServices();
 builder.Services.AddMooSharpMessaging();
+builder.Services.AddMooSharpAuth(builder.Configuration);
 
 builder.RegisterCommandDefinitions();
 builder.RegisterCommandHandlers();
