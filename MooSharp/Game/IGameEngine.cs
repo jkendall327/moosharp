@@ -1,4 +1,5 @@
 using System.Threading.Channels;
+using MooSharp.Actors;
 using MooSharp.Messaging;
 
 namespace MooSharp.Game;
@@ -51,7 +52,7 @@ public class GameEngine(World.World world, ChannelWriter<NewGameInput> writer) :
 
     public bool IsActorSpawned(Guid actorId)
     {
-        throw new NotImplementedException();
+        return world.Players.TryGetValue(actorId.ToString(), out var _);
     }
 
     public async Task<AutocompleteOptions> GetAutocompleteOptions(Guid actorId, CancellationToken ct = default)
