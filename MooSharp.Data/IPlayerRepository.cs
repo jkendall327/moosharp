@@ -12,5 +12,5 @@ public interface IPlayerRepository
         WriteType type = WriteType.Deferred,
         CancellationToken ct = default);
 
-    Task<PlayerDto?> LoadPlayerAsync(string username, string password, CancellationToken ct = default);
+    Task<PlayerDto?> LoadPlayerAsync(string username, CancellationToken ct = default);
 }

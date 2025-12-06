@@ -86,7 +86,7 @@ internal class EfPlayerStore(IDbContextFactory<MooSharpDbContext> contextFactory
         await context.SaveChangesAsync(ct);
     }
 
-    public async Task<PlayerDto?> LoadPlayerAsync(string username, string password, CancellationToken ct = default)
+    public async Task<PlayerDto?> LoadPlayerAsync(string username, CancellationToken ct = default)
     {
         await using var context = await contextFactory.CreateDbContextAsync(ct);
 
@@ -94,13 +94,8 @@ internal class EfPlayerStore(IDbContextFactory<MooSharpDbContext> contextFactory
             .Players
             .Include(p => p.Inventory)
             .FirstOrDefaultAsync(p => p.Username == username, ct);
-
-        // Always perform hash verification to mitigate timing side-channel.
-        // This method isn't constant-time or anything but might as well go partway.
-        var target = player?.Password ?? FakeBCryptHash;
-        var ok = BCrypt.Net.BCrypt.Verify(target, password);
-
-        if (player is null || !ok)
+        
+        if (player is null)
         {
             return null;
         }
@@ -120,7 +115,7 @@ internal class EfPlayerStore(IDbContextFactory<MooSharpDbContext> contextFactory
         return new(player.Username, player.Password, player.CurrentLocation, inventory);
     }
 
-    public async Task<LoginResult> LoginIsValidAsync(string username, string password, CancellationToken ct)
+    public async Task<LoginResult> LoginIsValidAsync(string username, string password, CancellationToken ct = default)
     {
         await using var context = await contextFactory.CreateDbContextAsync(ct);
 

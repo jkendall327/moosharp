@@ -20,9 +20,9 @@ public class GameEngine(
     CommandParser parser,
     CommandExecutor executor,
     IPlayerRepository playerRepository,
-    IRawMessageSender rawMessageSender,
+    IRawMessageSender sender,
     IPlayerConnectionFactory connectionFactory,
-    IGameMessagePresenter presenter,
+    ILoginChecker loginChecker,
     PlayerSessionManager sessionManager,
     ILogger<GameEngine> logger,
     IOptionsMonitor<AppOptions> appOptions)
@@ -40,7 +40,7 @@ public class GameEngine(
             case WorldCommand wc:
                 if (!world.Players.TryGetValue(input.ConnectionId.Value, out var player))
                 {
-                    await rawMessageSender.SendLoginRequiredMessageAsync(input.ConnectionId, ct);
+                    await sender.SendLoginRequiredMessageAsync(input.ConnectionId, ct);
 
                     break;
                 }
@@ -99,7 +99,7 @@ public class GameEngine(
     {
         if (string.IsNullOrWhiteSpace(sessionToken))
         {
-            await rawMessageSender.SendSystemMessageAsync(newConnectionId, "Session missing. Please log in.");
+            await sender.SendSystemMessageAsync(newConnectionId, "Session missing. Please log in.");
 
             return;
         }
@@ -109,7 +109,7 @@ public class GameEngine(
 
         if (player is null)
         {
-            await rawMessageSender.SendSystemMessageAsync(newConnectionId, "Session expired. Please log in again.");
+            await sender.SendSystemMessageAsync(newConnectionId, "Session expired. Please log in again.");
 
             return;
         }
@@ -131,7 +131,7 @@ public class GameEngine(
         world.Players[newConnectionId.Value] = player;
 
         // Tell the client we have logged in.
-        await rawMessageSender.SendLoginResultAsync(newConnectionId, true, "Session restored.");
+        await sender.SendLoginResultAsync(newConnectionId, true, "Session restored.");
 
         logger.LogInformation("Player {Player} reconnected successfully", player.Username);
     }
@@ -142,7 +142,7 @@ public class GameEngine(
 
         if (parsed is null)
         {
-            _ = rawMessageSender.SendGameMessagesAsync([
+            _ = sender.SendGameMessagesAsync([
                     new(player, new SystemMessageEvent("That command wasn't recognised."))
                 ],
                 ct);
@@ -154,13 +154,13 @@ public class GameEngine(
         {
             var result = await executor.Handle(parsed, ct);
 
-            _ = rawMessageSender.SendGameMessagesAsync(result.Messages, ct);
+            _ = sender.SendGameMessagesAsync(result.Messages, ct);
         }
         catch (Exception ex)
         {
             logger.LogError(ex, "Error processing world command {Command}", command.Command);
 
-            _ = rawMessageSender.SendGameMessagesAsync([
+            _ = sender.SendGameMessagesAsync([
                     new(player, new SystemMessageEvent("An unexpected error occurred."))
                 ],
                 ct);
@@ -197,29 +197,41 @@ public class GameEngine(
 
         messages.Add(new(player, new RoomDescriptionEvent(description.ToString())));
 
-        await rawMessageSender.SendLoginResultAsync(connectionId,
-            true,
-            $"Registered and logged in as {player.Username}.");
+        await sender.SendLoginResultAsync(connectionId, true, $"Registered and logged in as {player.Username}.");
 
-        _ = rawMessageSender.SendGameMessagesAsync(messages);
+        _ = sender.SendGameMessagesAsync(messages);
     }
 
     private async Task Login(ConnectionId connectionId, LoginCommand lc, string? sessionToken)
     {
-        var dto = await playerRepository.LoadPlayerAsync(lc.Username, lc.Password);
+        var result = await loginChecker.LoginIsValidAsync(lc.Username, lc.Password);
 
-        if (dto is null)
+        if (result is LoginResult.UsernameNotFound)
         {
-            await rawMessageSender.SendSystemMessageAsync(connectionId, "Login failed, please try again.");
-            await rawMessageSender.SendLoginResultAsync(connectionId, false, "Login failed, please try again.");
+            await sender.SendLoginResultAsync(connectionId, false, "No user by that name was found.");
 
             return;
         }
 
-        var startingRoom = world.Rooms.TryGetValue(new RoomId(dto.CurrentLocation), out var r)
-            ? r
-            : world.GetDefaultRoom();
+        if (result is LoginResult.WrongPassword)
+        {
+            await sender.SendLoginResultAsync(connectionId, false, "Password was incorrect.");
 
+            return;
+        }
+
+        if (result is not LoginResult.Ok)
+        {
+            throw new InvalidOperationException("Unrecognised login failure occurred.");
+        }
+
+        var dto = await playerRepository.LoadPlayerAsync(lc.Username);
+
+        if (dto is null)
+        {
+            throw new InvalidOperationException("No player found even though login check succeeded.");
+        }
+        
         var player = new Player
         {
             Username = dto.Username,
@@ -246,6 +258,10 @@ public class GameEngine(
             obj.MoveTo(player);
         }
 
+        var startingRoom = world.Rooms.TryGetValue(new(dto.CurrentLocation), out var r)
+            ? r
+            : world.GetDefaultRoom();
+
         world.MovePlayer(player, startingRoom);
 
         world.Players[connectionId.Value] = player;
@@ -262,9 +278,9 @@ public class GameEngine(
 
         messages.Add(new(player, new RoomDescriptionEvent(description.ToString())));
 
-        await rawMessageSender.SendLoginResultAsync(connectionId, true, $"Logged in as {player.Username}.");
+        await sender.SendLoginResultAsync(connectionId, true, $"Logged in as {player.Username}.");
 
-        _ = rawMessageSender.SendGameMessagesAsync(messages);
+        _ = sender.SendGameMessagesAsync(messages);
     }
 
     private void TrackSession(string? sessionToken, Player player, ConnectionId connectionId)
@@ -363,6 +379,6 @@ public class GameEngine(
         result.Add(player, gameEvent);
         result.BroadcastToAllButPlayer(room, player, gameEvent);
 
-        await rawMessageSender.SendGameMessagesAsync(result.Messages, ct);
+        await sender.SendGameMessagesAsync(result.Messages, ct);
     }
 }
