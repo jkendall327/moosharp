@@ -56,6 +56,7 @@ app.MapStaticAssets();
 app.MapRazorComponents<App>().AddInteractiveServerRenderMode();
 
 app.MapPlayerCountEndpoint();
+app.MapAuthEndpoints();
 
 app.MapHub<MooHub>(MooHub.HubName);
 
