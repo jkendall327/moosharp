@@ -65,9 +65,9 @@ public class AgentSpawner(
     {
         var brain = factory.Build(identity);
 
-        var id = Guid.NewGuid();
-
         var player = await playerRepository.GetPlayerByUsername(identity.Name, cancellationToken);
+
+        var id = player?.Id ?? Guid.NewGuid();
 
         if (player is null)
         {
