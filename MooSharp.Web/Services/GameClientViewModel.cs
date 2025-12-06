@@ -158,6 +158,8 @@ public sealed class GameClientViewModel : IDisposable
 
             LoginStatus = "Logged in.";
             IsLoggedIn = true;
+            
+            NotifyStateChanged();
 
             await StartConnection();
         }
@@ -201,6 +203,8 @@ public sealed class GameClientViewModel : IDisposable
             LoginStatus = "Registered.";
             IsLoggedIn = true;
 
+            NotifyStateChanged();
+            
             await StartConnection();
         }
         catch (Exception ex)

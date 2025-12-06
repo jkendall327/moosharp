@@ -126,7 +126,7 @@ internal class EfPlayerStore(IDbContextFactory<MooSharpDbContext> contextFactory
         // Always perform hash verification to mitigate timing side-channel.
         // This method isn't constant-time or anything but might as well go partway.
         var target = player?.Password ?? FakeBCryptHash;
-        var ok = BCrypt.Net.BCrypt.Verify(target, password);
+        var ok = BCrypt.Net.BCrypt.Verify(password, target);
 
         if (player is null)
         {
