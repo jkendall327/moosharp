@@ -104,7 +104,7 @@ else
             Model.OnStateChanged += ModelOnOnStateChanged;
             Model.OnFocusInputRequested += FocusInput;
             
-            var hubUri = NavigationManager.ToAbsoluteUri(MooHub.HUB_NAME);
+            var hubUri = NavigationManager.ToAbsoluteUri(MooHub.HubName);
 
             await Model.InitializeAsync(hubUri);
         }

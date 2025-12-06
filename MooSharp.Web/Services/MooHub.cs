@@ -7,7 +7,7 @@ namespace MooSharp.Web.Services;
 
 public class MooHub(ChannelWriter<GameInput> writer, ILogger<MooHub> logger, World.World world) : Hub
 {
-    public const string HUB_NAME = "/moohub";
+    public const string HubName = "/moohub";
     
     public override async Task OnConnectedAsync()
     {

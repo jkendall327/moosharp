@@ -141,7 +141,7 @@ public static class ServiceCollectionExtensions
                                 var accessToken = context.Request.Query["access_token"];
                                 var path = context.HttpContext.Request.Path;
 
-                                if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments(MooHub.HUB_NAME))
+                                if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments(MooHub.HubName))
                                 {
                                     context.Token = accessToken;
                                 }

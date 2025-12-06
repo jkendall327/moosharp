@@ -56,7 +56,7 @@ app.MapRazorComponents<App>().AddInteractiveServerRenderMode();
 
 app.MapPlayerCountEndpoint();
 
-app.MapHub<MooHub>(MooHub.HUB_NAME);
+app.MapHub<MooHub>(MooHub.HubName);
 
 await app.RunAsync();
 
