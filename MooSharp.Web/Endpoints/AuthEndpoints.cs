@@ -38,11 +38,13 @@ public static class AuthEndpoints
 
                 var defaultRoom = world.GetDefaultRoom();
 
-                var request = new NewPlayerRequest(Guid.NewGuid(), rc.Username, rc.Password, defaultRoom.Id.Value);
+                var id = Guid.NewGuid();
+                
+                var request = new NewPlayerRequest(id, rc.Username, rc.Password, defaultRoom.Id.Value);
 
                 await store.SaveNewPlayerAsync(request, WriteType.Immediate);
 
-                var token = tokenService.GenerateToken(rc.Username);
+                var token = tokenService.GenerateToken(id, rc.Username);
 
                 return Results.Ok(new RegisterResult(token));
             });
@@ -50,6 +52,7 @@ public static class AuthEndpoints
         app.MapPost(LoginEndpoint,
             async (LoginRequest req,
                 [FromServices] ILoginChecker checker,
+                [FromServices] IPlayerRepository playerRepository,
                 [FromServices] JwtTokenService tokenService) =>
             {
                 var result = await checker.LoginIsValidAsync(req.Username, req.Password);
@@ -69,7 +72,14 @@ public static class AuthEndpoints
                     throw new InvalidOperationException("Unknown login result.");
                 }
 
-                var token = tokenService.GenerateToken(req.Username);
+                var player = await playerRepository.GetPlayerByUsername(req.Username);
+
+                if (player is null)
+                {
+                    throw new InvalidOperationException("Player not found despite login passing validity check.");
+                }
+                
+                var token = tokenService.GenerateToken(player.Id, req.Username);
 
                 return Results.Ok(new LoginAttemptResult(token));
             });
