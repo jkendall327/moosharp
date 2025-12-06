@@ -61,7 +61,7 @@ public static class ServiceCollectionExtensions
 
             // Systems
             services.AddSingleton<IWorldClock, WorldClock>();
-            services.AddSingleton<GameEngine>();
+            services.AddSingleton<GameInputProcessor>();
         }
 
         public void AddMooSharpMessaging()

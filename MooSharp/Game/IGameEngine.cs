@@ -1,3 +1,6 @@
+using System.Threading.Channels;
+using MooSharp.Messaging;
+
 namespace MooSharp.Game;
 
 public interface IGameEngine
@@ -27,4 +30,32 @@ public interface IGameEngine
     bool IsActorSpawned(Guid actorId);
 
     Task<AutocompleteOptions> GetAutocompleteOptions(Guid actorId, CancellationToken ct = default);
+}
+
+public class GameEngine(World.World world, ChannelWriter<NewGameInput> writer) : IGameEngine
+{
+    public async Task ProcessInputAsync(Guid actorId, string commandText, CancellationToken ct = default)
+    {
+        await writer.WriteAsync(new(actorId, commandText), ct);
+    }
+
+    public async Task SpawnActorAsync(Guid actorId, CancellationToken ct = default)
+    {
+        throw new NotImplementedException();
+    }
+
+    public async Task DespawnActorAsync(Guid actorId, CancellationToken ct = default)
+    {
+        throw new NotImplementedException();
+    }
+
+    public bool IsActorSpawned(Guid actorId)
+    {
+        throw new NotImplementedException();
+    }
+
+    public async Task<AutocompleteOptions> GetAutocompleteOptions(Guid actorId, CancellationToken ct = default)
+    {
+        throw new NotImplementedException();
+    }
 }

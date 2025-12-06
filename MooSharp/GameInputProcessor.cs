@@ -15,7 +15,7 @@ using Object = MooSharp.Actors.Object;
 
 namespace MooSharp;
 
-public class GameEngine(
+public class GameInputProcessor(
     World.World world,
     CommandParser parser,
     CommandExecutor executor,
@@ -26,7 +26,7 @@ public class GameEngine(
     PlayerSessionManager sessionManager,
     PlayerHydrator hydrator,
     PlayerMessageProvider messageProvider,
-    ILogger<GameEngine> logger)
+    ILogger<GameInputProcessor> logger)
 {
     public async Task ProcessInputAsync(GameInput input, CancellationToken ct = default)
     {
