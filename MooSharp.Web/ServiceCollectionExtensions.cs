@@ -22,6 +22,7 @@ public static class ServiceCollectionExtensions
         public void AddMooSharpWebServices()
         {
             services.AddScoped<IClientStorageService, ClientStorageService>();
+            services.AddScoped<ISessionGateway, SignalRSessionGateway>();
             services.AddScoped<IGameHistoryService, ClientStorageGameHistoryService>();
             services.AddScoped<IGameConnectionService, SignalRGameConnectionService>();
             services.AddScoped<GameClientViewModel>();
@@ -33,6 +34,7 @@ public static class ServiceCollectionExtensions
             services.AddSingleton<IWorldSeeder, WorldSeeder>();
             services.AddSingleton<WorldInitializer>();
             services.AddSingleton<World.World>();
+            services.AddSingleton<IGameEngine, GameEngine>();
 
             // Players
             services.AddSingleton<PlayerHydrator>();
