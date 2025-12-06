@@ -7,7 +7,7 @@ namespace MooSharp.Data.Queueing;
 
 internal sealed class DatabaseBackgroundService(
     ChannelReader<DatabaseRequest> reader,
-    IPlayerRepository playerRepository,
+    IPlayerStore playerRepository,
     EfWorldRepository worldRepository,
     ILogger<DatabaseBackgroundService> logger) : BackgroundService
 {
@@ -35,10 +35,10 @@ internal sealed class DatabaseBackgroundService(
         switch (request)
         {
             case SaveNewPlayerRequest newPlayerRequest:
-                await playerRepository.SaveNewPlayerAsync(newPlayerRequest.Player, WriteType.Immediate, stoppingToken);
+                await playerRepository.SaveNewPlayerAsync(newPlayerRequest.Player, stoppingToken);
                 break;
             case SavePlayerRequest savePlayerRequest:
-                await playerRepository.SavePlayerAsync(savePlayerRequest.Snapshot, WriteType.Immediate, stoppingToken);
+                await playerRepository.SavePlayerAsync(savePlayerRequest.Snapshot, stoppingToken);
                 break;
             case SaveRoomRequest saveRoomRequest:
                 await worldRepository.SaveRoomAsync(saveRoomRequest.Room, stoppingToken);
