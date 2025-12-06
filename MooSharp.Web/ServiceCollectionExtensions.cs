@@ -21,8 +21,8 @@ public static class ServiceCollectionExtensions
     {
         public void AddMooSharpWebServices()
         {
+            services.AddSingleton<ISessionGateway, SignalRSessionGateway>();
             services.AddScoped<IClientStorageService, ClientStorageService>();
-            services.AddScoped<ISessionGateway, SignalRSessionGateway>();
             services.AddScoped<IGameHistoryService, ClientStorageGameHistoryService>();
             services.AddScoped<IGameConnectionService, SignalRGameConnectionService>();
             services.AddScoped<GameClientViewModel>();
