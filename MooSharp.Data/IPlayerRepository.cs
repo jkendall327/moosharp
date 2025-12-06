@@ -13,4 +13,6 @@ public interface IPlayerRepository
         CancellationToken ct = default);
 
     Task<PlayerDto?> LoadPlayerAsync(string username, CancellationToken ct = default);
+    
+    Task<bool> PlayerWithUsernameExistsAsync(string username, CancellationToken ct = default);
 }

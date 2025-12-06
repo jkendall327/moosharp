@@ -177,7 +177,7 @@ public class GameEngine(
 
         world.MovePlayer(player, defaultRoom);
 
-        var newPlayerRequest = PlayerSnapshotFactory.CreateNewPlayer(player, defaultRoom, rc.Password);
+        var newPlayerRequest = PlayerSnapshotFactory.CreateNewPlayer(rc.Username, defaultRoom, rc.Password);
 
         await playerRepository.SaveNewPlayerAsync(newPlayerRequest);
 
