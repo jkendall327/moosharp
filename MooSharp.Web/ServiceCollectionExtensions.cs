@@ -133,6 +133,8 @@ public static class ServiceCollectionExtensions
                 .AddJwtBearer("Bearer",
                     options =>
                     {
+                        options.MapInboundClaims = false;
+
                         var jwtSettings = config.GetSection("Jwt");
 
                         var keyString = jwtSettings["Key"] ??

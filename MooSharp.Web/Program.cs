@@ -66,6 +66,9 @@ app
     .MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
 
+app.UseAuthentication();
+app.UseAuthorization();
+
 app.MapPlayerCountEndpoint();
 app.MapAuthEndpoints();
 
