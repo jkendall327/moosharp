@@ -63,20 +63,8 @@ public class AgentSpawner(
         var brain = factory.Build(identity);
 
         await brain.StartAsync(cancellationToken);
-
-        var registerAgentCommand = new RegisterAgentCommand
-        {
-            Identity = identity,
-            Connection = brain.Connection
-        };
-
+        
         var channel = new AgentOutputChannel(brain.WriteToInternalQueue);
-        await gateway.OnSessionStartedAsync(Guid.NewGuid(), channel);
-
-        var connectionId = new ConnectionId(brain.Connection.Id);
-
-        await writer.WriteAsync(new(connectionId, registerAgentCommand), cancellationToken);
-
-        throw new NotImplementedException("Remove the old connection stuff here.");
+        await gateway.OnSessionStartedAsync(brain.Id.Value, channel);
     }
 }

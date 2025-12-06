@@ -1,5 +1,6 @@
 using System.Threading.Channels;
 using Microsoft.Extensions.Options;
+using MooSharp.Actors;
 using MooSharp.Messaging;
 
 namespace MooSharp.Agents;
@@ -20,6 +21,8 @@ public sealed class AgentBrain(
 
     public IPlayerConnection Connection { get; } = connection;
 
+    public PlayerId Id { get; } = PlayerId.New();
+    
     public async Task StartAsync(CancellationToken cancellationToken = default)
     {
         _cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
