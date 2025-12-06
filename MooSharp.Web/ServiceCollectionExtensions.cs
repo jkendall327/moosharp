@@ -28,6 +28,7 @@ public static class ServiceCollectionExtensions
             services.AddScoped<IGameConnectionService, SignalRGameConnectionService>();
             services.AddScoped<GameClientViewModel>();
             services.AddSingleton<JwtTokenService>();
+            services.AddSingleton<ActorIdentityResolver>();
 
             services.AddHttpContextAccessor();
 

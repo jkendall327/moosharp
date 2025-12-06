@@ -35,7 +35,11 @@ public sealed class SignalRGameConnectionService : IGameConnectionService
 
         _hubConnection.Reconnecting += _ => { OnReconnecting?.Invoke(); return Task.CompletedTask; };
         _hubConnection.Reconnected += _ => { OnReconnected?.Invoke(); return Task.CompletedTask; };
-        _hubConnection.Closed += _ => { OnClosed?.Invoke(); return Task.CompletedTask; };
+        _hubConnection.Closed += e =>
+        {
+            var u = e?.Message;
+            OnClosed?.Invoke(); return Task.CompletedTask;
+        };
     }
 
     public async Task StartAsync()
