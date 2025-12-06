@@ -30,7 +30,10 @@ public static class ServiceCollectionExtensions
             services.AddSingleton<IWorldSeeder, WorldSeeder>();
             services.AddSingleton<WorldInitializer>();
             services.AddSingleton<World.World>();
+            
+            // Players
             services.AddSingleton<PlayerHydrator>();
+            services.AddSingleton<PlayerMessageProvider>();
 
             // Commands
             services.AddSingleton<CommandParser>();

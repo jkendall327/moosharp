@@ -25,11 +25,9 @@ public class GameEngine(
     ILoginChecker loginChecker,
     PlayerSessionManager sessionManager,
     PlayerHydrator hydrator,
-    ILogger<GameEngine> logger,
-    IOptionsMonitor<AppOptions> appOptions)
+    PlayerMessageProvider messageProvider,
+    ILogger<GameEngine> logger)
 {
-    private string Motd => (appOptions.CurrentValue.Motd ?? string.Empty).Trim();
-
     public async Task ProcessInputAsync(GameInput input, CancellationToken ct = default)
     {
         switch (input.Command)
@@ -187,19 +185,9 @@ public class GameEngine(
         world.Players[connectionId.Value] = player;
         TrackSession(sessionToken, player, connectionId);
 
-        var description = BuildCurrentRoomDescription(player);
-
-        var messages = new List<GameMessage>
-        {
-            new(player, new SystemMessageEvent($"Welcome, {player.Username}."))
-        };
-
-        AddMotdMessage(messages, player);
-
-        messages.Add(new(player, new RoomDescriptionEvent(description.ToString())));
+        var messages = await messageProvider.GetMessagesForLogin(player);
 
         await sender.SendLoginResultAsync(connectionId, true, $"Registered and logged in as {player.Username}.");
-
         _ = sender.SendGameMessagesAsync(messages);
     }
 
@@ -244,16 +232,7 @@ public class GameEngine(
         world.Players[connectionId.Value] = player;
         TrackSession(sessionToken, player, connectionId);
 
-        var description = BuildCurrentRoomDescription(player);
-
-        var messages = new List<GameMessage>
-        {
-            new(player, new SystemMessageEvent($"Welcome back, {player.Username}."))
-        };
-
-        AddMotdMessage(messages, player);
-
-        messages.Add(new(player, new RoomDescriptionEvent(description.ToString())));
+        var messages = await messageProvider.GetMessagesForLogin(player);
 
         await sender.SendLoginResultAsync(connectionId, true, $"Logged in as {player.Username}.");
 
@@ -268,38 +247,6 @@ public class GameEngine(
         }
 
         sessionManager.RegisterSession(sessionToken, player, connectionId);
-    }
-
-    private StringBuilder BuildCurrentRoomDescription(Player player)
-    {
-        var sb = new StringBuilder();
-
-        var room = world.GetPlayerLocation(player);
-
-        if (room is null)
-        {
-            logger.LogWarning("Player {Player} has no known location when building description", player.Username);
-
-            sb.AppendLine("You are nowhere.");
-
-            return sb;
-        }
-
-        sb.Append(room.DescribeFor(player));
-
-        return sb;
-    }
-
-    private void AddMotdMessage(List<GameMessage> messages, Player player)
-    {
-        var motd = Motd;
-
-        if (string.IsNullOrWhiteSpace(motd))
-        {
-            return;
-        }
-
-        messages.Add(new(player, new SystemMessageEvent(motd)));
     }
 
     private Task RegisterAgent(ConnectionId connectionId, RegisterAgentCommand command)
