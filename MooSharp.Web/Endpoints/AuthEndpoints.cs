@@ -5,14 +5,19 @@ using MooSharp.Web.Services;
 namespace MooSharp.Web.Endpoints;
 
 public record RegisterRequest(string Username, string Password);
+public record RegisterResult(string Token);
 
 public record LoginRequest(string Username, string Password);
+public record LoginAttemptResult(string Token);
 
 public static class AuthEndpoints
 {
+    public const string RegistrationEndpoint = "/api/register";
+    public const string LoginEndpoint = "/api/login";
+    
     public static void MapAuthEndpoints(this IEndpointRouteBuilder app)
     {
-        app.MapPost("/api/register",
+        app.MapPost(RegistrationEndpoint,
             async (RegisterRequest rc, World.World world, IPlayerRepository store, JwtTokenService tokenService) =>
             {
                 var alreadyExists = await store.PlayerWithUsernameExistsAsync(rc.Username);
@@ -32,13 +37,10 @@ public static class AuthEndpoints
 
                 var token = tokenService.GenerateToken(newPlayerRequest.Username);
 
-                return Results.Ok(new
-                {
-                    Token = token
-                });
+                return Results.Ok(new RegisterResult(token));
             });
 
-        app.MapPost("/api/login",
+        app.MapPost(LoginEndpoint,
             async (LoginRequest req, ILoginChecker checker, JwtTokenService tokenService) =>
             {
                 var result = await checker.LoginIsValidAsync(req.Username, req.Password);
@@ -60,10 +62,7 @@ public static class AuthEndpoints
 
                 var token = tokenService.GenerateToken(req.Username);
 
-                return Results.Ok(new
-                {
-                    Token = token
-                });
+                return Results.Ok(new LoginAttemptResult(token));
             });
     }
 }

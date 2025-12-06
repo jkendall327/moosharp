@@ -1,12 +1,14 @@
 using System.Text;
 using Microsoft.Extensions.Logging;
 using MooSharp.Messaging;
+using MooSharp.Web.Endpoints;
 
 namespace MooSharp.Game;
 
 public sealed class GameClientViewModel : IDisposable
 {
     // Dependencies
+    private readonly IHttpClientFactory _factory;
     private readonly IGameConnectionService _connection;
     private readonly IGameHistoryService _historyService;
     private readonly ILogger<GameClientViewModel> _logger;
@@ -16,6 +18,7 @@ public sealed class GameClientViewModel : IDisposable
     private int _historyIndex = -1;
     private string _commandDraft = string.Empty;
     private Uri? _hubUri;
+    private string? _jwt;
 
     // The giant string of text for the terminal output
     public string GameOutput => _outputBuffer.ToString();
@@ -45,10 +48,12 @@ public sealed class GameClientViewModel : IDisposable
     public event Action? OnStateChanged;
     public event Func<Task>? OnFocusInputRequested;
 
-    public GameClientViewModel(IGameConnectionService connection,
+    public GameClientViewModel(IHttpClientFactory factory,
+        IGameConnectionService connection,
         IGameHistoryService historyService,
         ILogger<GameClientViewModel> logger)
     {
+        _factory = factory;
         _connection = connection;
         _historyService = historyService;
         _logger = logger;
@@ -64,11 +69,11 @@ public sealed class GameClientViewModel : IDisposable
     public async Task InitializeAsync(Uri hub)
     {
         await _historyService.InitializeAsync();
-        var sessionId = await _historyService.GetOrCreateSessionIdAsync();
 
-        // Pass the session ID provider to the connection service
         _hubUri = hub;
-        await _connection.InitializeAsync(hub, () => Task.FromResult<string?>(sessionId));
+
+        // TODO: try to get JWT from client storage to support refreshes again.
+        await _connection.InitializeAsync(hub, () => Task.FromResult(_jwt));
 
         try
         {
@@ -134,7 +139,22 @@ public sealed class GameClientViewModel : IDisposable
 
         try
         {
-            throw new NotImplementedException("Call API here.");
+            var client = _factory.CreateClient();
+
+            var request = new LoginRequest(Username, Password);
+
+            var response = await client.PostAsJsonAsync(AuthEndpoints.LoginEndpoint, request);
+
+            response.EnsureSuccessStatusCode();
+
+            var result = await response.Content.ReadFromJsonAsync<LoginAttemptResult>();
+
+            if (result is null)
+            {
+                throw new InvalidOperationException("Deserialisation of registration result failed.");
+            }
+
+            _jwt = result.Token;
         }
         catch (Exception ex)
         {
@@ -156,7 +176,23 @@ public sealed class GameClientViewModel : IDisposable
 
         try
         {
-            throw new NotImplementedException("Call API here.");
+            var client = _factory.CreateClient();
+
+            var request = new RegisterRequest(Username, Password);
+
+            var response = await client.PostAsJsonAsync(AuthEndpoints.RegistrationEndpoint, request);
+
+            response.EnsureSuccessStatusCode();
+
+            var result = await response.Content.ReadFromJsonAsync<RegisterResult>();
+
+            if (result is null)
+            {
+                throw new InvalidOperationException("Deserialisation of registration result failed.");
+            }
+
+            // TODO: store JWT in history so it survives refreshes again.
+            _jwt = result.Token;
         }
         catch (Exception ex)
         {
@@ -171,10 +207,7 @@ public sealed class GameClientViewModel : IDisposable
         LoginStatus = "Logging out...";
         NotifyStateChanged();
 
-        // 1. Clear Local Storage
-        await _historyService.ClearSessionAsync();
-
-        // 2. Stop Connection
+        // Stop connection.
         try
         {
             await _connection.StopAsync();
@@ -184,25 +217,19 @@ public sealed class GameClientViewModel : IDisposable
             _logger.LogError(ex, "Error stopping connection during logout");
         }
 
-        // 3. Reset State
+        // Reset state.
+        _jwt = null;
         IsLoggedIn = false;
         CommandInput = string.Empty;
         Username = string.Empty;
         Password = string.Empty;
         InitializeChannels();
 
-        const string logoutMessage = "Logged out. Session cleared.";
+        const string logoutMessage = "Logged out.";
         _outputBuffer.AppendLine(logoutMessage);
         LoginStatus = logoutMessage;
 
-        // 4. Re-Initialize (generates new Session ID)
-
-        if (_hubUri is null)
-        {
-            throw new InvalidOperationException("Hub URI was null when trying to log out.");
-        }
-
-        await InitializeAsync(_hubUri);
+        NotifyStateChanged();
     }
 
     public void NavigateHistory(int delta)

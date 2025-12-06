@@ -74,34 +74,6 @@ public class ClientStorageGameHistoryServiceTests
         Assert.Equal(commands, deserialized);
     }
 
-    [Fact]
-    public async Task GetOrCreateSessionIdAsync_UsesStoredValue()
-    {
-        var storage = Substitute.For<IClientStorageService>();
-        storage.GetItemAsync("mooSharpSession").Returns("known");
-
-        var service = CreateService(storage);
-
-        var result = await service.GetOrCreateSessionIdAsync();
-
-        Assert.Equal("known", result);
-        await storage.DidNotReceive().SetItemAsync("mooSharpSession", Arg.Any<string>());
-    }
-
-    [Fact]
-    public async Task GetOrCreateSessionIdAsync_CreatesAndCachesWhenMissing()
-    {
-        var storage = Substitute.For<IClientStorageService>();
-        storage.GetItemAsync("mooSharpSession").Returns((string?)null);
-
-        var service = CreateService(storage);
-
-        var result = await service.GetOrCreateSessionIdAsync();
-
-        Assert.False(string.IsNullOrWhiteSpace(result));
-        await storage.Received(1).SetItemAsync("mooSharpSession", result);
-    }
-
     private static ClientStorageGameHistoryService CreateService(IClientStorageService storage)
     {
         return new(storage, NullLogger<ClientStorageGameHistoryService>.Instance);
