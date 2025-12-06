@@ -4,9 +4,13 @@ namespace MooSharp.Data;
 
 public interface IPlayerRepository
 {
-    Task SaveNewPlayerAsync(NewPlayerRequest player, CancellationToken ct = default);
+    Task SaveNewPlayerAsync(NewPlayerRequest player,
+        WriteType type = WriteType.Deferred,
+        CancellationToken ct = default);
 
-    Task SavePlayerAsync(PlayerSnapshotDto snapshot, CancellationToken ct = default);
+    Task SavePlayerAsync(PlayerSnapshotDto snapshot,
+        WriteType type = WriteType.Deferred,
+        CancellationToken ct = default);
 
     Task<PlayerDto?> LoadPlayerAsync(LoginRequest command, CancellationToken ct = default);
 }

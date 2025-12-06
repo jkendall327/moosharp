@@ -2,6 +2,7 @@ using System.Threading.Channels;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using MooSharp.Data.EntityFramework;
 using MooSharp.Data.Queueing;
 
@@ -9,7 +10,7 @@ namespace MooSharp.Data;
 
 public static class DataServiceCollectionExtensions
 {
-    public static IServiceCollection AddMooSharpData(this IServiceCollection services, string databaseFilepath)
+    public static void AddMooSharpData(this IServiceCollection services, string databaseFilepath)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(databaseFilepath);
 
@@ -22,20 +23,19 @@ public static class DataServiceCollectionExtensions
         }.ToString();
 
         var directory = Path.GetDirectoryName(databaseFilepath);
+
         if (!string.IsNullOrWhiteSpace(directory))
         {
             Directory.CreateDirectory(directory);
         }
-
-        services.AddSingleton(new DatabaseConfiguration(connectionString));
-
+        
         services.AddDbContextFactory<MooSharpDbContext>(options =>
         {
             options.UseSqlite(connectionString);
             options.AddInterceptors(new SqliteWalInterceptor());
         });
 
-        var dbChannel = Channel.CreateUnbounded<DatabaseRequest>(new UnboundedChannelOptions
+        var dbChannel = Channel.CreateUnbounded<DatabaseRequest>(new()
         {
             SingleReader = true
         });
@@ -43,14 +43,33 @@ public static class DataServiceCollectionExtensions
         services.AddSingleton(dbChannel.Writer);
         services.AddSingleton(dbChannel.Reader);
 
-        services.AddSingleton<EfPlayerRepository>();
         services.AddSingleton<EfWorldRepository>();
-        services.AddSingleton<IPlayerRepository, QueuedPlayerRepository>();
+        services.AddSingleton<IPlayerRepository, EfPlayerRepository>();
+        services.AddSingleton<IPlayerStore, EfPlayerStore>();
         services.AddSingleton<IWorldRepository, QueuedWorldRepository>();
         services.AddHostedService<DatabaseBackgroundService>();
+    }
 
-        return services;
+    public static async Task EnsureMooSharpDatabaseCreatedAsync(this IHost host,
+        CancellationToken cancellationToken = default)
+    {
+        using var scope = host.Services.CreateScope();
+        var factory = scope.ServiceProvider.GetRequiredService<IDbContextFactory<MooSharpDbContext>>();
+
+        await using var context = await factory.CreateDbContextAsync(cancellationToken);
+
+        var connection = (SqliteConnection) context.Database.GetDbConnection();
+
+        await connection.OpenAsync(cancellationToken);
+
+        await context.Database.EnsureCreatedAsync(cancellationToken);
+
+        // Enforce WAL Mode.
+        // We run this OUTSIDE the 'if (created)' block. 
+        // This ensures that even if the DB already exists, we force it to WAL mode.
+        // This is very fast if it is already in WAL mode.
+        await using var command = connection.CreateCommand();
+        command.CommandText = "PRAGMA journal_mode=WAL;";
+        await command.ExecuteNonQueryAsync(cancellationToken);
     }
 }
-
-public sealed record DatabaseConfiguration(string ConnectionString);
