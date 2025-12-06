@@ -35,7 +35,7 @@ public interface IGameEngine
     Task<AutocompleteOptions> GetAutocompleteOptions(Guid actorId, CancellationToken ct = default);
 }
 
-public class GameEngine(World.World world, IPlayerRepository playerRepository, ChannelWriter<NewGameInput> writer) : IGameEngine
+public class GameEngine(World.World world, IPlayerRepository playerRepository, ChannelWriter<GameInput> writer) : IGameEngine
 {
     public async Task ProcessInputAsync(Guid actorId, string commandText, CancellationToken ct = default)
     {

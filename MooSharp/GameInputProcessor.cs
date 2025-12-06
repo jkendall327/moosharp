@@ -24,33 +24,26 @@ public class GameInputProcessor(
 {
     public async Task ProcessInputAsync(GameInput input, CancellationToken ct = default)
     {
-        switch (input.Command)
+        if (world.Players.TryGetValue(input.ActorId.ToString(), out var player))
         {
-            case WorldCommand wc:
-                if (!world.Players.TryGetValue(input.ConnectionId.Value, out var player))
-                {
-                    await sender.SendLoginRequiredMessageAsync(input.ConnectionId, ct);
-
-                    break;
-                }
-
-                await ProcessWorldCommand(wc, player, ct);
-
-                break;
-            default: throw new ArgumentOutOfRangeException(nameof(input.Command));
+            await ProcessWorldCommand(player, input.Command, ct);
+        }
+        else
+        {
+            throw new InvalidOperationException(
+                $"Got game input for actor {input.ActorId}, but they were not found in the world.");
         }
     }
 
-    private async Task ProcessWorldCommand(WorldCommand command, Player player, CancellationToken ct = default)
+    private async Task ProcessWorldCommand(Player player, string command, CancellationToken ct = default)
     {
-        var parsed = await parser.ParseAsync(player, command.Command, ct);
+        var parsed = await parser.ParseAsync(player, command, ct);
 
         if (parsed is null)
         {
-            _ = sender.SendGameMessagesAsync([
-                    new(player, new SystemMessageEvent("That command wasn't recognised."))
-                ],
-                ct);
+            var unparsedError = new GameMessage(player, new SystemMessageEvent("That command wasn't recognised."));
+
+            _ = sender.SendGameMessagesAsync([unparsedError], ct);
 
             return;
         }
@@ -63,12 +56,11 @@ public class GameInputProcessor(
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Error processing world command {Command}", command.Command);
+            logger.LogError(ex, "Error processing world command {Command}", command);
 
-            _ = sender.SendGameMessagesAsync([
-                    new(player, new SystemMessageEvent("An unexpected error occurred."))
-                ],
-                ct);
+            var unexpected = new GameMessage(player, new SystemMessageEvent("An unexpected error occurred."));
+
+            _ = sender.SendGameMessagesAsync([unexpected], ct);
         }
     }
 }
