@@ -15,6 +15,7 @@ public sealed class GameClientViewModel : IDisposable
     private readonly StringBuilder _outputBuffer = new();
     private int _historyIndex = -1;
     private string _commandDraft = string.Empty;
+    private Uri? _hubUri;
 
     // The giant string of text for the terminal output
     public string GameOutput => _outputBuffer.ToString();
@@ -40,11 +41,9 @@ public sealed class GameClientViewModel : IDisposable
     public Dictionary<string, bool> ChannelMuteState { get; } = new(StringComparer.OrdinalIgnoreCase);
     public string[] AvailableChannels { get; } = [ChatChannels.Global, ChatChannels.Newbie, ChatChannels.Trade];
 
-    // --- Events ---
+    // Events
     public event Action? OnStateChanged;
     public event Func<Task>? OnFocusInputRequested;
-
-    private Uri? _hubUri;
 
     public GameClientViewModel(IGameConnectionService connection,
         IGameHistoryService historyService,
@@ -55,7 +54,6 @@ public sealed class GameClientViewModel : IDisposable
         _logger = logger;
 
         _connection.OnMessageReceived += HandleMessageReceived;
-        _connection.OnLoginResult += HandleLoginResult;
         _connection.OnReconnecting += HandleReconnecting;
         _connection.OnReconnected += HandleReconnected;
         _connection.OnClosed += HandleClosed;
@@ -344,14 +342,6 @@ public sealed class GameClientViewModel : IDisposable
         NotifyStateChanged();
     }
 
-    private void HandleLoginResult(bool success, string message)
-    {
-        IsLoggedIn = success;
-        LoginStatus = message;
-        _outputBuffer.AppendLine(message);
-        NotifyStateChanged();
-    }
-
     private void HandleReconnecting()
     {
         _logger.LogWarning("Reconnecting...");
@@ -452,7 +442,6 @@ public sealed class GameClientViewModel : IDisposable
     public void Dispose()
     {
         _connection.OnMessageReceived -= HandleMessageReceived;
-        _connection.OnLoginResult -= HandleLoginResult;
         _connection.OnReconnecting -= HandleReconnecting;
         _connection.OnReconnected -= HandleReconnected;
         _connection.OnClosed -= HandleClosed;

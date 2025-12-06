@@ -9,7 +9,6 @@ public sealed class SignalRGameConnectionService : IGameConnectionService
     private HubConnection? _hubConnection;
 
     public event Action<string>? OnMessageReceived;
-    public event Action<bool, string>? OnLoginResult;
 
     public event Action? OnReconnecting;
     public event Action? OnReconnected;
@@ -33,7 +32,6 @@ public sealed class SignalRGameConnectionService : IGameConnectionService
             .Build();
 
         _hubConnection.On<string>(MooHub.ReceiveMessage, msg => OnMessageReceived?.Invoke(msg));
-        _hubConnection.On<bool, string>("LoginResult", (success, msg) => OnLoginResult?.Invoke(success, msg));
 
         _hubConnection.Reconnecting += _ => { OnReconnecting?.Invoke(); return Task.CompletedTask; };
         _hubConnection.Reconnected += _ => { OnReconnected?.Invoke(); return Task.CompletedTask; };
