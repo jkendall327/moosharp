@@ -3,7 +3,7 @@ using MooSharp.Data.Dtos;
 
 namespace MooSharp.Data.EntityFramework;
 
-internal sealed class EfPlayerStore(IDbContextFactory<MooSharpDbContext> contextFactory) : IPlayerStore
+internal sealed class EfPlayerRepository(IDbContextFactory<MooSharpDbContext> contextFactory) : IPlayerRepository
 {
     private static readonly string FakeBCryptHash = "$2a$11$dkL4OYJdQeDVNvTqK8Pz0Oz1b1ewy6/8.GkFzZb1sPmGlLP3lE8gm";
     

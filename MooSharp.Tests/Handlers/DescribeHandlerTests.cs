@@ -10,7 +10,7 @@ public class DescribeHandlerTests
     [Fact]
     public async Task DescribeHandler_UpdatesCurrentRoomDescriptions()
     {
-        var store = new InMemoryWorldStore();
+        var store = new InMemoryWorldRepository();
         var player = HandlerTestHelpers.CreatePlayer();
         var room = HandlerTestHelpers.CreateRoom("room", player.Username);
         var world = await HandlerTestHelpers.CreateWorld(store, room);
@@ -40,7 +40,7 @@ public class DescribeHandlerTests
     [Fact]
     public async Task DescribeHandler_UpdatesExitRoomDescription()
     {
-        var store = new InMemoryWorldStore();
+        var store = new InMemoryWorldRepository();
         var player = HandlerTestHelpers.CreatePlayer();
         var origin = HandlerTestHelpers.CreateRoom("origin", player.Username);
         var destination = HandlerTestHelpers.CreateRoom("destination", player.Username);
@@ -70,7 +70,7 @@ public class DescribeHandlerTests
     [Fact]
     public async Task DescribeHandler_PreventsNonCreatorFromUpdatingRoom()
     {
-        var store = new InMemoryWorldStore();
+        var store = new InMemoryWorldRepository();
         var room = HandlerTestHelpers.CreateRoom("room", "Builder");
         var world = await HandlerTestHelpers.CreateWorld(store, room);
         var player = HandlerTestHelpers.CreatePlayer("NotBuilder");

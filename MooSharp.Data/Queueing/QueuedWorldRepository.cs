@@ -5,19 +5,19 @@ using MooSharp.Data.EntityFramework;
 
 namespace MooSharp.Data.Queueing;
 
-internal sealed class QueuedWorldStore(
+internal sealed class QueuedWorldRepository(
     ChannelWriter<DatabaseRequest> writer,
-    EfWorldStore worldStore,
-    ILogger<QueuedWorldStore> logger) : IWorldStore
+    EfWorldRepository worldRepository,
+    ILogger<QueuedWorldRepository> logger) : IWorldRepository
 {
     public async Task<bool> HasRoomsAsync(CancellationToken cancellationToken = default)
     {
-        return await worldStore.HasRoomsAsync(cancellationToken);
+        return await worldRepository.HasRoomsAsync(cancellationToken);
     }
 
     public Task<IReadOnlyCollection<RoomSnapshotDto>> LoadRoomsAsync(CancellationToken cancellationToken = default)
     {
-        return worldStore.LoadRoomsAsync(cancellationToken);
+        return worldRepository.LoadRoomsAsync(cancellationToken);
     }
 
     public Task SaveRoomAsync(RoomSnapshotDto room, CancellationToken cancellationToken = default)

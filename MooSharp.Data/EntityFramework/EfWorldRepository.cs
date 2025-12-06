@@ -3,7 +3,7 @@ using MooSharp.Data.Dtos;
 
 namespace MooSharp.Data.EntityFramework;
 
-internal sealed class EfWorldStore(IDbContextFactory<MooSharpDbContext> contextFactory) : IWorldStore
+internal sealed class EfWorldRepository(IDbContextFactory<MooSharpDbContext> contextFactory) : IWorldRepository
 {
     public async Task<bool> HasRoomsAsync(CancellationToken cancellationToken = default)
     {

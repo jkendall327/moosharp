@@ -5,10 +5,10 @@ using MooSharp.Data.EntityFramework;
 
 namespace MooSharp.Data.Queueing;
 
-internal sealed class QueuedPlayerStore(
+internal sealed class QueuedPlayerRepository(
     ChannelWriter<DatabaseRequest> writer,
-    EfPlayerStore playerStore,
-    ILogger<QueuedPlayerStore> logger) : IPlayerStore
+    EfPlayerRepository playerRepository,
+    ILogger<QueuedPlayerRepository> logger) : IPlayerRepository
 {
     public Task SaveNewPlayerAsync(NewPlayerRequest player, CancellationToken ct = default)
     {
@@ -22,7 +22,7 @@ internal sealed class QueuedPlayerStore(
 
     public Task<PlayerDto?> LoadPlayerAsync(LoginRequest command, CancellationToken ct = default)
     {
-        return playerStore.LoadPlayerAsync(command, ct);
+        return playerRepository.LoadPlayerAsync(command, ct);
     }
 
     private async Task EnqueueAsync(DatabaseRequest request, CancellationToken ct)

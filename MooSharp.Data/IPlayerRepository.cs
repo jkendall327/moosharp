@@ -2,7 +2,7 @@ using MooSharp.Data.Dtos;
 
 namespace MooSharp.Data;
 
-public interface IPlayerStore
+public interface IPlayerRepository
 {
     Task SaveNewPlayerAsync(NewPlayerRequest player, CancellationToken ct = default);
 

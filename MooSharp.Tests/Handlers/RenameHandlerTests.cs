@@ -10,7 +10,7 @@ public class RenameHandlerTests
     [Fact]
     public async Task RenameHandler_RenamesOwnedRoom()
     {
-        var store = new InMemoryWorldStore();
+        var store = new InMemoryWorldRepository();
         var player = HandlerTestHelpers.CreatePlayer();
         var room = HandlerTestHelpers.CreateRoom("room", player.Username);
         var world = await HandlerTestHelpers.CreateWorld(store, room);
@@ -37,7 +37,7 @@ public class RenameHandlerTests
     [Fact]
     public async Task RenameHandler_PreventsRenamingRoomNotOwned()
     {
-        var store = new InMemoryWorldStore();
+        var store = new InMemoryWorldRepository();
         var player = HandlerTestHelpers.CreatePlayer();
         var room = HandlerTestHelpers.CreateRoom("room", "Other");
         var world = await HandlerTestHelpers.CreateWorld(store, room);
@@ -60,7 +60,7 @@ public class RenameHandlerTests
     [Fact]
     public async Task RenameHandler_RenamesOwnedItem()
     {
-        var store = new InMemoryWorldStore();
+        var store = new InMemoryWorldRepository();
         var player = HandlerTestHelpers.CreatePlayer();
         var room = HandlerTestHelpers.CreateRoom("room", player.Username);
         var item = new Object
@@ -92,7 +92,7 @@ public class RenameHandlerTests
     [Fact]
     public async Task RenameHandler_PreventsRenamingUnownedItem()
     {
-        var store = new InMemoryWorldStore();
+        var store = new InMemoryWorldRepository();
         var player = HandlerTestHelpers.CreatePlayer();
         var room = HandlerTestHelpers.CreateRoom("room", player.Username);
         var item = new Object

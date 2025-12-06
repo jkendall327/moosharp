@@ -89,7 +89,7 @@ public class WorldClockServiceTests
     [Fact]
     public async Task TriggerTickAsync_UpdatesPeriodEvenWithNoPlayers()
     {
-        var world = new World.World(Substitute.For<IWorldStore>(), NullLogger<World.World>.Instance)
+        var world = new World.World(Substitute.For<IWorldRepository>(), NullLogger<World.World>.Instance)
         {
             CurrentDayPeriod = DayPeriod.Morning
         };
@@ -125,7 +125,7 @@ public class WorldClockServiceTests
 
     private static World.World CreateWorldWithPlayers(out List<IPlayerConnection> connections)
     {
-        var world = new World.World(Substitute.For<IWorldStore>(), NullLogger<World.World>.Instance);
+        var world = new World.World(Substitute.For<IWorldRepository>(), NullLogger<World.World>.Instance);
         connections = [];
 
         for (var i = 0; i < 2; i++)

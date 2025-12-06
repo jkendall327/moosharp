@@ -9,7 +9,7 @@ public static class HandlerTestHelpers
 {
     public static Task<World.World> CreateWorld(params Room[] rooms)
     {
-        var store = new InMemoryWorldStore();
+        var store = new InMemoryWorldRepository();
         var world = new World.World(store, NullLogger<World.World>.Instance);
 
         world.Initialize(rooms);
@@ -17,13 +17,13 @@ public static class HandlerTestHelpers
         return Task.FromResult(world);
     }
 
-    public static async Task<World.World> CreateWorld(InMemoryWorldStore store, params Room[] rooms)
+    public static async Task<World.World> CreateWorld(InMemoryWorldRepository repository, params Room[] rooms)
     {
-        var world = new World.World(store, NullLogger<World.World>.Instance);
+        var world = new World.World(repository, NullLogger<World.World>.Instance);
 
         world.Initialize(rooms);
 
-        await store.SaveRoomsAsync(WorldSnapshotFactory.CreateSnapshots(rooms));
+        await repository.SaveRoomsAsync(WorldSnapshotFactory.CreateSnapshots(rooms));
 
         return world;
     }

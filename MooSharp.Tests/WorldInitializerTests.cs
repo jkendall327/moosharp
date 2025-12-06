@@ -71,11 +71,11 @@ public class WorldInitializerTests
         };
     }
 
-    private static async Task<(WorldInitializer Initializer, InMemoryWorldStore Store, IWorldSeeder Seeder, World.World World)> CreateInitializerAsync(
+    private static async Task<(WorldInitializer Initializer, InMemoryWorldRepository Store, IWorldSeeder Seeder, World.World World)> CreateInitializerAsync(
         IWorldSeeder? seeder = null,
         Room? existingRoomToPersist = null)
     {
-        var store = new InMemoryWorldStore();
+        var store = new InMemoryWorldRepository();
 
         if (existingRoomToPersist is not null)
         {

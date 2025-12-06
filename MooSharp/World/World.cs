@@ -7,7 +7,7 @@ using Object = MooSharp.Actors.Object;
 
 namespace MooSharp.World;
 
-public class World(IWorldStore worldStore, ILogger<World> logger)
+public class World(IWorldRepository worldRepository, ILogger<World> logger)
 {
     private readonly Dictionary<RoomId, Room> _rooms = [];
     private readonly ConcurrentDictionary<Player, Room> _playerLocations = [];
@@ -92,7 +92,7 @@ public class World(IWorldStore worldStore, ILogger<World> logger)
 
         _rooms[room.Id] = room;
 
-        await worldStore.SaveRoomAsync(WorldSnapshotFactory.CreateSnapshot(room), cancellationToken);
+        await worldRepository.SaveRoomAsync(WorldSnapshotFactory.CreateSnapshot(room), cancellationToken);
 
         logger.LogInformation("Room {RoomName} ({RoomId}) created", room.Name, room.Id);
 
@@ -107,7 +107,7 @@ public class World(IWorldStore worldStore, ILogger<World> logger)
         var oldName = room.Name;
         room.Name = name;
 
-        await worldStore.RenameRoomAsync(room.Id.Value, name, cancellationToken);
+        await worldRepository.RenameRoomAsync(room.Id.Value, name, cancellationToken);
 
         logger.LogInformation("Room {OldName} ({RoomId}) renamed to {NewName}", oldName, room.Id, name);
     }
@@ -120,7 +120,7 @@ public class World(IWorldStore worldStore, ILogger<World> logger)
         var oldName = item.Name;
         item.Name = name;
 
-        await worldStore.RenameObjectAsync(item.Id.Value.ToString(), name, cancellationToken);
+        await worldRepository.RenameObjectAsync(item.Id.Value.ToString(), name, cancellationToken);
 
         logger.LogInformation("Object {OldName} ({ObjectId}) renamed to {NewName}", oldName, item.Id, name);
     }
@@ -134,7 +134,7 @@ public class World(IWorldStore worldStore, ILogger<World> logger)
 
         origin.Exits[direction] = destination.Id;
 
-        await worldStore.SaveExitAsync(origin.Id.Value, destination.Id.Value, direction, cancellationToken);
+        await worldRepository.SaveExitAsync(origin.Id.Value, destination.Id.Value, direction, cancellationToken);
     }
 
     public async Task UpdateRoomDescriptionAsync(Room room, string description,
@@ -146,7 +146,7 @@ public class World(IWorldStore worldStore, ILogger<World> logger)
         room.Description = description;
         room.LongDescription = description;
 
-        await worldStore.UpdateRoomDescriptionAsync(room.Id.Value, description, description, cancellationToken);
+        await worldRepository.UpdateRoomDescriptionAsync(room.Id.Value, description, description, cancellationToken);
 
         logger.LogInformation("Room {RoomName} ({RoomId}) description updated", room.Name, room.Id);
     }

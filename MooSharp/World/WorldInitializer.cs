@@ -5,14 +5,14 @@ using MooSharp.Data.Mapping;
 
 namespace MooSharp.World;
 
-public class WorldInitializer(World world, IWorldStore worldStore, IWorldSeeder worldSeeder,
+public class WorldInitializer(World world, IWorldRepository worldRepository, IWorldSeeder worldSeeder,
     ILogger<WorldInitializer> logger)
 {
     public async Task InitializeAsync(CancellationToken cancellationToken = default)
     {
-        if (await worldStore.HasRoomsAsync(cancellationToken))
+        if (await worldRepository.HasRoomsAsync(cancellationToken))
         {
-            var rooms = await worldStore.LoadRoomsAsync(cancellationToken);
+            var rooms = await worldRepository.LoadRoomsAsync(cancellationToken);
             world.Initialize(WorldSnapshotFactory.CreateRooms(rooms));
 
             logger.LogInformation("World loaded with {RoomCount} rooms from persistent storage", rooms.Count);
@@ -21,7 +21,7 @@ public class WorldInitializer(World world, IWorldStore worldStore, IWorldSeeder 
 
         var seedRooms = worldSeeder.GetSeedRooms().ToList();
 
-        await worldStore.SaveRoomsAsync(WorldSnapshotFactory.CreateSnapshots(seedRooms), cancellationToken);
+        await worldRepository.SaveRoomsAsync(WorldSnapshotFactory.CreateSnapshots(seedRooms), cancellationToken);
         world.Initialize(seedRooms);
 
         logger.LogInformation("World seeded with {RoomCount} rooms from configuration", seedRooms.Count);
@@ -33,7 +33,7 @@ public class WorldInitializer(World world, IWorldStore worldStore, IWorldSeeder 
 
         var roomList = rooms.ToList();
 
-        await worldStore.SaveRoomsAsync(WorldSnapshotFactory.CreateSnapshots(roomList), cancellationToken);
+        await worldRepository.SaveRoomsAsync(WorldSnapshotFactory.CreateSnapshots(roomList), cancellationToken);
         world.Initialize(roomList);
 
         logger.LogInformation("World initialized with {RoomCount} provided rooms", roomList.Count);

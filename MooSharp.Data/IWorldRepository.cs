@@ -2,7 +2,7 @@ using MooSharp.Data.Dtos;
 
 namespace MooSharp.Data;
 
-public interface IWorldStore
+public interface IWorldRepository
 {
     Task<bool> HasRoomsAsync(CancellationToken cancellationToken = default);
 

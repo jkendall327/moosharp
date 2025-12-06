@@ -43,10 +43,10 @@ public static class DataServiceCollectionExtensions
         services.AddSingleton(dbChannel.Writer);
         services.AddSingleton(dbChannel.Reader);
 
-        services.AddSingleton<EfPlayerStore>();
-        services.AddSingleton<EfWorldStore>();
-        services.AddSingleton<IPlayerStore, QueuedPlayerStore>();
-        services.AddSingleton<IWorldStore, QueuedWorldStore>();
+        services.AddSingleton<EfPlayerRepository>();
+        services.AddSingleton<EfWorldRepository>();
+        services.AddSingleton<IPlayerRepository, QueuedPlayerRepository>();
+        services.AddSingleton<IWorldRepository, QueuedWorldRepository>();
         services.AddHostedService<DatabaseBackgroundService>();
 
         return services;

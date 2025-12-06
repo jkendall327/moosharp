@@ -3,7 +3,7 @@ using MooSharp.Data.Dtos;
 
 namespace MooSharp.Tests.TestDoubles;
 
-public sealed class InMemoryWorldStore : IWorldStore
+public sealed class InMemoryWorldRepository : IWorldRepository
 {
     private readonly List<RoomSnapshotDto> _rooms = [];
 

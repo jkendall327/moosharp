@@ -19,7 +19,7 @@ public class GameEngine(
     World.World world,
     CommandParser parser,
     CommandExecutor executor,
-    IPlayerStore playerStore,
+    IPlayerRepository playerRepository,
     IRawMessageSender rawMessageSender,
     IPlayerConnectionFactory connectionFactory,
     IGameMessagePresenter presenter,
@@ -88,7 +88,7 @@ public class GameEngine(
 
         var snapshot = PlayerSnapshotFactory.CreateSnapshot(player, location);
 
-        await playerStore.SavePlayerAsync(snapshot);
+        await playerRepository.SavePlayerAsync(snapshot);
 
         world.RemovePlayer(player);
 
@@ -181,7 +181,7 @@ public class GameEngine(
 
         var newPlayerRequest = PlayerSnapshotFactory.CreateNewPlayer(player, defaultRoom, rc.Password);
 
-        await playerStore.SaveNewPlayerAsync(newPlayerRequest);
+        await playerRepository.SaveNewPlayerAsync(newPlayerRequest);
 
         world.Players[connectionId.Value] = player;
         TrackSession(sessionToken, player, connectionId);
@@ -206,7 +206,7 @@ public class GameEngine(
 
     private async Task Login(ConnectionId connectionId, LoginCommand lc, string? sessionToken)
     {
-        var dto = await playerStore.LoadPlayerAsync(new LoginRequest(lc.Username, lc.Password));
+        var dto = await playerRepository.LoadPlayerAsync(new LoginRequest(lc.Username, lc.Password));
 
         if (dto is null)
         {
