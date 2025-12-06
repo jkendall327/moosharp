@@ -3,6 +3,8 @@ using MooSharp.Agents;
 
 namespace MooSharp.Messaging;
 
+public record NewGameInput(Guid ActorId, string Command);
+
 public record GameInput(ConnectionId ConnectionId, InputCommand Command, string? SessionToken = null)
 {
     // This task completes when the engine finishes processing this input
