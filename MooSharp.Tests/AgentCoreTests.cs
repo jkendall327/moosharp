@@ -57,7 +57,7 @@ public class AgentCoreTests
 
         // We got the thinking command immediately
         Assert.True(hasFirst);
-        Assert.IsType<AgentThinkingCommand>(enumerator.Current);
+        Assert.IsType<WorldCommand>(enumerator.Current);
 
         // MoveNext triggers the LLM call and waits for the next yield
         var hasSecond = await enumerator.MoveNextAsync();

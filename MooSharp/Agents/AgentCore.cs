@@ -57,7 +57,10 @@ public class AgentCore(
 
             // Yield "Thinking" immediately so the UI can update.
             logger.LogDebug("Agent has begun thinking");
-            yield return new AgentThinkingCommand();
+            yield return new WorldCommand
+            {
+                Command = "/me is thinking..."
+            };
 
             // Perform the slow LLM call.
             // The shell is currently processing the Thinking command, 
