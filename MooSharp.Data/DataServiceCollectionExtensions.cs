@@ -46,6 +46,7 @@ public static class DataServiceCollectionExtensions
         services.AddSingleton<EfWorldRepository>();
         services.AddSingleton<IPlayerRepository, EfPlayerRepository>();
         services.AddSingleton<IPlayerStore, EfPlayerStore>();
+        services.AddSingleton<ILoginChecker, EfPlayerStore>();
         services.AddSingleton<IWorldRepository, QueuedWorldRepository>();
         services.AddHostedService<DatabaseBackgroundService>();
     }
