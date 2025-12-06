@@ -51,7 +51,7 @@ public static class ServiceCollectionExtensions
             services.AddSingleton<IAgentResponseProvider, AgentResponseProvider>();
 
             // Connections and message-sending
-            services.AddSingleton<IRawMessageSender, SessionGatewayMessageSender>();
+            services.AddSingleton<IGameMessageEmitter, SessionGatewayMessageEmitter>();
 
             // Generic infrastructure
             services.AddSingleton<SlugCreator>();

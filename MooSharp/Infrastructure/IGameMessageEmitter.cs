@@ -3,7 +3,7 @@ using MooSharp.Messaging;
 
 namespace MooSharp.Infrastructure;
 
-public interface IRawMessageSender
+public interface IGameMessageEmitter
 {
     Task SendGameMessagesAsync(IEnumerable<GameMessage> messages, CancellationToken ct = default);
 }

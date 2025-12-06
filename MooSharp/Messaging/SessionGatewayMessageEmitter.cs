@@ -3,10 +3,10 @@ using MooSharp.Infrastructure;
 
 namespace MooSharp.Messaging;
 
-public class SessionGatewayMessageSender(
+public class SessionGatewayMessageEmitter(
     ISessionGateway gateway,
     IGameMessagePresenter presenter,
-    ILogger<SessionGatewayMessageSender> logger) : IRawMessageSender
+    ILogger<SessionGatewayMessageEmitter> logger) : IGameMessageEmitter
 {
     public async Task SendGameMessagesAsync(IEnumerable<GameMessage> messages, CancellationToken ct = default)
     {

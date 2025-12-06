@@ -10,7 +10,7 @@ public class WorldClock(
     World world,
     IOptions<WorldClockOptions> options,
     TimeProvider timeProvider,
-    IRawMessageSender sender,
+    IGameMessageEmitter emitter,
     ILogger<WorldClock> logger) : IWorldClock
 {
     private DateTimeOffset _lastPeriodChange = timeProvider.GetUtcNow();
@@ -74,6 +74,6 @@ public class WorldClock(
             .Values
             .Select(player => new GameMessage(player, gameEvent));
 
-        await sender.SendGameMessagesAsync(sends, cancellationToken);
+        await emitter.SendGameMessagesAsync(sends, cancellationToken);
     }
 }

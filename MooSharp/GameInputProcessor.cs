@@ -19,7 +19,7 @@ public class GameInputProcessor(
     World.World world,
     CommandParser parser,
     CommandExecutor executor,
-    IRawMessageSender sender,
+    IGameMessageEmitter emitter,
     ILogger<GameInputProcessor> logger)
 {
     public async Task ProcessInputAsync(GameInput input, CancellationToken ct = default)
@@ -43,7 +43,7 @@ public class GameInputProcessor(
         {
             var unparsedError = new GameMessage(player, new SystemMessageEvent("That command wasn't recognised."));
 
-            _ = sender.SendGameMessagesAsync([unparsedError], ct);
+            _ = emitter.SendGameMessagesAsync([unparsedError], ct);
 
             return;
         }
@@ -52,7 +52,7 @@ public class GameInputProcessor(
         {
             var result = await executor.Handle(parsed, ct);
 
-            _ = sender.SendGameMessagesAsync(result.Messages, ct);
+            _ = emitter.SendGameMessagesAsync(result.Messages, ct);
         }
         catch (Exception ex)
         {
@@ -60,7 +60,7 @@ public class GameInputProcessor(
 
             var unexpected = new GameMessage(player, new SystemMessageEvent("An unexpected error occurred."));
 
-            _ = sender.SendGameMessagesAsync([unexpected], ct);
+            _ = emitter.SendGameMessagesAsync([unexpected], ct);
         }
     }
 }

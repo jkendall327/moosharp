@@ -95,7 +95,7 @@ public class WorldClockServiceTests
             CurrentDayPeriod = DayPeriod.Morning
         };
 
-        var presenter = Substitute.For<IRawMessageSender>();
+        var presenter = Substitute.For<IGameMessageEmitter>();
         var timeProvider = new FakeTimeProvider();
 
         var clock = CreateWorldClock(world, presenter, timeProvider, dayPeriodMinutes: 10);
@@ -113,7 +113,7 @@ public class WorldClockServiceTests
 
     private static WorldClock CreateWorldClock(
         World.World world,
-        IRawMessageSender sender,
+        IGameMessageEmitter emitter,
         TimeProvider timeProvider,
         int dayPeriodMinutes = 10)
     {
@@ -124,7 +124,7 @@ public class WorldClockServiceTests
                 DayPeriodDurationMinutes = dayPeriodMinutes
             }),
             timeProvider,
-            sender,
+            emitter,
             NullLogger<WorldClock>.Instance);
     }
 
