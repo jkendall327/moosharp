@@ -7,6 +7,8 @@ namespace MooSharp.Web.Game;
 
 public class MooHub(ChannelWriter<GameInput> writer, ILogger<MooHub> logger, World.World world) : Hub
 {
+    public const string HUB_NAME = "/moohub";
+    
     public override async Task OnConnectedAsync()
     {
         logger.LogInformation("Connection made with ID {Id}", Context.ConnectionId);

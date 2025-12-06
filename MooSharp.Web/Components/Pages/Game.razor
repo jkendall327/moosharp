@@ -2,6 +2,7 @@
 @inject GameClientViewModel Model
 @inject NavigationManager NavigationManager
 @using MooSharp.Game
+@using MooSharp.Web.Game
 @implements IAsyncDisposable
 @rendermode InteractiveServer
 
@@ -102,7 +103,7 @@ else
             Model.OnStateChanged += ModelOnOnStateChanged;
             Model.OnFocusInputRequested += FocusInput;
             
-            var hubUri = NavigationManager.ToAbsoluteUri("/moohub");
+            var hubUri = NavigationManager.ToAbsoluteUri(MooHub.HUB_NAME);
 
             await Model.InitializeAsync(hubUri);
         }
