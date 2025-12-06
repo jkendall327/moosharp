@@ -106,8 +106,7 @@ public class CommandParserTests
     {
         return new()
         {
-            Username = "Player",
-            Connection = new TestPlayerConnection()
+            Username = "Player"
         };
     }
 

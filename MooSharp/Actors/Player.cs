@@ -13,7 +13,7 @@ public class Player : IContainer
     private readonly HashSet<string> _mutedChannels = new(StringComparer.OrdinalIgnoreCase);
 
     public PlayerId Id { get; } = PlayerId.New();
-    public required IPlayerConnection Connection { get; set; }
+    
     public IReadOnlyCollection<Object> Inventory => _inventory;
     public required string Username { get; init; }
     public IReadOnlyCollection<string> MutedChannels => _mutedChannels;

@@ -43,20 +43,22 @@ public class SignalRRawMessageSender(
             .SendAsync("LoginResult", success, message, cancellationToken: ct);
     }
 
-    public async Task SendGameMessagesAsync(List<GameMessage> messages, CancellationToken ct = default)
+    public async Task SendGameMessagesAsync(IEnumerable<GameMessage> messages, CancellationToken ct = default)
     {
-        var tasks = messages
-            .Select(msg => (msg.Player, Content: presenter.Present(msg)))
-            .Where(msg => !string.IsNullOrWhiteSpace(msg.Content))
-            .Select(msg => msg.Player.Connection.SendMessageAsync(msg.Content!, ct));
-
-        try
-        {
-            await Task.WhenAll(tasks);
-        }
-        catch (Exception ex)
-        {
-            logger.LogError(ex, "Error sending messages");
-        }
+        throw new NotImplementedException();
+        
+        // var tasks = messages
+        //     .Select(msg => (msg.Player, Content: presenter.Present(msg)))
+        //     .Where(msg => !string.IsNullOrWhiteSpace(msg.Content))
+        //     .Select(msg => msg.Player.Connection.SendMessageAsync(msg.Content!, ct));
+        //
+        // try
+        // {
+        //     await Task.WhenAll(tasks);
+        // }
+        // catch (Exception ex)
+        // {
+        //     logger.LogError(ex, "Error sending messages");
+        // }
     }
 }

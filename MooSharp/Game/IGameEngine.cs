@@ -49,7 +49,6 @@ public class GameEngine(World.World world, IPlayerRepository playerRepository, C
         var player = new Player
         {
             Username = null,
-            Connection = null
         };
 
         world.MovePlayer(player, defaultRoom);

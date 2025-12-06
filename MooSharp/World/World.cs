@@ -67,7 +67,7 @@ public class World(IWorldRepository worldRepository, ILogger<World> logger)
             location.RemovePlayer(player);
         }
 
-        Players.TryRemove(player.Connection.Id, out var _);
+        Players.TryRemove(player.Id.Value.ToString(), out var _);
     }
 
     public IReadOnlyCollection<Player> GetActivePlayers()

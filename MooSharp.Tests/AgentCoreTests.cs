@@ -49,7 +49,7 @@ public class AgentCoreTests
         // Act
         // We get the enumerator manually to control the stepping
         var enumerator = core
-            .ProcessMessageAsync("Hello", CancellationToken.None)
+            .ProcessMessageAsync(Guid.NewGuid(), "Hello", CancellationToken.None)
             .GetAsyncEnumerator();
 
         // MoveNext triggers logic up to the first 'yield return'

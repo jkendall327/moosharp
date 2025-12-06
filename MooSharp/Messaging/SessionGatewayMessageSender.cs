@@ -27,7 +27,7 @@ public class SessionGatewayMessageSender(
         return Task.CompletedTask;
     }
 
-    public async Task SendGameMessagesAsync(List<GameMessage> messages, CancellationToken ct = default)
+    public async Task SendGameMessagesAsync(IEnumerable<GameMessage> messages, CancellationToken ct = default)
     {
         var tasks = messages
             .Select(msg => (msg.Player, Content: presenter.Present(msg)))

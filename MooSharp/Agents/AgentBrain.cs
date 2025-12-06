@@ -18,9 +18,7 @@ public sealed class AgentBrain(
     // Fire-and-forget tasks
     private Task? _processingTask;
     private Task? _volitionTask;
-
-    public IPlayerConnection Connection { get; } = connection;
-
+    
     public PlayerId Id { get; } = PlayerId.New();
     
     public async Task StartAsync(CancellationToken cancellationToken = default)
@@ -50,9 +48,9 @@ public sealed class AgentBrain(
         {
             await foreach (var msg in _incomingMessages.Reader.ReadAllAsync(_cts.Token))
             {
-                await foreach (var cmd in core.ProcessMessageAsync(msg, _cts.Token))
+                await foreach (var cmd in core.ProcessMessageAsync(Id.Value, msg, _cts.Token))
                 {
-                    await gameWriter.WriteAsync(new(Connection.Id, cmd), _cts.Token);
+                    await gameWriter.WriteAsync(cmd, _cts.Token);
                 }
             }
         }
