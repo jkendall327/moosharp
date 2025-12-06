@@ -1,9 +1,7 @@
-using System.Threading.Channels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
 using MooSharp.Game;
 using MooSharp.Infrastructure;
-using MooSharp.Messaging;
 
 namespace MooSharp.Web.Services;
 
@@ -11,9 +9,8 @@ namespace MooSharp.Web.Services;
 public class MooHub(
     ISessionGateway gateway,
     ActorIdentityResolver identityResolver,
-    ChannelWriter<NewGameInput> writer,
-    ILogger<MooHub> logger,
-    World.World world) : Hub
+    IGameEngine engine,
+    ILogger<MooHub> logger) : Hub
 {
     public const string HubName = "/moohub";
 
@@ -36,26 +33,14 @@ public class MooHub(
 
         var actor = GetActorIdOrThrow();
         
-        await writer.WriteAsync(new(actor, command));
+        await engine.ProcessInputAsync(actor, command);
     }
 
-    public Task<AutocompleteOptions> GetAutocompleteOptions()
+    public async Task<AutocompleteOptions> GetAutocompleteOptions()
     {
-        throw new NotImplementedException();
+        var actor = GetActorIdOrThrow();
         
-        if (!world.Players.TryGetValue(Context.ConnectionId, out var player))
-        {
-            return Task.FromResult(new AutocompleteOptions([], []));
-        }
-
-        var room = world.GetPlayerLocation(player);
-
-        var exits = room?.Exits.Keys ?? Enumerable.Empty<string>();
-        var inventory = player.Inventory.Select(item => item.Name);
-
-        var options = new AutocompleteOptions(exits.ToList(), inventory.ToList());
-
-        return Task.FromResult(options);
+        return await engine.GetAutocompleteOptions(actor);
     }
 
     public override async Task OnDisconnectedAsync(Exception? exception)
