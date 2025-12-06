@@ -133,6 +133,7 @@ public static class ServiceCollectionExtensions
                 .AddJwtBearer("Bearer",
                     options =>
                     {
+                        // Without this it renames the 'sub', 'name' claims etc. into some stupid SOAP format.
                         options.MapInboundClaims = false;
 
                         var jwtSettings = config.GetSection("Jwt");
