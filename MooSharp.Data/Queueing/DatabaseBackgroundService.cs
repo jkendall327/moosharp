@@ -7,7 +7,7 @@ namespace MooSharp.Data.Queueing;
 
 internal sealed class DatabaseBackgroundService(
     ChannelReader<DatabaseRequest> reader,
-    EfPlayerRepository playerRepository,
+    IPlayerRepository playerRepository,
     EfWorldRepository worldRepository,
     ILogger<DatabaseBackgroundService> logger) : BackgroundService
 {
@@ -17,40 +17,7 @@ internal sealed class DatabaseBackgroundService(
         {
             try
             {
-                switch (request)
-                {
-                    case SaveNewPlayerRequest newPlayerRequest:
-                        await playerRepository.SaveNewPlayerAsync(newPlayerRequest.Player, stoppingToken);
-                        break;
-                    case SavePlayerRequest savePlayerRequest:
-                        await playerRepository.SavePlayerAsync(savePlayerRequest.Snapshot, stoppingToken);
-                        break;
-                    case SaveRoomRequest saveRoomRequest:
-                        await worldRepository.SaveRoomAsync(saveRoomRequest.Room, stoppingToken);
-                        break;
-                    case SaveRoomsRequest saveRoomsRequest:
-                        await worldRepository.SaveRoomsAsync(saveRoomsRequest.Rooms, stoppingToken);
-                        break;
-                    case SaveExitRequest saveExitRequest:
-                        await worldRepository.SaveExitAsync(saveExitRequest.FromRoomId, saveExitRequest.ToRoomId, string.Empty, stoppingToken);
-                        break;
-                    case UpdateRoomDescriptionRequest updateRoomDescriptionRequest:
-                        await worldRepository.UpdateRoomDescriptionAsync(
-                            updateRoomDescriptionRequest.RoomId,
-                            updateRoomDescriptionRequest.Description,
-                            updateRoomDescriptionRequest.LongDescription,
-                            stoppingToken);
-                        break;
-                    case RenameRoomRequest renameRoomRequest:
-                        await worldRepository.RenameRoomAsync(renameRoomRequest.RoomId, renameRoomRequest.Name, stoppingToken);
-                        break;
-                    case RenameObjectRequest renameObjectRequest:
-                        await worldRepository.RenameObjectAsync(renameObjectRequest.ObjectId, renameObjectRequest.Name, stoppingToken);
-                        break;
-                    default:
-                        logger.LogWarning("Unhandled database request type {RequestType}", request.GetType().Name);
-                        break;
-                }
+                await ProcessRequest(request, stoppingToken);
             }
             catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
             {
@@ -60,6 +27,44 @@ internal sealed class DatabaseBackgroundService(
             {
                 logger.LogError(ex, "Error processing database request {RequestType}", request.GetType().Name);
             }
+        }
+    }
+
+    private async Task ProcessRequest(DatabaseRequest request, CancellationToken stoppingToken)
+    {
+        switch (request)
+        {
+            case SaveNewPlayerRequest newPlayerRequest:
+                await playerRepository.SaveNewPlayerAsync(newPlayerRequest.Player, WriteType.Immediate, stoppingToken);
+                break;
+            case SavePlayerRequest savePlayerRequest:
+                await playerRepository.SavePlayerAsync(savePlayerRequest.Snapshot, WriteType.Immediate, stoppingToken);
+                break;
+            case SaveRoomRequest saveRoomRequest:
+                await worldRepository.SaveRoomAsync(saveRoomRequest.Room, stoppingToken);
+                break;
+            case SaveRoomsRequest saveRoomsRequest:
+                await worldRepository.SaveRoomsAsync(saveRoomsRequest.Rooms, stoppingToken);
+                break;
+            case SaveExitRequest saveExitRequest:
+                await worldRepository.SaveExitAsync(saveExitRequest.FromRoomId, saveExitRequest.ToRoomId, string.Empty, stoppingToken);
+                break;
+            case UpdateRoomDescriptionRequest updateRoomDescriptionRequest:
+                await worldRepository.UpdateRoomDescriptionAsync(
+                    updateRoomDescriptionRequest.RoomId,
+                    updateRoomDescriptionRequest.Description,
+                    updateRoomDescriptionRequest.LongDescription,
+                    stoppingToken);
+                break;
+            case RenameRoomRequest renameRoomRequest:
+                await worldRepository.RenameRoomAsync(renameRoomRequest.RoomId, renameRoomRequest.Name, stoppingToken);
+                break;
+            case RenameObjectRequest renameObjectRequest:
+                await worldRepository.RenameObjectAsync(renameObjectRequest.ObjectId, renameObjectRequest.Name, stoppingToken);
+                break;
+            default:
+                logger.LogWarning("Unhandled database request type {RequestType}", request.GetType().Name);
+                break;
         }
     }
 }

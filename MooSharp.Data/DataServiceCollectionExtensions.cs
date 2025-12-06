@@ -35,7 +35,7 @@ public static class DataServiceCollectionExtensions
             options.AddInterceptors(new SqliteWalInterceptor());
         });
 
-        var dbChannel = Channel.CreateUnbounded<DatabaseRequest>(new UnboundedChannelOptions
+        var dbChannel = Channel.CreateUnbounded<DatabaseRequest>(new()
         {
             SingleReader = true
         });
@@ -43,9 +43,8 @@ public static class DataServiceCollectionExtensions
         services.AddSingleton(dbChannel.Writer);
         services.AddSingleton(dbChannel.Reader);
 
-        services.AddSingleton<EfPlayerRepository>();
         services.AddSingleton<EfWorldRepository>();
-        services.AddSingleton<IPlayerRepository, QueuedPlayerRepository>();
+        services.AddSingleton<IPlayerRepository, EfPlayerRepository>();
         services.AddSingleton<IWorldRepository, QueuedWorldRepository>();
         services.AddHostedService<DatabaseBackgroundService>();
 

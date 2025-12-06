@@ -1,26 +1,71 @@
+using System.Threading.Channels;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using MooSharp.Data.Dtos;
 
 namespace MooSharp.Data.EntityFramework;
 
-internal sealed class EfPlayerRepository(IDbContextFactory<MooSharpDbContext> contextFactory) : IPlayerRepository
+internal sealed class EfPlayerRepository(
+    ChannelWriter<DatabaseRequest> writer,
+    IDbContextFactory<MooSharpDbContext> contextFactory,
+    ILogger<EfPlayerRepository> logger) : IPlayerRepository
 {
     private static readonly string FakeBCryptHash = "$2a$11$dkL4OYJdQeDVNvTqK8Pz0Oz1b1ewy6/8.GkFzZb1sPmGlLP3lE8gm";
+
+    public async Task SaveNewPlayerAsync(NewPlayerRequest player,
+        WriteType type = WriteType.Deferred,
+        CancellationToken ct = default)
+    {
+        if (type is WriteType.Deferred)
+        {
+            await EnqueueAsync(new SaveNewPlayerRequest(player), ct);
+            return;
+        }
+        
+        await SaveNewPlayerInner(player, ct);
+    }
+
+    public async Task SavePlayerAsync(PlayerSnapshotDto snapshot,
+        WriteType type = WriteType.Deferred,
+        CancellationToken ct = default)
+    {
+        if (type is WriteType.Deferred)
+        {
+            await EnqueueAsync(new SavePlayerRequest(snapshot), ct);
+            return;
+        }
+
+        await SavePlayerInner(snapshot, ct);
+    }
     
-    public async Task SaveNewPlayerAsync(NewPlayerRequest player, CancellationToken ct = default)
+    private async Task EnqueueAsync(DatabaseRequest request, CancellationToken ct)
+    {
+        try
+        {
+            await writer.WriteAsync(request, ct);
+        }
+        catch (ChannelClosedException)
+        {
+            logger.LogWarning("Database request channel was closed; request {RequestType} was dropped", request.GetType().Name);
+        }
+    }
+
+    private async Task SaveNewPlayerInner(NewPlayerRequest player, CancellationToken ct)
     {
         await using var context = await contextFactory.CreateDbContextAsync(ct);
 
-        var existing = await context.Players
+        var existing = await context
+            .Players
             .Include(p => p.Inventory)
             .FirstOrDefaultAsync(p => p.Username == player.Username, ct);
 
         if (existing is null)
         {
-            existing = new PlayerEntity
+            existing = new()
             {
                 Username = player.Username
             };
+
             context.Players.Add(existing);
         }
 
@@ -28,7 +73,9 @@ internal sealed class EfPlayerRepository(IDbContextFactory<MooSharpDbContext> co
         existing.CurrentLocation = player.CurrentLocation;
 
         context.PlayerInventory.RemoveRange(existing.Inventory);
-        existing.Inventory = player.Inventory
+
+        existing.Inventory = player
+            .Inventory
             .Select(i => new InventoryItemEntity
             {
                 ItemId = i.Id,
@@ -45,11 +92,12 @@ internal sealed class EfPlayerRepository(IDbContextFactory<MooSharpDbContext> co
         await context.SaveChangesAsync(ct);
     }
 
-    public async Task SavePlayerAsync(PlayerSnapshotDto snapshot, CancellationToken ct = default)
+    private async Task SavePlayerInner(PlayerSnapshotDto snapshot, CancellationToken ct)
     {
         await using var context = await contextFactory.CreateDbContextAsync(ct);
 
-        var player = await context.Players
+        var player = await context
+            .Players
             .Include(p => p.Inventory)
             .FirstOrDefaultAsync(p => p.Username == snapshot.Username, ct);
 
@@ -61,7 +109,9 @@ internal sealed class EfPlayerRepository(IDbContextFactory<MooSharpDbContext> co
         player.CurrentLocation = snapshot.CurrentLocation;
 
         context.PlayerInventory.RemoveRange(player.Inventory);
-        player.Inventory = snapshot.Inventory
+
+        player.Inventory = snapshot
+            .Inventory
             .Select(i => new InventoryItemEntity
             {
                 ItemId = i.Id,
@@ -82,7 +132,8 @@ internal sealed class EfPlayerRepository(IDbContextFactory<MooSharpDbContext> co
     {
         await using var context = await contextFactory.CreateDbContextAsync(ct);
 
-        var player = await context.Players
+        var player = await context
+            .Players
             .Include(p => p.Inventory)
             .FirstOrDefaultAsync(p => p.Username == command.Username, ct);
 
@@ -96,7 +147,8 @@ internal sealed class EfPlayerRepository(IDbContextFactory<MooSharpDbContext> co
             return null;
         }
 
-        var inventory = player.Inventory
+        var inventory = player
+            .Inventory
             .Select(i => new InventoryItemDto(
                 i.ItemId,
                 i.Name,
