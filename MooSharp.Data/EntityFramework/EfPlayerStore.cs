@@ -5,6 +5,8 @@ namespace MooSharp.Data.EntityFramework;
 
 internal sealed class EfPlayerStore(IDbContextFactory<MooSharpDbContext> contextFactory) : IPlayerStore
 {
+    private static readonly string FakeBCryptHash = "$2a$11$dkL4OYJdQeDVNvTqK8Pz0Oz1b1ewy6/8.GkFzZb1sPmGlLP3lE8gm";
+    
     public async Task SaveNewPlayerAsync(NewPlayerRequest player, CancellationToken ct = default)
     {
         await using var context = await contextFactory.CreateDbContextAsync(ct);
@@ -84,7 +86,12 @@ internal sealed class EfPlayerStore(IDbContextFactory<MooSharpDbContext> context
             .Include(p => p.Inventory)
             .FirstOrDefaultAsync(p => p.Username == command.Username, ct);
 
-        if (player is null || !BCrypt.Net.BCrypt.Verify(command.Password, player.Password))
+        // Always perform hash verification to mitigate timing side-channel.
+        // This method isn't constant-time or anything but might as well go partway.
+        var password = player?.Password ?? FakeBCryptHash;
+        var ok = BCrypt.Net.BCrypt.Verify(command.Password, password);
+
+        if (player is null || !ok)
         {
             return null;
         }
@@ -100,6 +107,6 @@ internal sealed class EfPlayerStore(IDbContextFactory<MooSharpDbContext> context
                 i.CreatorUsername))
             .ToList();
 
-        return new PlayerDto(player.Username, player.Password, player.CurrentLocation, inventory);
+        return new(player.Username, player.Password, player.CurrentLocation, inventory);
     }
 }
