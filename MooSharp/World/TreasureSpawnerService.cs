@@ -1,12 +1,14 @@
+using System.Threading.Channels;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 using MooSharp.Infrastructure;
+using MooSharp.Messaging;
 using Object = MooSharp.Actors.Object;
 
 namespace MooSharp.World;
 
 public class TreasureSpawnerService(
-    World world,
+    ChannelWriter<GameCommand> writer,
     IOptions<TreasureSpawnerOptions> options,
     TimeProvider timeProvider) : BackgroundService
 {
@@ -33,7 +35,7 @@ public class TreasureSpawnerService(
         while (await timer.WaitForNextTickAsync(stoppingToken))
         {
             var treasure = CreateRandomTreasure();
-            world.SpawnTreasureInEmptyRoom([treasure]);
+            await writer.WriteAsync(new SpawnTreasureCommand(treasure), stoppingToken);
         }
     }
 

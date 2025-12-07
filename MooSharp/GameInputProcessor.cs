@@ -22,16 +22,16 @@ public class GameInputProcessor(
     IGameMessageEmitter emitter,
     ILogger<GameInputProcessor> logger)
 {
-    public async Task ProcessInputAsync(GameInput input, CancellationToken ct = default)
+    public async Task ProcessInputAsync(InputCommand inputCommand, CancellationToken ct = default)
     {
-        if (world.Players.TryGetValue(input.ActorId.ToString(), out var player))
+        if (world.Players.TryGetValue(inputCommand.ActorId.ToString(), out var player))
         {
-            await ProcessWorldCommand(player, input.Command, ct);
+            await ProcessWorldCommand(player, inputCommand.Command, ct);
         }
         else
         {
             throw new InvalidOperationException(
-                $"Got game input for actor {input.ActorId}, but they were not found in the world.");
+                $"Got game input for actor {inputCommand.ActorId}, but they were not found in the world.");
         }
     }
 

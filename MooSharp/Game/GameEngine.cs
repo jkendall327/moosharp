@@ -12,7 +12,7 @@ public class GameEngine(
     PlayerHydrator hydrator,
     IPlayerRepository playerRepository,
     PlayerMessageProvider messageProvider,
-    ChannelWriter<GameInput> writer) : IGameEngine
+    ChannelWriter<InputCommand> writer) : IGameEngine
 {
     public event Action<Player>? OnPlayerSpawned;
     public event Action<Player>? OnPlayerDespawned;

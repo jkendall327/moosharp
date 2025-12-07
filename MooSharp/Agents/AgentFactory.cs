@@ -6,7 +6,7 @@ using MooSharp.Messaging;
 namespace MooSharp.Agents;
 
 public class AgentFactory(
-    ChannelWriter<GameInput> writer,
+    ChannelWriter<InputCommand> writer,
     TimeProvider clock,
     IOptions<AgentOptions> options,
     IAgentPromptProvider promptProvider,
