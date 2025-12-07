@@ -1,6 +1,7 @@
 using System.Text;
 using MooSharp.Actors.Players;
 using MooSharp.Commands.Machinery;
+using MooSharp.Commands.Parsing;
 using MooSharp.Commands.Presentation;
 using MooSharp.Commands.Searching;
 using Object = MooSharp.Actors.Objects.Object;
@@ -19,13 +20,18 @@ public class ExamineCommandDefinition : ICommandDefinition
 
     public string Description => "Inspect yourself, an item, or the room. Usage: examine <target>.";
     public CommandCategory Category => CommandCategory.General;
-
-    public ICommand Create(Player player, string args)
-        => new ExamineCommand
+    
+    public string? TryCreateCommand(ParsingContext ctx, ArgumentBinder binder, out ICommand? command)
+    {
+        command = new ExamineCommand
         {
-            Player = player,
-            Target = args
+            Player = ctx.Player,
+            Target = ctx.GetRemainingText()
         };
+
+        return null;
+    }
+
 }
 
 public class ExamineHandler(World.World world, TargetResolver resolver) : IHandler<ExamineCommand>

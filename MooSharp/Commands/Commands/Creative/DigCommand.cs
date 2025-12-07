@@ -1,6 +1,8 @@
 using MooSharp.Actors.Players;
 using MooSharp.Actors.Rooms;
+using MooSharp.Commands.Commands.Items;
 using MooSharp.Commands.Machinery;
+using MooSharp.Commands.Parsing;
 using MooSharp.Commands.Presentation;
 
 namespace MooSharp.Commands.Commands.Creative;
@@ -17,6 +19,28 @@ public class DigCommandDefinition : ICommandDefinition
     public CommandCategory Category => CommandCategory.General;
 
     public string Description => "Create a new room connected to your current one. Usage: @dig to <room name>.";
+
+    public string? TryCreateCommand(ParsingContext ctx, ArgumentBinder binder, out ICommand? command)
+    {
+        var args = ctx.GetRemainingText();
+        
+        var name = args.StartsWith("to ", StringComparison.OrdinalIgnoreCase)
+            ? args[3..].Trim()
+            : args.Trim();
+
+        if (string.IsNullOrWhiteSpace(name))
+        {
+            name = "Unfinished room";
+        }
+
+        command = new DigCommand
+        {
+            Player = ctx.Player,
+            RoomName = name
+        };
+
+        return null;
+    }
 
     public ICommand Create(Player player, string args)
     {
