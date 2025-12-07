@@ -22,7 +22,7 @@ public class ArgumentBinder(TargetResolver resolver)
             SearchStatus.Found => BindingResult<Object>.Success(search.Match!),
             SearchStatus.NotFound => BindingResult<Object>.Failure($"You aren't carrying a '{token}'."),
             SearchStatus.Ambiguous => BindingResult<Object>.Failure($"Which '{token}' do you mean?"),
-            _ => BindingResult<Object>.Failure("Invalid item.")
+            var _ => BindingResult<Object>.Failure("Invalid item.")
         };
     }
 

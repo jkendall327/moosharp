@@ -1,6 +1,7 @@
 using MooSharp.Actors.Players;
 using MooSharp.Commands.Commands.Informational;
 using MooSharp.Commands.Machinery;
+using MooSharp.Commands.Parsing;
 using MooSharp.Commands.Presentation;
 using MooSharp.Commands.Searching;
 using Object = MooSharp.Actors.Objects.Object;
@@ -10,8 +11,8 @@ namespace MooSharp.Commands.Commands.Items;
 public class GiveCommand : CommandBase<GiveCommand>
 {
     public required Player Player { get; init; }
-    public required string Target { get; init; }
-    public required string ItemName { get; init; }
+    public required Player Target { get; init; }
+    public required Object Item { get; init; }
 }
 
 public class GiveCommandDefinition : ICommandDefinition
@@ -19,76 +20,61 @@ public class GiveCommandDefinition : ICommandDefinition
     public IReadOnlyCollection<string> Verbs { get; } = ["give"];
     public CommandCategory Category => CommandCategory.General;
 
-    public string Description => "Give an item to another player in the same room. Usage: give <target> <item>.";
+    public string Description => "Give an item to another player. Usage: give <target> to <item>.";
 
-    public ICommand Create(Player player, string args)
+    public string? TryCreateCommand(ParsingContext ctx, ArgumentBinder binder, out ICommand? command)
     {
-        var split = args.Split(' ', 2, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        command = null;
 
-        var target = split.ElementAtOrDefault(0) ?? string.Empty;
-        var item = split.ElementAtOrDefault(1) ?? string.Empty;
+        // Try to get the item from inventory
+        var itemResult = binder.BindInventoryItem(ctx);
 
-        return new GiveCommand
+        if (!itemResult.IsSuccess)
         {
-            Player = player,
-            Target = target,
-            ItemName = item
+            return itemResult.ErrorMessage;
+        }
+
+        // Optionally consume "to"
+        binder.ConsumePreposition(ctx, "to");
+
+        var playerResult = binder.BindPlayerInRoom(ctx);
+
+        if (!playerResult.IsSuccess)
+        {
+            return playerResult.ErrorMessage;
+        }
+
+        command = new GiveCommand
+        {
+            Player = ctx.Player,
+            Item = itemResult.Value!,
+            Target = playerResult.Value!
         };
+
+        return null;
     }
 }
 
-public class GiveHandler(World.World world, TargetResolver resolver) : IHandler<GiveCommand>
+public class GiveHandler(World.World world) : IHandler<GiveCommand>
 {
     public Task<CommandResult> Handle(GiveCommand cmd, CancellationToken cancellationToken = default)
     {
         var result = new CommandResult();
         var player = cmd.Player;
 
-        if (string.IsNullOrWhiteSpace(cmd.Target) || string.IsNullOrWhiteSpace(cmd.ItemName))
-        {
-            result.Add(player, new SystemMessageEvent("Usage: give <target> <item>."));
-            return Task.FromResult(result);
-        }
-
         var room = world.GetLocationOrThrow(player);
 
-        var recipient = room.PlayersInRoom
-            .FirstOrDefault(p => p.Username.Equals(cmd.Target, StringComparison.OrdinalIgnoreCase));
+        var item = cmd.Item;
+        var recipient = cmd.Target;
 
-        if (recipient is null)
-        {
-            result.Add(player, new SystemMessageEvent($"{cmd.Target} isn't here."));
-            return Task.FromResult(result);
-        }
+        item.MoveTo(recipient);
 
-        var search = resolver.FindObjects(player.Inventory, cmd.ItemName);
+        var giveEvent = new ItemGivenEvent(player, recipient, item);
+        var receiveEvent = new ItemReceivedEvent(player, recipient, item);
 
-        switch (search.Status)
-        {
-            case SearchStatus.NotFound:
-                result.Add(player, new ItemNotCarriedEvent(cmd.ItemName));
-                break;
-
-            case SearchStatus.IndexOutOfRange:
-                result.Add(player, new SystemMessageEvent($"You don't have a '{cmd.ItemName}'."));
-                break;
-
-            case SearchStatus.Ambiguous:
-                result.Add(player, new AmbiguousInputEvent(cmd.ItemName, search.Candidates));
-                break;
-
-            case SearchStatus.Found:
-                var item = search.Match!;
-                item.MoveTo(recipient);
-
-                var giveEvent = new ItemGivenEvent(player, recipient, item);
-                var receiveEvent = new ItemReceivedEvent(player, recipient, item);
-
-                result.Add(player, giveEvent);
-                result.Add(recipient, receiveEvent);
-                result.Broadcast(room.PlayersInRoom, giveEvent, MessageAudience.Observer, player, recipient);
-                break;
-        }
+        result.Add(player, giveEvent);
+        result.Add(recipient, receiveEvent);
+        result.Broadcast(room.PlayersInRoom, giveEvent, MessageAudience.Observer, player, recipient);
 
         return Task.FromResult(result);
     }
