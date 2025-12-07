@@ -45,6 +45,7 @@ public class WorldClock(
         if (string.IsNullOrWhiteSpace(message))
         {
             logger.LogWarning("No message configured for day period {DayPeriod}; skipping broadcast", nextPeriod);
+
             return;
         }
 
@@ -69,10 +70,7 @@ public class WorldClock(
     {
         var gameEvent = new SystemMessageEvent(messageText);
 
-        
-        var sends = world.Players
-            .Values
-            .Select(player => new GameMessage(player, gameEvent));
+        var sends = world.Players.Values.Select(player => new GameMessage(player, gameEvent));
 
         await emitter.SendGameMessagesAsync(sends, cancellationToken);
     }

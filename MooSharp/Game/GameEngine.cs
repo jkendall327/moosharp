@@ -11,15 +11,14 @@ public class GameEngine(
     World.World world,
     PlayerHydrator hydrator,
     IPlayerRepository playerRepository,
-    PlayerMessageProvider messageProvider,
-    ChannelWriter<GameInput> writer) : IGameEngine
+    ChannelWriter<GameCommand> writer) : IGameEngine
 {
     public event Action<Player>? OnPlayerSpawned;
     public event Action<Player>? OnPlayerDespawned;
 
     public async Task ProcessInputAsync(Guid actorId, string commandText, CancellationToken ct = default)
     {
-        await writer.WriteAsync(new(actorId, commandText), ct);
+        await writer.WriteAsync(new InputCommand(actorId, commandText), ct);
     }
 
     public async Task SpawnActorAsync(Guid actorId, CancellationToken ct = default)

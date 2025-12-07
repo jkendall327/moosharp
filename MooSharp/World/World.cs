@@ -42,6 +42,12 @@ public class World(IWorldRepository worldRepository, ILogger<World> logger)
         return room;
     }
 
+    public Room GetLocationOrThrow(Player player)
+    {
+        return GetPlayerLocation(player) ??
+               throw new InvalidOperationException($"Player {player.Username} has no location.");
+    }
+
     public void MovePlayer(Player player, Room destination)
     {
         ArgumentNullException.ThrowIfNull(destination);
@@ -75,10 +81,17 @@ public class World(IWorldRepository worldRepository, ILogger<World> logger)
         return _playerLocations.Keys.ToList();
     }
 
-    public async Task<Room> CreateRoomAsync(string slug, string name, string description, string longDescription,
-        string enterText, string exitText, string? creatorUsername, CancellationToken cancellationToken = default)
+    public async Task<Room> CreateRoomAsync(string slug,
+        string name,
+        string description,
+        string longDescription,
+        string enterText,
+        string exitText,
+        string? creatorUsername,
+        CancellationToken cancellationToken = default)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(slug);
+
         var room = new Room
         {
             Id = new(slug),
@@ -125,7 +138,9 @@ public class World(IWorldRepository worldRepository, ILogger<World> logger)
         logger.LogInformation("Object {OldName} ({ObjectId}) renamed to {NewName}", oldName, item.Id, name);
     }
 
-    public async Task AddExitAsync(Room origin, Room destination, string direction,
+    public async Task AddExitAsync(Room origin,
+        Room destination,
+        string direction,
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(origin);
@@ -137,7 +152,8 @@ public class World(IWorldRepository worldRepository, ILogger<World> logger)
         await worldRepository.SaveExitAsync(origin.Id.Value, destination.Id.Value, direction, cancellationToken);
     }
 
-    public async Task UpdateRoomDescriptionAsync(Room room, string description,
+    public async Task UpdateRoomDescriptionAsync(Room room,
+        string description,
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(room);
@@ -160,7 +176,8 @@ public class World(IWorldRepository worldRepository, ILogger<World> logger)
             return;
         }
 
-        var emptyRooms = _rooms.Values
+        var emptyRooms = _rooms
+            .Values
             .Where(r => r.PlayersInRoom.Count == 0)
             .ToList();
 

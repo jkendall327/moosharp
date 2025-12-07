@@ -1,11 +1,14 @@
 using System.Threading.Channels;
 using MooSharp.Messaging;
+using MooSharp.World;
 
 namespace MooSharp.Web.Game;
 
 public class GameEngineBackgroundService(
     GameInputProcessor inputProcessor,
-    ChannelReader<GameInput> reader,
+    World.World world,
+    IWorldClock worldClock,
+    ChannelReader<GameCommand> reader,
     ILogger<GameEngineBackgroundService> logger) : BackgroundService
 {
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -14,7 +17,23 @@ public class GameEngineBackgroundService(
         {
             try
             {
-                await inputProcessor.ProcessInputAsync(input, stoppingToken);
+                switch (input)
+                {
+                    case InputCommand ic:
+                        await inputProcessor.ProcessInputAsync(ic, stoppingToken);
+
+                        break;
+
+                    case SpawnTreasureCommand stc:
+                        world.SpawnTreasureInEmptyRoom([stc.Treasure]);
+
+                        break;
+
+                    case IncrementWorldClockCommand:
+                        await worldClock.TriggerTickAsync(stoppingToken);
+
+                        break;
+                }
 
                 // Signal success
                 input.CompletionSource?.TrySetResult();
@@ -26,5 +45,4 @@ public class GameEngineBackgroundService(
             }
         }
     }
-
 }

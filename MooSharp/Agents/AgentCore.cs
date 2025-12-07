@@ -33,7 +33,7 @@ public class AgentCore(
         _history.AddSystemMessage(systemPrompt);
     }
 
-    public async IAsyncEnumerable<GameInput> ProcessMessageAsync(Guid actorId, string message,
+    public async IAsyncEnumerable<InputCommand> ProcessMessageAsync(Guid actorId, string message,
         [EnumeratorCancellation] CancellationToken ct)
     {
         // We acquire the lock. Because this is an iterator, the lock remains 
