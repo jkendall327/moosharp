@@ -7,7 +7,6 @@ namespace MooSharp.Agents;
 
 public sealed class AgentBrain(
     AgentCore core,
-    AgentPlayerConnection connection,
     ChannelWriter<GameCommand> gameWriter,
     TimeProvider clock,
     IOptions<AgentOptions> options) : IAsyncDisposable
@@ -26,10 +25,7 @@ public sealed class AgentBrain(
         Id = new(id);
         
         _cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-
-        // Wire up the connection to the internal channel
-        connection.OnMessageReceived = WriteToInternalQueue;
-
+        
         await core.InitializeAsync(_cts.Token);
 
         _processingTask = ProcessLoopAsync();
