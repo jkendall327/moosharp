@@ -57,5 +57,5 @@ public class CommandParser
         }
 
         return Task.FromResult(ParseResult.Success(command!));
-    } 
+    }
 }
