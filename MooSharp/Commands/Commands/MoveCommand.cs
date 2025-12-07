@@ -53,15 +53,22 @@ public class MoveHandler(World.World world, ILogger<MoveHandler> logger) : IHand
 
         var exit = cmd.TargetExit;
 
-        if (exit.IsLocked && !exit.IsOpen)
+        if (exit is {IsLocked: true, IsOpen: true})
+        {
+            throw new InvalidOperationException($"Exit {exit.Id} in invalid state - locked and open.");
+        }
+
+        if (exit is {IsLocked: true, IsOpen: false})
         {
             result.Add(player, new SystemMessageEvent("The door is locked."));
+
             return Task.FromResult(result);
         }
 
         if (!exit.IsOpen)
         {
-            result.Add(player, new SystemMessageEvent("The door is closed."));
+            result.Add(player, new SystemMessageEvent("That way is closed."));
+
             return Task.FromResult(result);
         }
 
@@ -70,7 +77,9 @@ public class MoveHandler(World.World world, ILogger<MoveHandler> logger) : IHand
         result.Add(player, new PlayerDepartedEvent(player, originRoom, cmd.TargetExit.Name));
         result.Add(player, new PlayerMovedEvent(player, exitRoom));
 
-        result.BroadcastToAllButPlayer(originRoom, player, new PlayerDepartedEvent(player, originRoom, cmd.TargetExit.Name));
+        result.BroadcastToAllButPlayer(originRoom,
+            player,
+            new PlayerDepartedEvent(player, originRoom, cmd.TargetExit.Name));
 
         world.MovePlayer(player, exitRoom);
 
