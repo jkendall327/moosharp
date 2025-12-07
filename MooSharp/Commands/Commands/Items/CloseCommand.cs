@@ -1,7 +1,7 @@
 using MooSharp.Actors.Players;
 using MooSharp.Commands.Machinery;
+using MooSharp.Commands.Parsing;
 using MooSharp.Commands.Presentation;
-using MooSharp.Commands.Searching;
 using Object = MooSharp.Actors.Objects.Object;
 
 namespace MooSharp.Commands.Commands.Items;
@@ -9,27 +9,57 @@ namespace MooSharp.Commands.Commands.Items;
 public class CloseCommand : CommandBase<CloseCommand>
 {
     public required Player Player { get; init; }
-    public required string Target { get; init; }
+    public required Object Target { get; init; }
 }
 
 public class CloseCommandDefinition : ICommandDefinition
 {
     public IReadOnlyCollection<string> Verbs { get; } = ["close", "shut"];
     public CommandCategory Category => CommandCategory.General;
-
     public string Description => "Close a container or door. Usage: 'close <object>'.";
 
-    public ICommand Create(Player player, string args)
+    public string? TryCreateCommand(ParsingContext ctx, ArgumentBinder binder, out ICommand? command)
     {
-        ArgumentException.ThrowIfNullOrWhiteSpace(args);
+        command = null;
 
-        return new CloseCommand
+        var bind = binder.BindNearbyObject(ctx);
+        if (!bind.IsSuccess) return bind.ErrorMessage;
+
+        command = new CloseCommand
         {
-            Player = player,
-            Target = args
+            Player = ctx.Player,
+            Target = bind.Value!
         };
+
+        return null;
     }
 }
+
+public class CloseHandler : IHandler<CloseCommand>
+{
+    public Task<CommandResult> Handle(CloseCommand cmd, CancellationToken ct = default)
+    {
+        var result = new CommandResult();
+        var target = cmd.Target;
+
+        if (!target.IsOpenable)
+        {
+            result.Add(cmd.Player, new SystemMessageEvent("You can't close that."));
+            return Task.FromResult(result);
+        }
+
+        if (!target.IsOpen)
+        {
+            result.Add(cmd.Player, new SystemMessageEvent("It is already closed."));
+            return Task.FromResult(result);
+        }
+
+        target.IsOpen = false;
+        result.Add(cmd.Player, new ItemClosedEvent(cmd.Player, target));
+        return Task.FromResult(result);
+    }
+}
+// Event/Formatter omitted for brevity (unchanged)
 
 public record ItemClosedEvent(Player Player, Object Object) : IGameEvent;
 
@@ -39,50 +69,4 @@ public class ItemClosedEventFormatter : IGameEventFormatter<ItemClosedEvent>
 
     public string FormatForObserver(ItemClosedEvent gameEvent) =>
         $"{gameEvent.Player.Username} closes the {gameEvent.Object.Name}.";
-}
-
-public class CloseHandler(World.World world, TargetResolver resolver) : IHandler<CloseCommand>
-{
-    public Task<CommandResult> Handle(CloseCommand command, CancellationToken cancellationToken = default)
-    {
-        var result = new CommandResult();
-
-        var player = command.Player;
-
-        var currentRoom = world.GetLocationOrThrow(player);
-
-        var searchResult = resolver.FindObjects(currentRoom.Contents, command.Target);
-
-        var target = searchResult.Match;
-
-        if (target is null)
-        {
-            result.Add(player, new SystemMessageEvent("No item was found to close."));
-
-            return Task.FromResult(result);
-        }
-
-        var openable = target.IsOpenable;
-        var open = target.IsOpen;
-
-        if (!openable)
-        {
-            result.Add(player, new SystemMessageEvent("You can't close that."));
-
-            return Task.FromResult(result);
-        }
-
-        if (!open)
-        {
-            result.Add(player, new SystemMessageEvent("It is already closed."));
-
-            return Task.FromResult(result);
-        }
-
-        target.IsOpen = false;
-
-        result.Add(player, new ItemClosedEvent(player, target));
-
-        return Task.FromResult(result);
-    }
 }
