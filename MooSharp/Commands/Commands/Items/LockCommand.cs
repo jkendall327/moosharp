@@ -31,7 +31,7 @@ public class LockCommandDefinition : ICommandDefinition
         command = new LockCommand
         {
             Player = ctx.Player,
-            Target = bind.Value!
+            Target = bind.Value
         };
 
         return null;
@@ -63,7 +63,7 @@ public class UnlockCommandDefinition : ICommandDefinition
         command = new UnlockCommand
         {
             Player = ctx.Player,
-            Target = bind.Value!
+            Target = bind.Value
         };
 
         return null;

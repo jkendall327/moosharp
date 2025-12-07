@@ -31,7 +31,7 @@ public class OpenCommandDefinition : ICommandDefinition
         command = new OpenCommand
         {
             Player = ctx.Player,
-            Target = bind.Value!
+            Target = bind.Value
         };
 
         return null;

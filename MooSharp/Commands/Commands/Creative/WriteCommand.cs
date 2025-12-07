@@ -42,7 +42,7 @@ public class WriteCommandDefinition : ICommandDefinition
         command = new WriteCommand
         {
             Player = ctx.Player,
-            Target = itemResult.Value!,
+            Target = itemResult.Value,
             Text = text
         };
 

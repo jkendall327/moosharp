@@ -31,7 +31,7 @@ public class CloseCommandDefinition : ICommandDefinition
         command = new CloseCommand
         {
             Player = ctx.Player,
-            Target = bind.Value!
+            Target = bind.Value
         };
 
         return null;

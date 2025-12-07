@@ -31,7 +31,7 @@ public class DropCommandDefinition : ICommandDefinition
         command = new DropCommand
         {
             Player = ctx.Player,
-            Target = bind.Value!
+            Target = bind.Value
         };
 
         return null;
