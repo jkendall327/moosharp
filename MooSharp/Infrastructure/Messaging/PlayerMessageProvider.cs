@@ -20,7 +20,7 @@ public class PlayerMessageProvider(
 
         var messages = new List<GameMessage>
         {
-            new(player, new SystemMessageEvent($"Welcome, {player.Username}."))
+            new(player, new SystemMessageEvent($"[SYSTEM] Welcome, {player.Username}."))
         };
 
         AddMessageOfTheDay(messages, player);
@@ -39,7 +39,7 @@ public class PlayerMessageProvider(
             return;
         }
 
-        messages.Add(new(player, new SystemMessageEvent(motd)));
+        messages.Add(new(player, new SystemMessageEvent($"[SYSTEM] {motd}")));
     }
 
     private StringBuilder BuildCurrentRoomDescription(Player player)
