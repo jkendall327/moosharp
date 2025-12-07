@@ -1,6 +1,7 @@
 using System.Threading.Channels;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using MooSharp.Data.EntityFramework;
@@ -33,6 +34,7 @@ public static class DataServiceCollectionExtensions
         {
             options.UseSqlite(connectionString);
             options.AddInterceptors(new SqliteWalInterceptor());
+            options.ConfigureWarnings(w => w.Throw(RelationalEventId.MultipleCollectionIncludeWarning));
         });
 
         var dbChannel = Channel.CreateUnbounded<DatabaseRequest>(new()

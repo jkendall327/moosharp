@@ -19,6 +19,7 @@ internal sealed class EfWorldRepository(IDbContextFactory<MooSharpDbContext> con
         var rooms = await context.Rooms
             .Include(r => r.Exits)
             .Include(r => r.Objects)
+            .AsSplitQuery()
             .ToListAsync(cancellationToken);
 
         return rooms.Select(ToSnapshot).ToList();
