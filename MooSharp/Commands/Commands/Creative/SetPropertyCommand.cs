@@ -1,8 +1,10 @@
 using System.Text.RegularExpressions;
+using Microsoft.Extensions.Options;
 using MooSharp.Actors.Players;
 using MooSharp.Commands.Machinery;
 using MooSharp.Commands.Parsing;
 using MooSharp.Commands.Presentation;
+using MooSharp.Scripting;
 using Object = MooSharp.Actors.Objects.Object;
 
 namespace MooSharp.Commands.Commands.Creative;
@@ -57,8 +59,10 @@ public class PropertySetEventFormatter : IGameEventFormatter<PropertySetEvent>
     public string? FormatForObserver(PropertySetEvent gameEvent) => null;
 }
 
-public class SetPropertyHandler(World.World world) : IHandler<SetPropertyCommand>
+public class SetPropertyHandler(World.World world, IOptions<LuaScriptOptions> options) : IHandler<SetPropertyCommand>
 {
+    private readonly LuaScriptOptions _options = options.Value;
+
     public Task<CommandResult> Handle(SetPropertyCommand cmd, CancellationToken cancellationToken = default)
     {
         var result = new CommandResult();
@@ -78,6 +82,16 @@ public class SetPropertyHandler(World.World world) : IHandler<SetPropertyCommand
         if (!target.IsOwnedBy(player))
         {
             result.Add(player, new SystemMessageEvent($"You don't own '{target.Name}'."));
+            return Task.FromResult(result);
+        }
+
+        var isExistingProperty = target.Properties.ContainsKey(cmd.PropertyName);
+
+        if (!isExistingProperty && target.Properties.Count >= _options.MaxPropertiesPerObject)
+        {
+            result.Add(player, new SystemMessageEvent(
+                $"'{target.Name}' already has the maximum of {_options.MaxPropertiesPerObject} properties."));
+
             return Task.FromResult(result);
         }
 

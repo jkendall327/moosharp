@@ -1,8 +1,10 @@
+using Microsoft.Extensions.Options;
 using MooSharp.Actors.Objects;
 using MooSharp.Actors.Players;
 using MooSharp.Commands.Machinery;
 using MooSharp.Commands.Parsing;
 using MooSharp.Commands.Presentation;
+using MooSharp.Scripting;
 using Object = MooSharp.Actors.Objects.Object;
 
 namespace MooSharp.Commands.Commands.Creative;
@@ -72,8 +74,10 @@ public class VerbAlreadyExistsEventFormatter : IGameEventFormatter<VerbAlreadyEx
     public string? FormatForObserver(VerbAlreadyExistsEvent gameEvent) => null;
 }
 
-public class VerbHandler(World.World world) : IHandler<VerbCommand>
+public class VerbHandler(World.World world, IOptions<LuaScriptOptions> options) : IHandler<VerbCommand>
 {
+    private readonly LuaScriptOptions _options = options.Value;
+
     public Task<CommandResult> Handle(VerbCommand cmd, CancellationToken cancellationToken = default)
     {
         var result = new CommandResult();
@@ -100,6 +104,14 @@ public class VerbHandler(World.World world) : IHandler<VerbCommand>
         if (target.HasVerb(cmd.VerbName))
         {
             result.Add(player, new VerbAlreadyExistsEvent(target, cmd.VerbName));
+            return Task.FromResult(result);
+        }
+
+        if (target.Verbs.Count >= _options.MaxVerbsPerObject)
+        {
+            result.Add(player, new SystemMessageEvent(
+                $"'{target.Name}' already has the maximum of {_options.MaxVerbsPerObject} verbs."));
+
             return Task.FromResult(result);
         }
 
