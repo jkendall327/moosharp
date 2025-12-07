@@ -15,6 +15,4 @@ public interface IGameConnectionService : IAsyncDisposable
 
     Task SendCommandAsync(string command);
     Task<AutocompleteOptions> GetAutocompleteOptions();
-
-    bool IsConnected();
 }

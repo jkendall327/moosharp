@@ -41,26 +41,6 @@ public class DigCommandDefinition : ICommandDefinition
 
         return null;
     }
-
-    public ICommand Create(Player player, string args)
-    {
-        ArgumentNullException.ThrowIfNull(player);
-
-        var name = args.StartsWith("to ", StringComparison.OrdinalIgnoreCase)
-            ? args[3..].Trim()
-            : args.Trim();
-
-        if (string.IsNullOrWhiteSpace(name))
-        {
-            name = "Unfinished room";
-        }
-
-        return new DigCommand
-        {
-            Player = player,
-            RoomName = name
-        };
-    }
 }
 
 public record RoomCreatedEvent(Player Player, Room Room) : IGameEvent;
