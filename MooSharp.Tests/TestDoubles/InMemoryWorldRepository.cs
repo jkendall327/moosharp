@@ -1,4 +1,3 @@
-using MooSharp.Data;
 using MooSharp.Data.Worlds;
 
 namespace MooSharp.Tests.TestDoubles;

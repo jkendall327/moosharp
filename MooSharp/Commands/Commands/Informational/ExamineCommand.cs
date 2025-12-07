@@ -1,10 +1,8 @@
 using System.Text;
-using MooSharp.Actors;
 using MooSharp.Actors.Players;
 using MooSharp.Commands.Machinery;
 using MooSharp.Commands.Presentation;
 using MooSharp.Commands.Searching;
-using MooSharp.World;
 using Object = MooSharp.Actors.Objects.Object;
 
 namespace MooSharp.Commands.Commands.Informational;

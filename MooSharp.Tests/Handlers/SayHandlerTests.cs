@@ -1,4 +1,3 @@
-using MooSharp.Commands;
 using MooSharp.Commands.Commands.Social;
 using MooSharp.Commands.Presentation;
 

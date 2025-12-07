@@ -1,5 +1,4 @@
 using System.Text.RegularExpressions;
-using MooSharp.Actors;
 using MooSharp.Actors.Players;
 using MooSharp.Actors.Rooms;
 using Object = MooSharp.Actors.Objects.Object;

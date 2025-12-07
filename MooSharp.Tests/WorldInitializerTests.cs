@@ -1,5 +1,4 @@
 using Microsoft.Extensions.Logging.Abstractions;
-using MooSharp.Actors;
 using MooSharp.Actors.Rooms;
 using MooSharp.Tests.TestDoubles;
 using MooSharp.World;
