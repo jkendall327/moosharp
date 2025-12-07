@@ -66,7 +66,7 @@ public class GameEngine(
 
     public bool IsActorSpawned(Guid actorId)
     {
-        return world.TryGetPlayer(actorId) is null;
+        return world.TryGetPlayer(actorId) is not null;
     }
 
     public Task<AutocompleteOptions> GetAutocompleteOptions(Guid actorId, CancellationToken ct = default)

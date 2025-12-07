@@ -6,6 +6,7 @@ using MooSharp.Actors.Players;
 using MooSharp.Actors.Rooms;
 using MooSharp.Agents;
 using MooSharp.Commands.Machinery;
+using MooSharp.Commands.Parsing;
 using MooSharp.Commands.Presentation;
 using MooSharp.Commands.Searching;
 using MooSharp.Features.Treasure;
@@ -70,6 +71,7 @@ public static class ServiceCollectionExtensions
             services.AddSingleton<CommandExecutor>();
             services.AddSingleton<CommandReference>();
             services.AddSingleton<TargetResolver>();
+            services.AddSingleton<ArgumentBinder>();
 
             // Agents
             services.AddSingleton<IAgentPromptProvider, AgentPromptProvider>();
