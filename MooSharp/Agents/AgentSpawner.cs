@@ -3,6 +3,7 @@ using System.Text.Json.Serialization;
 using Microsoft.Extensions.Options;
 using MooSharp.Data;
 using MooSharp.Data.Players;
+using MooSharp.Infrastructure;
 using MooSharp.Infrastructure.Sessions;
 
 namespace MooSharp.Agents;
@@ -14,14 +15,6 @@ public class AgentSpawner(
     IPlayerRepository playerRepository,
     IOptions<AgentOptions> options)
 {
-    private static readonly JsonSerializerOptions JsonSerializerOptions = new()
-    {
-        Converters =
-        {
-            new JsonStringEnumConverter<AgentSource>()
-        }
-    };
-
     public async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         var identities = await LoadIdentitiesAsync(stoppingToken);
@@ -51,7 +44,7 @@ public class AgentSpawner(
         await using var stream = File.OpenRead(path);
 
         var identities = await JsonSerializer.DeserializeAsync<List<AgentIdentity>>(stream,
-            JsonSerializerOptions,
+            MooSharpJsonSerializerOptions.Options,
             cancellationToken: cancellationToken) ?? [];
 
         return identities;

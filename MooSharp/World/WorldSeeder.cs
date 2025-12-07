@@ -16,11 +16,6 @@ public interface IWorldSeeder
 
 public class WorldSeeder(IOptions<AppOptions> options, ILogger<WorldSeeder> logger) : IWorldSeeder
 {
-    private static readonly JsonSerializerOptions JsonSerializerOptions = new()
-    {
-        Converters = { new JsonStringEnumConverter<ObjectFlags>(), new RoomIdJsonConverter() }
-    };
-
     public IReadOnlyCollection<Room> GetSeedRooms()
     {
         var dto = GetWorldDto();
@@ -42,7 +37,7 @@ public class WorldSeeder(IOptions<AppOptions> options, ILogger<WorldSeeder> logg
 
         var raw = File.ReadAllText(path);
 
-        var dto = JsonSerializer.Deserialize<WorldDto>(raw, JsonSerializerOptions);
+        var dto = JsonSerializer.Deserialize<WorldDto>(raw, MooSharpJsonSerializerOptions.Options);
 
         if (dto is null)
         {
