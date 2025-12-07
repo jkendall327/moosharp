@@ -1,7 +1,10 @@
+using System.Linq;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using MooSharp.Commands.Presentation;
 using MooSharp.Actors.Players;
 using MooSharp.Infrastructure.Messaging;
+using MooSharp.World;
 
 namespace MooSharp.Game;
 
@@ -13,6 +16,7 @@ public class PlayerLoginService(
     IGameEngine engine,
     IGameMessageEmitter emitter,
     PlayerMessageProvider messageProvider,
+    World.World world,
     ILogger<PlayerLoginService> logger) : IHostedService
 {
     public Task StartAsync(CancellationToken cancellationToken)
@@ -37,7 +41,7 @@ public class PlayerLoginService(
     private void HandlePlayerDespawned(Player player)
     {
         logger.LogInformation("Player {Username} has despawned", player.Username);
-        // TODO: broadcast a "Has left the game" message to the room here if desired.
+        _ = BroadcastPlayerLeftAsync(player);
     }
 
     private async Task SendWelcomeMessagesAsync(Player player)
@@ -52,4 +56,48 @@ public class PlayerLoginService(
             logger.LogError(ex, "Failed to send welcome messages to {Username}", player.Username);
         }
     }
+
+    private async Task BroadcastPlayerLeftAsync(Player player)
+    {
+        try
+        {
+            var room = world.GetPlayerLocation(player);
+
+            if (room is null)
+            {
+                logger.LogWarning("Player {Username} has no known location when leaving the game", player.Username);
+
+                return;
+            }
+
+            var leaveEvent = new PlayerLeftGameEvent(player);
+
+            var messages = room.PlayersInRoom
+                .Where(p => p != player)
+                .Select(p => new GameMessage(p, leaveEvent, MessageAudience.Observer))
+                .ToList();
+
+            if (messages.Count is 0)
+            {
+                return;
+            }
+
+            await emitter.SendGameMessagesAsync(messages);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Failed to broadcast player leave message for {Username}", player.Username);
+        }
+    }
+}
+
+public record PlayerLeftGameEvent(Player Player) : IGameEvent;
+
+public class PlayerLeftGameEventFormatter : IGameEventFormatter<PlayerLeftGameEvent>
+{
+    public string FormatForActor(PlayerLeftGameEvent gameEvent) =>
+        $"{gameEvent.Player.Username} has left the game.";
+
+    public string FormatForObserver(PlayerLeftGameEvent gameEvent) =>
+        $"{gameEvent.Player.Username} has left the game.";
 }
