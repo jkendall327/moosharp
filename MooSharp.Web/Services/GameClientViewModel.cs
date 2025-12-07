@@ -3,6 +3,7 @@ using MooSharp.Features.Autocomplete;
 using MooSharp.Features.Chats;
 using MooSharp.Game;
 using MooSharp.Web.Endpoints;
+using MooSharp.Web.Services.ClientStorage;
 
 namespace MooSharp.Web.Services;
 
@@ -10,6 +11,7 @@ public sealed class GameClientViewModel : IDisposable
 {
     // Dependencies
     private readonly IHttpClientFactory _factory;
+    private readonly IClientStorageService _clientStorage;
     private readonly IGameConnectionService _connection;
     private readonly IGameHistoryService _historyService;
     private readonly ILogger<GameClientViewModel> _logger;
@@ -20,6 +22,8 @@ public sealed class GameClientViewModel : IDisposable
     private string _commandDraft = string.Empty;
     private Uri? _hubUri;
     private string? _jwt;
+
+    private const string JwtStorageKey = "mooSharpJwt";
 
     // The giant string of text for the terminal output
     public string GameOutput => _outputBuffer.ToString();
@@ -47,11 +51,13 @@ public sealed class GameClientViewModel : IDisposable
     public event Func<Task>? OnFocusInputRequested;
 
     public GameClientViewModel(IHttpClientFactory factory,
+        IClientStorageService clientStorage,
         IGameConnectionService connection,
         IGameHistoryService historyService,
         ILogger<GameClientViewModel> logger)
     {
         _factory = factory;
+        _clientStorage = clientStorage;
         _connection = connection;
         _historyService = historyService;
         _logger = logger;
@@ -70,8 +76,20 @@ public sealed class GameClientViewModel : IDisposable
 
         _hubUri = hub;
 
-        // TODO: try to get JWT from client storage to support refreshes again.
+        _jwt = await _clientStorage.GetItemAsync(JwtStorageKey);
         await _connection.InitializeAsync(hub, () => Task.FromResult(_jwt));
+
+        if (!string.IsNullOrWhiteSpace(_jwt))
+        {
+            LoginStatus = "Restoring session...";
+            IsLoggedIn = true;
+
+            NotifyStateChanged();
+
+            await StartConnection();
+
+            return;
+        }
 
         NotifyStateChanged();
     }
@@ -156,6 +174,7 @@ public sealed class GameClientViewModel : IDisposable
             }
 
             _jwt = result.Token;
+            await _clientStorage.SetItemAsync(JwtStorageKey, _jwt);
 
             LoginStatus = "Logged in.";
             IsLoggedIn = true;
@@ -199,8 +218,9 @@ public sealed class GameClientViewModel : IDisposable
                 throw new InvalidOperationException("Deserialisation of registration result failed.");
             }
 
-            // TODO: store JWT in history so it survives refreshes again.
             _jwt = result.Token;
+            await _clientStorage.SetItemAsync(JwtStorageKey, _jwt);
+
             LoginStatus = "Registered.";
             IsLoggedIn = true;
 
@@ -233,6 +253,7 @@ public sealed class GameClientViewModel : IDisposable
 
         // Reset state.
         _jwt = null;
+        await _clientStorage.RemoveItemAsync(JwtStorageKey);
         IsLoggedIn = false;
         CommandInput = string.Empty;
         Username = string.Empty;
