@@ -83,7 +83,7 @@ public static class ServiceCollectionExtensions
 
         public void AddMooSharpMessaging()
         {
-            var channel = Channel.CreateUnbounded<InputCommand>();
+            var channel = Channel.CreateUnbounded<GameCommand>();
 
             services.AddSingleton(channel.Writer);
             services.AddSingleton(channel.Reader);

@@ -7,7 +7,7 @@ namespace MooSharp.Web.Game;
 public class GameEngineBackgroundService(
     GameInputProcessor inputProcessor,
     World.World world,
-    WorldClock worldClock,
+    IWorldClock worldClock,
     ChannelReader<GameCommand> reader,
     ILogger<GameEngineBackgroundService> logger) : BackgroundService
 {

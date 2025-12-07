@@ -8,7 +8,7 @@ namespace MooSharp.Agents;
 public sealed class AgentBrain(
     AgentCore core,
     AgentPlayerConnection connection,
-    ChannelWriter<InputCommand> gameWriter,
+    ChannelWriter<GameCommand> gameWriter,
     TimeProvider clock,
     IOptions<AgentOptions> options) : IAsyncDisposable
 {
