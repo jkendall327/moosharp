@@ -1,72 +1,47 @@
-using System.Threading.Channels;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
 using MooSharp.Game;
-using MooSharp.Messaging;
+using MooSharp.Infrastructure;
 
-namespace MooSharp.Web.Game;
+namespace MooSharp.Web.Services;
 
-public class MooHub(ChannelWriter<GameInput> writer, ILogger<MooHub> logger, World.World world) : Hub
+[Authorize]
+public class MooHub(
+    ISessionGateway gateway,
+    ActorIdentityResolver identityResolver,
+    IGameEngine engine,
+    ILogger<MooHub> logger) : Hub
 {
-    public const string HUB_NAME = "/moohub";
-    
+    public const string HubName = "/moohub";
+    public const string ReceiveMessage = "ReceiveMessage";
+
     public override async Task OnConnectedAsync()
     {
         logger.LogInformation("Connection made with ID {Id}", Context.ConnectionId);
 
-        writer.TryWrite(new(Context.ConnectionId, new ReconnectCommand(), GetSessionId()));
+        var actorId = GetActorIdOrThrow();
+
+        var channel = new SignalROutputChannel(Clients.Caller);
+
+        await gateway.OnSessionStartedAsync(actorId, channel);
 
         await base.OnConnectedAsync();
     }
 
-    public Task Login(string username, string password)
-    {
-        writer.TryWrite(new(Context.ConnectionId, new LoginCommand
-        {
-            Username = username,
-            Password = password
-        }, GetSessionId()));
-
-        return Task.CompletedTask;
-    }
-
-    public Task Register(string username, string password)
-    {
-        writer.TryWrite(new(Context.ConnectionId, new RegisterCommand
-        {
-            Username = username,
-            Password = password
-        }, GetSessionId()));
-
-        return Task.CompletedTask;
-    }
-
-    public Task SendCommand(string command)
+    public async Task SendCommand(string command)
     {
         logger.LogInformation("Got command {Command}", command);
 
-        writer.TryWrite(new(Context.ConnectionId, new WorldCommand
-        {
-            Command = command
-        }, GetSessionId()));
-
-        return Task.CompletedTask;
+        var actor = GetActorIdOrThrow();
+        
+        await engine.ProcessInputAsync(actor, command);
     }
 
-    public Task<AutocompleteOptions> GetAutocompleteOptions()
+    public async Task<AutocompleteOptions> GetAutocompleteOptions()
     {
-        if (!world.Players.TryGetValue(Context.ConnectionId, out var player))
-        {
-            return Task.FromResult(new AutocompleteOptions([], []));
-        }
-
-        var room = world.GetPlayerLocation(player);
-
-        var exits = room?.Exits.Keys ?? Enumerable.Empty<string>();
-        var inventory = player.Inventory.Select(item => item.Name);
-
-        var options = new AutocompleteOptions(exits.ToList(), inventory.ToList());
-
-        return Task.FromResult(options);
+        var actor = GetActorIdOrThrow();
+        
+        return await engine.GetAutocompleteOptions(actor);
     }
 
     public override async Task OnDisconnectedAsync(Exception? exception)
@@ -78,29 +53,29 @@ public class MooHub(ChannelWriter<GameInput> writer, ILogger<MooHub> logger, Wor
             logger.LogError(exception, "Exception was present on connection loss");
         }
 
-        writer.TryWrite(new(Context.ConnectionId, new DisconnectCommand(), GetSessionId()));
+        var actorId = GetActorIdOrThrow();
+
+        await gateway.OnSessionEndedAsync(actorId);
 
         await base.OnDisconnectedAsync(exception);
     }
 
-    private string? GetSessionId()
+    private Guid GetActorIdOrThrow()
     {
-        var context = Context.GetHttpContext();
+        var user = Context.User;
 
-        if (context is null)
+        if (user is null)
         {
-            return null;
-        }
-        
-        // .NET SignalR client: AccessTokenProvider -> Authorization: Bearer {token}
-        if (!context.Request.Headers.TryGetValue("Authorization", out var authHeader))
-        {
-            return null;
+            throw new InvalidOperationException("Claims principal was null despite authorization.");
         }
 
-        var value = authHeader.ToString();
-        const string bearerPrefix = "Bearer ";
+        var actorId = identityResolver.GetActorId(user);
 
-        return value.StartsWith(bearerPrefix, StringComparison.OrdinalIgnoreCase) ? value[bearerPrefix.Length..].Trim() : null;
+        if (actorId is null)
+        {
+            throw new InvalidOperationException("Actor ID not found");
+        }
+
+        return actorId.Value;
     }
 }

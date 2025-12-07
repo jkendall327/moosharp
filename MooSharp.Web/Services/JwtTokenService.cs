@@ -9,7 +9,7 @@ public class JwtTokenService(IConfiguration config, TimeProvider clock)
 {
     private readonly JsonWebTokenHandler _tokenHandler = new();
 
-    public string GenerateToken(string username)
+    public string GenerateToken(Guid id, string username)
     {
         var jwtSettings = config.GetSection("Jwt");
         var keyString = jwtSettings["Key"] ?? throw new InvalidOperationException("JWT Key is missing");
@@ -21,7 +21,7 @@ public class JwtTokenService(IConfiguration config, TimeProvider clock)
         var claims = new List<Claim>
         {
             // effectively the "User ID"
-            new(JwtRegisteredClaimNames.Sub, username),
+            new(JwtRegisteredClaimNames.Sub, id.ToString()),
 
             // standard name claim
             new(JwtRegisteredClaimNames.Name, username),

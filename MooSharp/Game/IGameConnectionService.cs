@@ -3,7 +3,6 @@ namespace MooSharp.Game;
 public interface IGameConnectionService : IAsyncDisposable
 {
     event Action<string>? OnMessageReceived;
-    event Action<bool, string>? OnLoginResult;
     event Action? OnReconnecting;
     event Action? OnReconnected;
     event Action? OnClosed;
@@ -12,8 +11,6 @@ public interface IGameConnectionService : IAsyncDisposable
     Task StartAsync();
     Task StopAsync();
 
-    Task Login(string username, string password);
-    Task Register(string username, string password);
     Task SendCommandAsync(string command);
     Task<AutocompleteOptions> GetAutocompleteOptions();
 

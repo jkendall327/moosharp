@@ -49,7 +49,7 @@ public class AgentCoreTests
         // Act
         // We get the enumerator manually to control the stepping
         var enumerator = core
-            .ProcessMessageAsync("Hello", CancellationToken.None)
+            .ProcessMessageAsync(Guid.NewGuid(), "Hello", CancellationToken.None)
             .GetAsyncEnumerator();
 
         // MoveNext triggers logic up to the first 'yield return'
@@ -57,14 +57,14 @@ public class AgentCoreTests
 
         // We got the thinking command immediately
         Assert.True(hasFirst);
-        Assert.IsType<WorldCommand>(enumerator.Current);
+        Assert.IsType<GameInput>(enumerator.Current);
 
         // MoveNext triggers the LLM call and waits for the next yield
         var hasSecond = await enumerator.MoveNextAsync();
 
         // We got the text response
         Assert.True(hasSecond);
-        var worldCmd = Assert.IsType<WorldCommand>(enumerator.Current);
+        var worldCmd = Assert.IsType<GameInput>(enumerator.Current);
         Assert.Equal(assistantResponse, worldCmd.Command);
 
         // Ensure no more commands

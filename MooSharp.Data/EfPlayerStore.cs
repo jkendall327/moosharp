@@ -12,41 +12,26 @@ internal class EfPlayerStore(IDbContextFactory<MooSharpDbContext> contextFactory
     {
         await using var context = await contextFactory.CreateDbContextAsync(ct);
 
-        var existing = await context
-            .Players
-            .Include(p => p.Inventory)
-            .FirstOrDefaultAsync(p => p.Username == player.Username, ct);
+        // Hash unconditionally to mitigate timing side-channels.
+        var hashed = BCrypt.Net.BCrypt.HashPassword(player.Password);
 
-        if (existing is null)
+        var existing = await context.Players.AnyAsync(p => p.Username == player.Username, ct);
+
+        if (existing)
         {
-            existing = new()
-            {
-                Username = player.Username
-            };
-
-            context.Players.Add(existing);
+            throw new InvalidOperationException($"Player record with username {player.Username} already exists.");
         }
 
-        existing.Password = BCrypt.Net.BCrypt.HashPassword(player.Password);
-        existing.CurrentLocation = player.CurrentLocation;
+        var newPlayer = new PlayerEntity
+        {
+            Id = player.Id,
+            Username = player.Username,
+            Password = hashed,
+            CurrentLocation = player.CurrentLocation,
+            Inventory = []
+        };
 
-        context.PlayerInventory.RemoveRange(existing.Inventory);
-
-        existing.Inventory = player
-            .Inventory
-            .Select(i => new InventoryItemEntity
-            {
-                ItemId = i.Id,
-                Username = player.Username,
-                Name = i.Name,
-                Description = i.Description,
-                TextContent = i.TextContent,
-                Flags = i.Flags,
-                KeyId = i.KeyId,
-                CreatorUsername = i.CreatorUsername
-            })
-            .ToList();
-
+        context.Players.Add(newPlayer);
         await context.SaveChangesAsync(ct);
     }
 
@@ -61,7 +46,7 @@ internal class EfPlayerStore(IDbContextFactory<MooSharpDbContext> contextFactory
 
         if (player is null)
         {
-            return;
+            throw new InvalidOperationException($"No player record was found for username {snapshot.Username}");
         }
 
         player.CurrentLocation = snapshot.CurrentLocation;
@@ -86,15 +71,15 @@ internal class EfPlayerStore(IDbContextFactory<MooSharpDbContext> contextFactory
         await context.SaveChangesAsync(ct);
     }
 
-    public async Task<PlayerDto?> LoadPlayerAsync(string username, CancellationToken ct = default)
+    public async Task<PlayerDto?> LoadPlayerAsync(Guid id, CancellationToken ct = default)
     {
         await using var context = await contextFactory.CreateDbContextAsync(ct);
 
         var player = await context
             .Players
             .Include(p => p.Inventory)
-            .FirstOrDefaultAsync(p => p.Username == username, ct);
-        
+            .SingleOrDefaultAsync(p => p.Id == id, ct);
+
         if (player is null)
         {
             return null;
@@ -112,16 +97,21 @@ internal class EfPlayerStore(IDbContextFactory<MooSharpDbContext> contextFactory
                 i.CreatorUsername))
             .ToList();
 
-        return new(player.Username, player.Password, player.CurrentLocation, inventory);
+        return new(player.Id, player.Username, player.CurrentLocation, inventory);
     }
 
-    public async Task<bool> PlayerWithUsernameExistsAsync(string username, CancellationToken ct)
+    public async Task<PlayerDto?> GetPlayerByUsernameAsync(string username, CancellationToken ct)
     {
         await using var context = await contextFactory.CreateDbContextAsync(ct);
+
+        var player = await context.Players.SingleOrDefaultAsync(p => p.Username == username, ct);
+
+        if (player is null)
+        {
+            return null;
+        }
         
-        return await context
-            .Players
-            .AnyAsync(p => string.Equals(p.Username, username, StringComparison.OrdinalIgnoreCase), ct);
+        return new(player.Id, player.Username, player.CurrentLocation, []);
     }
 
     public async Task<LoginResult> LoginIsValidAsync(string username, string password, CancellationToken ct = default)
@@ -131,12 +121,12 @@ internal class EfPlayerStore(IDbContextFactory<MooSharpDbContext> contextFactory
         var player = await context
             .Players
             .Include(p => p.Inventory)
-            .FirstOrDefaultAsync(p => string.Equals(p.Username, username, StringComparison.OrdinalIgnoreCase), ct);
+            .FirstOrDefaultAsync(p => p.Username == username, ct);
 
         // Always perform hash verification to mitigate timing side-channel.
         // This method isn't constant-time or anything but might as well go partway.
         var target = player?.Password ?? FakeBCryptHash;
-        var ok = BCrypt.Net.BCrypt.Verify(target, password);
+        var ok = BCrypt.Net.BCrypt.Verify(password, target);
 
         if (player is null)
         {

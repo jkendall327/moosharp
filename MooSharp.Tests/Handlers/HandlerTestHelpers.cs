@@ -46,8 +46,8 @@ public static class HandlerTestHelpers
     {
         return new()
         {
-            Username = username ?? "Player",
-            Connection = new TestPlayerConnection()
+            Id = PlayerId.New(),
+            Username = username ?? "Player"
         };
     }
 }

@@ -33,7 +33,7 @@ public class AgentCore(
         _history.AddSystemMessage(systemPrompt);
     }
 
-    public async IAsyncEnumerable<InputCommand> ProcessMessageAsync(string message,
+    public async IAsyncEnumerable<GameInput> ProcessMessageAsync(Guid actorId, string message,
         [EnumeratorCancellation] CancellationToken ct)
     {
         // We acquire the lock. Because this is an iterator, the lock remains 
@@ -57,10 +57,8 @@ public class AgentCore(
 
             // Yield "Thinking" immediately so the UI can update.
             logger.LogDebug("Agent has begun thinking");
-            yield return new WorldCommand
-            {
-                Command = "/me is thinking..."
-            };
+
+            yield return new(actorId, "/me is thinking...");
 
             // Perform the slow LLM call.
             // The shell is currently processing the Thinking command, 
@@ -80,10 +78,7 @@ public class AgentCore(
             TrimHistory();
 
             // Yield the actual response.
-            yield return new WorldCommand
-            {
-                Command = responseText
-            };
+            yield return new(actorId, responseText);
 
             _lastActionTime = clock.GetUtcNow();
         }

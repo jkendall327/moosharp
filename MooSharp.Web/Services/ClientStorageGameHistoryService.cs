@@ -7,7 +7,6 @@ public sealed class ClientStorageGameHistoryService(
     IClientStorageService storage,
     ILogger<ClientStorageGameHistoryService> logger) : IGameHistoryService
 {
-    private const string SessionStorageKey = "mooSharpSession";
     private const string CommandHistoryStorageKey = "mooSharpCommandHistory";
     private const int CommandHistoryLimit = 20;
 
@@ -52,29 +51,6 @@ public sealed class ClientStorageGameHistoryService(
         {
             logger.LogWarning(ex, "Failed to save command history");
         }
-    }
-
-    public async Task<string> GetOrCreateSessionIdAsync()
-    {
-        var existingSessionId = await storage.GetItemAsync(SessionStorageKey);
-
-        if (!string.IsNullOrWhiteSpace(existingSessionId))
-        {
-            return existingSessionId;
-        }
-
-        var newSessionId = Guid
-            .NewGuid()
-            .ToString();
-
-        await storage.SetItemAsync(SessionStorageKey, newSessionId);
-
-        return newSessionId;
-    }
-
-    public async Task ClearSessionAsync()
-    {
-        await storage.RemoveItemAsync(SessionStorageKey);
     }
 
     private async Task LoadCommandHistoryAsync()

@@ -9,7 +9,9 @@ using MooSharp.Commands.Searching;
 using MooSharp.Game;
 using MooSharp.Infrastructure;
 using MooSharp.Messaging;
+using MooSharp.Web.Endpoints;
 using MooSharp.Web.Game;
+using MooSharp.Web.Services;
 using MooSharp.World;
 
 namespace MooSharp.Web;
@@ -20,10 +22,27 @@ public static class ServiceCollectionExtensions
     {
         public void AddMooSharpWebServices()
         {
+            services.AddSingleton<ISessionGateway, SignalRSessionGateway>();
             services.AddScoped<IClientStorageService, ClientStorageService>();
             services.AddScoped<IGameHistoryService, ClientStorageGameHistoryService>();
             services.AddScoped<IGameConnectionService, SignalRGameConnectionService>();
             services.AddScoped<GameClientViewModel>();
+            services.AddSingleton<JwtTokenService>();
+            services.AddSingleton<ActorIdentityResolver>();
+
+            services.AddHttpContextAccessor();
+
+            services.AddHttpClient(nameof(AuthEndpoints),
+                (sp, client) =>
+                {
+                    var accessor = sp.GetRequiredService<IHttpContextAccessor>();
+                    var http = accessor.HttpContext!;
+
+                    // Builds: "https://yoursite.com"
+                    var baseUri = new Uri($"{http.Request.Scheme}://{http.Request.Host}");
+
+                    client.BaseAddress = baseUri;
+                });
         }
 
         public void AddMooSharpServices()
@@ -32,6 +51,7 @@ public static class ServiceCollectionExtensions
             services.AddSingleton<IWorldSeeder, WorldSeeder>();
             services.AddSingleton<WorldInitializer>();
             services.AddSingleton<World.World>();
+            services.AddSingleton<IGameEngine, GameEngine>();
 
             // Players
             services.AddSingleton<PlayerHydrator>();
@@ -50,9 +70,7 @@ public static class ServiceCollectionExtensions
             services.AddSingleton<IAgentResponseProvider, AgentResponseProvider>();
 
             // Connections and message-sending
-            services.AddSingleton<IPlayerConnectionFactory, SignalRPlayerConnectionFactory>();
-            services.AddSingleton<IRawMessageSender, SignalRRawMessageSender>();
-            services.AddSingleton<PlayerSessionManager>();
+            services.AddSingleton<IGameMessageEmitter, SessionGatewayMessageEmitter>();
 
             // Generic infrastructure
             services.AddSingleton<SlugCreator>();
@@ -60,7 +78,7 @@ public static class ServiceCollectionExtensions
 
             // Systems
             services.AddSingleton<IWorldClock, WorldClock>();
-            services.AddSingleton<GameEngine>();
+            services.AddSingleton<GameInputProcessor>();
         }
 
         public void AddMooSharpMessaging()
@@ -115,6 +133,9 @@ public static class ServiceCollectionExtensions
                 .AddJwtBearer("Bearer",
                     options =>
                     {
+                        // Without this it renames the 'sub', 'name' claims etc. into some stupid SOAP format.
+                        options.MapInboundClaims = false;
+
                         var jwtSettings = config.GetSection("Jwt");
 
                         var keyString = jwtSettings["Key"] ??
@@ -140,7 +161,7 @@ public static class ServiceCollectionExtensions
                                 var accessToken = context.Request.Query["access_token"];
                                 var path = context.HttpContext.Request.Path;
 
-                                if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments(MooHub.HUB_NAME))
+                                if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments(MooHub.HubName))
                                 {
                                     context.Token = accessToken;
                                 }

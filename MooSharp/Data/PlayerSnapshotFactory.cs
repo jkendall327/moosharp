@@ -5,15 +5,6 @@ namespace MooSharp.Data.Mapping;
 
 public static class PlayerSnapshotFactory
 {
-    public static NewPlayerRequest CreateNewPlayer(string username, Room currentLocation, string password)
-    {
-        ArgumentNullException.ThrowIfNull(currentLocation);
-        ArgumentException.ThrowIfNullOrWhiteSpace(username);
-        ArgumentException.ThrowIfNullOrWhiteSpace(password);
-
-        return new(username, password, currentLocation.Id.Value, []);
-    }
-
     public static PlayerSnapshotDto CreateSnapshot(Player player, Room currentLocation)
     {
         ArgumentNullException.ThrowIfNull(player);

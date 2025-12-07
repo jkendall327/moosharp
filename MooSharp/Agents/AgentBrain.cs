@@ -1,5 +1,6 @@
 using System.Threading.Channels;
 using Microsoft.Extensions.Options;
+using MooSharp.Actors;
 using MooSharp.Messaging;
 
 namespace MooSharp.Agents;
@@ -17,11 +18,13 @@ public sealed class AgentBrain(
     // Fire-and-forget tasks
     private Task? _processingTask;
     private Task? _volitionTask;
-
-    public IPlayerConnection Connection { get; } = connection;
-
-    public async Task StartAsync(CancellationToken cancellationToken = default)
+    
+    public PlayerId Id { get; private set; }
+    
+    public async Task StartAsync(Guid id, CancellationToken cancellationToken = default)
     {
+        Id = new(id);
+        
         _cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
 
         // Wire up the connection to the internal channel
@@ -33,7 +36,7 @@ public sealed class AgentBrain(
         _volitionTask = VolitionLoopAsync();
     }
 
-    private async Task WriteToInternalQueue(string msg)
+    public async Task WriteToInternalQueue(string msg)
     {
         ArgumentNullException.ThrowIfNull(_cts);
         await _incomingMessages.Writer.WriteAsync(msg, _cts.Token);
@@ -47,9 +50,9 @@ public sealed class AgentBrain(
         {
             await foreach (var msg in _incomingMessages.Reader.ReadAllAsync(_cts.Token))
             {
-                await foreach (var cmd in core.ProcessMessageAsync(msg, _cts.Token))
+                await foreach (var cmd in core.ProcessMessageAsync(Id.Value, msg, _cts.Token))
                 {
-                    await gameWriter.WriteAsync(new(Connection.Id, cmd), _cts.Token);
+                    await gameWriter.WriteAsync(cmd, _cts.Token);
                 }
             }
         }

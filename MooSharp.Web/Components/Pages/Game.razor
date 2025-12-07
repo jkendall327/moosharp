@@ -3,10 +3,11 @@
 @inject NavigationManager NavigationManager
 @using MooSharp.Game
 @using MooSharp.Web.Game
+@using MooSharp.Web.Services
 @implements IAsyncDisposable
 @rendermode InteractiveServer
 
-@if (!Model.IsConnected)
+@if (false)
 {
     <div class="page-shell">
         <div class="terminal-card" data-label="/status">
@@ -103,7 +104,7 @@ else
             Model.OnStateChanged += ModelOnOnStateChanged;
             Model.OnFocusInputRequested += FocusInput;
             
-            var hubUri = NavigationManager.ToAbsoluteUri(MooHub.HUB_NAME);
+            var hubUri = NavigationManager.ToAbsoluteUri(MooHub.HubName);
 
             await Model.InitializeAsync(hubUri);
         }

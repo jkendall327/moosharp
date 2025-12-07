@@ -3,11 +3,20 @@ using System.Text.Json.Serialization;
 using System.Threading.Channels;
 using Microsoft.Extensions.Options;
 using MooSharp.Actors;
+using MooSharp.Data;
+using MooSharp.Data.Dtos;
+using MooSharp.Infrastructure;
 using MooSharp.Messaging;
+using MooSharp.Web.Services;
 
 namespace MooSharp.Agents;
 
-public class AgentSpawner(AgentFactory factory, ChannelWriter<GameInput> writer, IOptions<AgentOptions> options)
+public class AgentSpawner(
+    AgentFactory factory,
+    ISessionGateway gateway,
+    World.World world,
+    IPlayerRepository playerRepository,
+    IOptions<AgentOptions> options)
 {
     private static readonly JsonSerializerOptions JsonSerializerOptions = new()
     {
@@ -56,16 +65,30 @@ public class AgentSpawner(AgentFactory factory, ChannelWriter<GameInput> writer,
     {
         var brain = factory.Build(identity);
 
-        await brain.StartAsync(cancellationToken);
+        var player = await playerRepository.GetPlayerByUsername(identity.Name, cancellationToken);
 
-        var registerAgentCommand = new RegisterAgentCommand
+        var id = player?.Id ?? Guid.NewGuid();
+
+        if (player is null)
         {
-            Identity = identity,
-            Connection = brain.Connection
-        };
+            await PersistAgentToDatabase(id, identity, cancellationToken);
+        }
 
-        var connectionId = new ConnectionId(brain.Connection.Id);
+        await brain.StartAsync(id, cancellationToken);
 
-        await writer.WriteAsync(new(connectionId, registerAgentCommand), cancellationToken);
+        var channel = new AgentOutputChannel(brain.WriteToInternalQueue);
+        await gateway.OnSessionStartedAsync(brain.Id.Value, channel);
+    }
+
+    private async Task PersistAgentToDatabase(Guid id, AgentIdentity identity, CancellationToken cancellationToken)
+    {
+        // Stick the agent in the database so they are spawned into the world properly.
+        // TODO: unsure if this feels like a hack or not?
+        var startingRoom = identity.StartingRoomSlug ?? world.GetDefaultRoom()
+            .Id.Value;
+
+        var req = new NewPlayerRequest(id, identity.Name, Random.Shared.GetHexString(12), startingRoom);
+
+        await playerRepository.SaveNewPlayerAsync(req, WriteType.Immediate, cancellationToken);
     }
 }

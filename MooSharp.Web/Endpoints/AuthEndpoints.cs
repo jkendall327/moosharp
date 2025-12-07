@@ -1,4 +1,6 @@
+using Microsoft.AspNetCore.Mvc;
 using MooSharp.Data;
+using MooSharp.Data.Dtos;
 using MooSharp.Data.Mapping;
 using MooSharp.Web.Services;
 
@@ -6,18 +8,28 @@ namespace MooSharp.Web.Endpoints;
 
 public record RegisterRequest(string Username, string Password);
 
+public record RegisterResult(string Token);
+
 public record LoginRequest(string Username, string Password);
+
+public record LoginAttemptResult(string Token);
 
 public static class AuthEndpoints
 {
+    public const string RegistrationEndpoint = "/api/register";
+    public const string LoginEndpoint = "/api/login";
+
     public static void MapAuthEndpoints(this IEndpointRouteBuilder app)
     {
-        app.MapPost("/api/register",
-            async (RegisterRequest rc, World.World world, IPlayerRepository store, JwtTokenService tokenService) =>
+        app.MapPost(RegistrationEndpoint,
+            async (RegisterRequest rc,
+                [FromServices] World.World world,
+                [FromServices] IPlayerRepository store,
+                [FromServices] JwtTokenService tokenService) =>
             {
-                var alreadyExists = await store.PlayerWithUsernameExistsAsync(rc.Username);
+                var player = await store.GetPlayerByUsername(rc.Username);
 
-                if (alreadyExists)
+                if (player is not null)
                 {
                     return Results.ValidationProblem([
                         new("Username", ["A player with that username already exists."])
@@ -26,20 +38,22 @@ public static class AuthEndpoints
 
                 var defaultRoom = world.GetDefaultRoom();
 
-                var newPlayerRequest = PlayerSnapshotFactory.CreateNewPlayer(rc.Username, defaultRoom, rc.Password);
+                var id = Guid.NewGuid();
+                
+                var request = new NewPlayerRequest(id, rc.Username, rc.Password, defaultRoom.Id.Value);
 
-                await store.SaveNewPlayerAsync(newPlayerRequest, WriteType.Immediate);
+                await store.SaveNewPlayerAsync(request, WriteType.Immediate);
 
-                var token = tokenService.GenerateToken(newPlayerRequest.Username);
+                var token = tokenService.GenerateToken(id, rc.Username);
 
-                return Results.Ok(new
-                {
-                    Token = token
-                });
+                return Results.Ok(new RegisterResult(token));
             });
 
-        app.MapPost("/api/login",
-            async (LoginRequest req, ILoginChecker checker, JwtTokenService tokenService) =>
+        app.MapPost(LoginEndpoint,
+            async (LoginRequest req,
+                [FromServices] ILoginChecker checker,
+                [FromServices] IPlayerRepository playerRepository,
+                [FromServices] JwtTokenService tokenService) =>
             {
                 var result = await checker.LoginIsValidAsync(req.Username, req.Password);
 
@@ -58,12 +72,16 @@ public static class AuthEndpoints
                     throw new InvalidOperationException("Unknown login result.");
                 }
 
-                var token = tokenService.GenerateToken(req.Username);
+                var player = await playerRepository.GetPlayerByUsername(req.Username);
 
-                return Results.Ok(new
+                if (player is null)
                 {
-                    Token = token
-                });
+                    throw new InvalidOperationException("Player not found despite login passing validity check.");
+                }
+                
+                var token = tokenService.GenerateToken(player.Id, req.Username);
+
+                return Results.Ok(new LoginAttemptResult(token));
             });
     }
 }

@@ -8,9 +8,9 @@ namespace MooSharp.World;
 
 public class WorldClock(
     World world,
-    IGameMessagePresenter presenter,
     IOptions<WorldClockOptions> options,
     TimeProvider timeProvider,
+    IGameMessageEmitter emitter,
     ILogger<WorldClock> logger) : IWorldClock
 {
     private DateTimeOffset _lastPeriodChange = timeProvider.GetUtcNow();
@@ -69,20 +69,11 @@ public class WorldClock(
     {
         var gameEvent = new SystemMessageEvent(messageText);
 
+        
         var sends = world.Players
             .Values
-            .Select(player => new GameMessage(player, gameEvent))
-            .Select(message => (message.Player, Content: presenter.Present(message)))
-            .Where(result => !string.IsNullOrWhiteSpace(result.Content))
-            .Select(result => result.Player.Connection.SendMessageAsync(result.Content!, cancellationToken));
+            .Select(player => new GameMessage(player, gameEvent));
 
-        try
-        {
-            await Task.WhenAll(sends);
-        }
-        catch (Exception ex)
-        {
-            logger.LogError(ex, "Error broadcasting day period change");
-        }
+        await emitter.SendGameMessagesAsync(sends, cancellationToken);
     }
 }

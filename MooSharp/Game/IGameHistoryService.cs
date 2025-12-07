@@ -6,6 +6,4 @@ public interface IGameHistoryService
     Task InitializeAsync();
     void AddCommand(string command);
     Task PersistAsync();
-    Task<string> GetOrCreateSessionIdAsync();
-    Task ClearSessionAsync();
 }

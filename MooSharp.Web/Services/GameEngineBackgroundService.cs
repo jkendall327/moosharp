@@ -4,7 +4,7 @@ using MooSharp.Messaging;
 namespace MooSharp.Web.Game;
 
 public class GameEngineBackgroundService(
-    GameEngine engine,
+    GameInputProcessor inputProcessor,
     ChannelReader<GameInput> reader,
     ILogger<GameEngineBackgroundService> logger) : BackgroundService
 {
@@ -14,7 +14,7 @@ public class GameEngineBackgroundService(
         {
             try
             {
-                await engine.ProcessInputAsync(input, stoppingToken);
+                await inputProcessor.ProcessInputAsync(input, stoppingToken);
 
                 // Signal success
                 input.CompletionSource?.TrySetResult();

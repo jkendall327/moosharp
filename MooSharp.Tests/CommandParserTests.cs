@@ -106,8 +106,8 @@ public class CommandParserTests
     {
         return new()
         {
-            Username = "Player",
-            Connection = new TestPlayerConnection()
+            Id = PlayerId.New(),
+            Username = "Player"
         };
     }
 

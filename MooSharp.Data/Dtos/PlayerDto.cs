@@ -1,8 +1,8 @@
 namespace MooSharp.Data.Dtos;
 
 public sealed record PlayerDto(
+    Guid Id,
     string Username,
-    string Password,
     string CurrentLocation,
     List<InventoryItemDto> Inventory);
 
@@ -12,7 +12,7 @@ public sealed record PlayerSnapshotDto(
     List<InventoryItemDto> Inventory);
 
 public sealed record NewPlayerRequest(
+    Guid Id,
     string Username,
     string Password,
-    string CurrentLocation,
-    List<InventoryItemDto> Inventory);
+    string CurrentLocation);

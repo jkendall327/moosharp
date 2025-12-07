@@ -7,8 +7,14 @@ public class PlayerHydrator(World.World world)
     /// <summary>
     /// Given a player, refreshes their inventory and current location from the database DTO.
     /// </summary>
-    public Task RehydrateAsync(Player player, PlayerDto dto)
+    public Task<Player> RehydrateAsync(PlayerDto dto)
     {
+        var player = new Player
+        {
+            Id = new(dto.Id),
+            Username = dto.Username
+        };
+        
         foreach (var item in dto.Inventory)
         {
             var obj = new Object
@@ -35,6 +41,6 @@ public class PlayerHydrator(World.World world)
 
         world.MovePlayer(player, startingRoom);
 
-        return Task.CompletedTask;
+        return Task.FromResult(player);
     }
 }
