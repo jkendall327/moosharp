@@ -1,5 +1,7 @@
+using MooSharp.Actors.Rooms;
 using MooSharp.Commands.Commands.Creative;
 using MooSharp.Commands.Presentation;
+using MooSharp.Commands.Searching;
 using MooSharp.Tests.TestDoubles;
 
 namespace MooSharp.Tests.Handlers;
@@ -16,7 +18,7 @@ public class DescribeHandlerTests
         var world = await HandlerTestHelpers.CreateWorld(store, room);
         world.MovePlayer(player, room);
 
-        var handler = new DescribeHandler(world);
+        var handler = new DescribeHandler(world, new TargetResolver());
 
         var result = await handler.Handle(new()
         {
@@ -44,12 +46,17 @@ public class DescribeHandlerTests
         var player = HandlerTestHelpers.CreatePlayer();
         var origin = HandlerTestHelpers.CreateRoom("origin", player.Username);
         var destination = HandlerTestHelpers.CreateRoom("destination", player.Username);
-        origin.Exits.Add("east", destination.Id);
+        origin.Exits.Add(new Exit
+        {
+            Name = "east",
+            Description = "",
+            Destination = destination.Id
+        });
 
         var world = await HandlerTestHelpers.CreateWorld(store, origin, destination);
         world.MovePlayer(player, origin);
 
-        var handler = new DescribeHandler(world);
+        var handler = new DescribeHandler(world, new TargetResolver());
 
         var result = await handler.Handle(new()
         {
@@ -76,7 +83,7 @@ public class DescribeHandlerTests
         var player = HandlerTestHelpers.CreatePlayer("NotBuilder");
         world.MovePlayer(player, room);
 
-        var handler = new DescribeHandler(world);
+        var handler = new DescribeHandler(world, new TargetResolver());
 
         var result = await handler.Handle(new()
         {

@@ -112,7 +112,7 @@ public class DigHandler(World.World world, SlugCreator slugCreator) : IHandler<D
             return result;
         }
 
-        if (world.Rooms.Values.SelectMany(r => r.Exits.Keys).Any(e => string.Equals(e, slug, StringComparison.OrdinalIgnoreCase)))
+        if (world.Rooms.Values.SelectMany(r => r.Exits.Select(e => e.Name)).Any(e => string.Equals(e, slug, StringComparison.OrdinalIgnoreCase)))
         {
             result.Add(player, new RoomAlreadyExistsEvent(slug));
             return result;

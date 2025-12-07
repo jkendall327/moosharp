@@ -1,15 +1,15 @@
+using MooSharp.Actors;
 using MooSharp.Actors.Players;
 using MooSharp.Commands.Machinery;
 using MooSharp.Commands.Parsing;
 using MooSharp.Commands.Presentation;
-using Object = MooSharp.Actors.Objects.Object;
 
 namespace MooSharp.Commands.Commands.Items;
 
 public class OpenCommand : CommandBase<OpenCommand>
 {
     public required Player Player { get; init; }
-    public required Object Target { get; init; }
+    public required IOpenable Target { get; init; }
 }
 
 public class OpenCommandDefinition : ICommandDefinition
@@ -21,7 +21,7 @@ public class OpenCommandDefinition : ICommandDefinition
     public string? TryCreateCommand(ParsingContext ctx, ArgumentBinder binder, out ICommand? command)
     {
         command = null;
-        var bind = binder.BindNearbyObject(ctx);
+        var bind = binder.BindOpenable(ctx);
         if (!bind.IsSuccess) return bind.ErrorMessage;
 
         command = new OpenCommand { Player = ctx.Player, Target = bind.Value! };
@@ -36,9 +36,15 @@ public class OpenHandler : IHandler<OpenCommand>
         var result = new CommandResult();
         var target = cmd.Target;
 
-        if (!target.IsOpenable)
+        if (!target.CanBeOpened)
         {
             result.Add(cmd.Player, new SystemMessageEvent("You can't open that."));
+            return Task.FromResult(result);
+        }
+
+        if (target is ILockable lockable && lockable.IsLocked)
+        {
+            result.Add(cmd.Player, new SystemMessageEvent("It's locked."));
             return Task.FromResult(result);
         }
 
@@ -54,7 +60,7 @@ public class OpenHandler : IHandler<OpenCommand>
     }
 }
 
-public record ItemOpenedEvent(Player Player, Object Object) : IGameEvent;
+public record ItemOpenedEvent(Player Player, IOpenable Object) : IGameEvent;
 
 public class ItemOpenedEventEventFormatter : IGameEventFormatter<ItemOpenedEvent>
 {

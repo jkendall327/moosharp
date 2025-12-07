@@ -11,11 +11,21 @@ public static class WorldSnapshotFactory
     {
         ArgumentNullException.ThrowIfNull(room);
 
-        var exits = new Dictionary<string, string>(room.Exits.Count, StringComparer.OrdinalIgnoreCase);
-        foreach (var exit in room.Exits)
-        {
-            exits[exit.Key] = exit.Value.Value;
-        }
+        var exits = room.Exits
+            .Select(e => new ExitSnapshotDto(
+                e.Id,
+                e.Name,
+                e.Description,
+                e.Destination.Value,
+                e.IsHidden,
+                e.IsLocked,
+                e.IsOpen,
+                e.CanBeOpened,
+                e.CanBeLocked,
+                e.KeyId,
+                e.Aliases.ToList(),
+                e.Keywords.ToList()))
+            .ToList();
 
         var objects = room.Contents
             .Select(o => new ObjectSnapshotDto(
@@ -69,7 +79,21 @@ public static class WorldSnapshotFactory
 
             foreach (var exit in roomSnapshot.Exits)
             {
-                room.Exits[exit.Key] = new RoomId(exit.Value);
+                room.Exits.Add(new Exit
+                {
+                    Id = exit.Id,
+                    Name = exit.Name,
+                    Description = exit.Description,
+                    Destination = new RoomId(exit.DestinationRoomId),
+                    Aliases = exit.Aliases.ToList(),
+                    Keywords = exit.Keywords.ToList(),
+                    IsHidden = exit.IsHidden,
+                    IsLocked = exit.IsLocked,
+                    IsOpen = exit.IsLocked ? false : exit.IsOpen,
+                    CanBeOpened = exit.CanBeOpened,
+                    CanBeLocked = exit.CanBeLocked,
+                    KeyId = exit.KeyId
+                });
             }
         }
 

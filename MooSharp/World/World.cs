@@ -160,9 +160,36 @@ public class World(IWorldRepository worldRepository, ILogger<World> logger)
         ArgumentNullException.ThrowIfNull(destination);
         ArgumentException.ThrowIfNullOrWhiteSpace(direction);
 
-        origin.Exits[direction] = destination.Id;
+        origin.Exits.RemoveAll(e => e.Name.Equals(direction, StringComparison.OrdinalIgnoreCase));
 
-        await worldRepository.SaveExitAsync(origin.Id.Value, destination.Id.Value, direction, cancellationToken);
+        var exit = new Exit
+        {
+            Name = direction,
+            Description = $"An exit leading to {destination.Name}.",
+            Destination = destination.Id,
+            Aliases = [direction[0].ToString()],
+            Keywords = [],
+            IsOpen = true,
+            CanBeLocked = false
+        };
+
+        origin.Exits.Add(exit);
+
+        var snapshot = new ExitSnapshotDto(
+            exit.Id,
+            exit.Name,
+            exit.Description,
+            exit.Destination.Value,
+            exit.IsHidden,
+            exit.IsLocked,
+            exit.IsOpen,
+            exit.CanBeOpened,
+            exit.CanBeLocked,
+            exit.KeyId,
+            exit.Aliases.ToList(),
+            exit.Keywords.ToList());
+
+        await worldRepository.SaveExitAsync(origin.Id.Value, snapshot, cancellationToken);
     }
 
     public async Task UpdateRoomDescriptionAsync(Room room,

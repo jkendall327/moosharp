@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Logging.Abstractions;
+using MooSharp.Actors.Rooms;
 using MooSharp.Commands.Commands;
 using MooSharp.Commands.Presentation;
 
@@ -11,7 +12,14 @@ public class MoveHandlerTests
     {
         var origin = HandlerTestHelpers.CreateRoom("origin");
         var destination = HandlerTestHelpers.CreateRoom("destination");
-        origin.Exits.Add("north", destination.Id);
+        var exit = new Exit
+        {
+            Name = "north",
+            Description = string.Empty,
+            Destination = destination.Id
+        };
+
+        origin.Exits.Add(exit);
 
         var world = await HandlerTestHelpers.CreateWorld(origin, destination);
 
@@ -23,7 +31,7 @@ public class MoveHandlerTests
         var result = await handler.Handle(new()
         {
             Player = player,
-            TargetExit = destination
+            TargetExit = exit
         });
 
         Assert.Same(destination, world.GetPlayerLocation(player));
@@ -45,7 +53,14 @@ public class MoveHandlerTests
     {
         var origin = HandlerTestHelpers.CreateRoom("origin");
         var destination = HandlerTestHelpers.CreateRoom("destination");
-        origin.Exits.Add("north", destination.Id);
+        var exit = new Exit
+        {
+            Name = "north",
+            Description = string.Empty,
+            Destination = destination.Id
+        };
+
+        origin.Exits.Add(exit);
 
         var world = await HandlerTestHelpers.CreateWorld(origin, destination);
 
@@ -62,7 +77,7 @@ public class MoveHandlerTests
         var result = await handler.Handle(new()
         {
             Player = actor,
-            TargetExit = destination
+            TargetExit = exit
         });
 
         var originMessage = Assert.Single(result.Messages, m => m.Player == originObserver);

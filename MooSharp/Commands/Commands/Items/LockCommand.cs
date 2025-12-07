@@ -1,15 +1,15 @@
+using MooSharp.Actors;
 using MooSharp.Actors.Players;
 using MooSharp.Commands.Machinery;
 using MooSharp.Commands.Parsing;
 using MooSharp.Commands.Presentation;
-using Object = MooSharp.Actors.Objects.Object;
 
 namespace MooSharp.Commands.Commands.Items;
 
 public class LockCommand : CommandBase<LockCommand>
 {
     public required Player Player { get; init; }
-    public required Object Target { get; init; }
+    public required ILockable Target { get; init; }
 }
 
 public class LockCommandDefinition : ICommandDefinition
@@ -21,7 +21,7 @@ public class LockCommandDefinition : ICommandDefinition
     public string? TryCreateCommand(ParsingContext ctx, ArgumentBinder binder, out ICommand? command)
     {
         command = null;
-        var bind = binder.BindNearbyObject(ctx);
+        var bind = binder.BindLockable(ctx);
         if (!bind.IsSuccess) return bind.ErrorMessage;
 
         command = new LockCommand { Player = ctx.Player, Target = bind.Value! };
@@ -32,7 +32,7 @@ public class LockCommandDefinition : ICommandDefinition
 public class UnlockCommand : CommandBase<UnlockCommand>
 {
     public required Player Player { get; init; }
-    public required Object Target { get; init; }
+    public required ILockable Target { get; init; }
 }
 
 public class UnlockCommandDefinition : ICommandDefinition
@@ -44,7 +44,7 @@ public class UnlockCommandDefinition : ICommandDefinition
     public string? TryCreateCommand(ParsingContext ctx, ArgumentBinder binder, out ICommand? command)
     {
         command = null;
-        var bind = binder.BindNearbyObject(ctx);
+        var bind = binder.BindLockable(ctx);
         if (!bind.IsSuccess) return bind.ErrorMessage;
 
         command = new UnlockCommand { Player = ctx.Player, Target = bind.Value! };
@@ -59,7 +59,7 @@ public class LockHandler : IHandler<LockCommand>
         var result = new CommandResult();
         var target = cmd.Target;
 
-        if (!target.IsLockable)
+        if (!target.CanBeLocked)
         {
             result.Add(cmd.Player, new SystemMessageEvent("You can't lock that."));
             return Task.FromResult(result);
@@ -80,6 +80,10 @@ public class LockHandler : IHandler<LockCommand>
         }
 
         target.IsLocked = true;
+        if (target is IOpenable openable)
+        {
+            openable.IsOpen = false;
+        }
         result.Add(cmd.Player, new ItemLockedEvent(cmd.Player, target));
         return Task.FromResult(result);
     }
@@ -92,7 +96,7 @@ public class UnlockHandler : IHandler<UnlockCommand>
         var result = new CommandResult();
         var target = cmd.Target;
 
-        if (!target.IsLockable)
+        if (!target.CanBeLocked)
         {
             result.Add(cmd.Player, new SystemMessageEvent("You can't unlock that."));
             return Task.FromResult(result);
@@ -118,7 +122,7 @@ public class UnlockHandler : IHandler<UnlockCommand>
     }
 }
 
-public record ItemLockedEvent(Player Player, Object Object) : IGameEvent;
+public record ItemLockedEvent(Player Player, ILockable Object) : IGameEvent;
 
 public class ItemLockedEventFormatter : IGameEventFormatter<ItemLockedEvent>
 {
@@ -128,7 +132,7 @@ public class ItemLockedEventFormatter : IGameEventFormatter<ItemLockedEvent>
         $"{gameEvent.Player.Username} locks the {gameEvent.Object.Name}.";
 }
 
-public record ItemUnlockedEvent(Player Player, Object Object) : IGameEvent;
+public record ItemUnlockedEvent(Player Player, ILockable Object) : IGameEvent;
 
 public class ItemUnlockedEventFormatter : IGameEventFormatter<ItemUnlockedEvent>
 {

@@ -20,7 +20,7 @@ public sealed class InMemoryWorldRepository : IWorldRepository
         return Task.CompletedTask;
     }
 
-    public Task SaveExitAsync(string fromRoomId, string toRoomId, string direction, CancellationToken cancellationToken = default)
+    public Task SaveExitAsync(string fromRoomId, ExitSnapshotDto exit, CancellationToken cancellationToken = default)
     {
         var existing = _rooms.FirstOrDefault(r => r.Id == fromRoomId);
 
@@ -29,10 +29,11 @@ public sealed class InMemoryWorldRepository : IWorldRepository
             return Task.CompletedTask;
         }
 
-        var exits = new Dictionary<string, string>(existing.Exits, StringComparer.OrdinalIgnoreCase)
-        {
-            [direction] = toRoomId
-        };
+        var exits = existing.Exits
+            .Where(e => e.Id != exit.Id)
+            .ToList();
+
+        exits.Add(Clone(exit));
 
         ReplaceRoom(existing, existing with { Exits = exits });
         return Task.CompletedTask;
@@ -119,11 +120,22 @@ public sealed class InMemoryWorldRepository : IWorldRepository
 
     private static RoomSnapshotDto Clone(RoomSnapshotDto room)
     {
-        var exits = new Dictionary<string, string>(room.Exits, StringComparer.OrdinalIgnoreCase);
+        var exits = room.Exits
+            .Select(Clone)
+            .ToList();
         var objects = room.Objects
             .Select(o => o with { })
             .ToList();
 
         return room with { Exits = exits, Objects = objects };
+    }
+
+    private static ExitSnapshotDto Clone(ExitSnapshotDto exit)
+    {
+        return exit with
+        {
+            Aliases = exit.Aliases.ToList(),
+            Keywords = exit.Keywords.ToList()
+        };
     }
 }

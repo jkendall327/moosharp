@@ -80,7 +80,10 @@ public class GameEngine(
 
         var room = world.GetPlayerLocation(player);
 
-        var exits = room?.Exits.Keys ?? Enumerable.Empty<string>();
+        var exits = room?.Exits
+                        .Where(e => !e.IsHidden)
+                        .Select(e => e.Name)
+                        ?? Enumerable.Empty<string>();
         var inventory = player.Inventory.Select(item => item.Name);
 
         var options = new AutocompleteOptions(exits.ToList(), inventory.ToList());

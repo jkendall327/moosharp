@@ -1,6 +1,7 @@
 using System.Collections.Frozen;
 using MooSharp.Actors.Players;
 using MooSharp.Actors.Rooms;
+using MooSharp.Actors;
 
 namespace MooSharp.Actors.Objects;
 
@@ -10,7 +11,7 @@ public readonly record struct ObjectId(Guid Value)
     public override string ToString() => Value.ToString();
 }
 
-public class Object
+public class Object : IOpenable, ILockable
 {
     public ObjectId Id { get; init; } = ObjectId.New();
     public required string Name { get; set; }
@@ -117,6 +118,10 @@ public class Object
             SetFlag(ObjectFlags.Locked, value);
         }
     }
+
+    public bool CanBeOpened => IsOpenable;
+
+    public bool CanBeLocked => IsLockable;
 
     public bool IsScenery
     {
