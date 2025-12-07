@@ -1,6 +1,7 @@
 using System.Text;
 using MooSharp.Actors.Players;
 using MooSharp.Commands.Machinery;
+using MooSharp.Commands.Parsing;
 using MooSharp.Commands.Presentation;
 using Object = MooSharp.Actors.Objects.Object;
 
@@ -15,14 +16,13 @@ public class InventoryCommandDefinition : ICommandDefinition
 {
     public IReadOnlyCollection<string> Verbs { get; } = ["i", "inv", "inventory"];
     public CommandCategory Category => CommandCategory.General;
-
     public string Description => "Check what you're carrying.";
 
-    public ICommand Create(Player player, string args) =>
-        new InventoryCommand
-        {
-            Player = player
-        };
+    public string? TryCreateCommand(ParsingContext ctx, ArgumentBinder binder, out ICommand? command)
+    {
+        command = new InventoryCommand { Player = ctx.Player };
+        return null;
+    }
 }
 
 public class InventoryHandler : IHandler<InventoryCommand>

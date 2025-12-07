@@ -70,6 +70,40 @@ public class ArgumentBinder(TargetResolver resolver, World.World world)
         return BindingResult<string>.Success(Features.Chats.ChatChannels.Normalize(token));
     }
 
+    /// <summary>
+    /// Attempts to find an item in the Inventory OR the Room.
+    /// Used for 'Examine', 'Read'.
+    /// </summary>
+    public BindingResult<Object> BindNearbyObject(ParsingContext ctx)
+    {
+        if (ctx.IsFinished)
+        {
+            return BindingResult<Object>.Failure("You didn't specify an item.");
+        }
+
+        var token = ctx.Pop()!;
+
+        // 1. Check Inventory
+        var invSearch = resolver.FindObjects(ctx.Player.Inventory, token);
+
+        if (invSearch.Status == SearchStatus.Found)
+        {
+            return BindingResult<Object>.Success(invSearch.Match!);
+        }
+
+        // 2. Check Room
+        var roomSearch = resolver.FindObjects(ctx.Room.Contents, token);
+
+        return roomSearch.Status switch
+        {
+            SearchStatus.Found => BindingResult<Object>.Success(roomSearch.Match!),
+            SearchStatus.NotFound => BindingResult<Object>.Failure($"You don't see a '{token}' here."),
+            SearchStatus.Ambiguous => BindingResult<Object>.Failure($"Which '{token}' do you mean?"),
+            SearchStatus.IndexOutOfRange => BindingResult<Object>.Failure($"You don't see that many '{token}'s."),
+            _ => BindingResult<Object>.Failure("Invalid item.")
+        };
+    }
+
     public BindingResult<Room> BindExitInRoom(ParsingContext ctx)
     {
         if (ctx.IsFinished)
