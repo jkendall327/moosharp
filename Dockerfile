@@ -1,29 +1,23 @@
-# Stage 1: Build
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /src
 
-# Copy solution and project files
 COPY ["MooSharp.slnx", "./"]
 COPY ["MooSharp/MooSharp.csproj", "MooSharp/"]
+COPY ["MooSharp.Data/MooSharp.Data.csproj", "MooSharp.Data/"]
 COPY ["MooSharp.Web/MooSharp.Web.csproj", "MooSharp.Web/"]
 COPY ["MooSharp.Tests/MooSharp.Tests.csproj", "MooSharp.Tests/"]
 
-# Restore dependencies
 RUN dotnet restore
 
-# Copy the rest of the source code
 COPY . .
 
-# Build and Publish the Web project
 WORKDIR "/src/MooSharp.Web"
 RUN dotnet publish -c Release -o /app/publish /p:UseAppHost=false
 
-# Stage 2: Runtime
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS final
 WORKDIR /app
 EXPOSE 8080
 
-# Copy the build artifacts
 COPY --from=build /app/publish .
 
 # Create a directory for the persistent data
