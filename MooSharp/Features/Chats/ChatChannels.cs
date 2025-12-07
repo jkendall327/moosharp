@@ -12,9 +12,7 @@ public static class ChatChannels
         Newbie,
         Trade
     };
-
-    public static IReadOnlyCollection<string> All => Channels;
-
+    
     public static bool IsValid(string channel) => Channels.Contains(channel);
 
     public static string Normalize(string channel)

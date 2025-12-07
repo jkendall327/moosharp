@@ -2,16 +2,6 @@ using MooSharp.Actors;
 
 namespace MooSharp.Messaging;
 
-public enum MessageAudience
-{
-    Actor,
-    Observer
-}
-
-public interface IGameEvent;
-
-public record GameMessage(Player Player, IGameEvent Event, MessageAudience Audience = MessageAudience.Actor);
-
 public class CommandResult
 {
     // Messages to be sent out
