@@ -23,7 +23,7 @@ public class MoveHandlerTests
         var result = await handler.Handle(new()
         {
             Player = player,
-            TargetExit = "north"
+            TargetExit = destination
         });
 
         Assert.Same(destination, world.GetPlayerLocation(player));
@@ -38,28 +38,6 @@ public class MoveHandlerTests
 
         var description = Assert.Single(result.Messages, m => m.Event is RoomDescriptionEvent);
         Assert.NotNull(((RoomDescriptionEvent)description.Event).Description);
-    }
-
-    [Fact]
-    public async Task MoveHandler_ReturnsExitNotFoundWhenMissing()
-    {
-        var origin = HandlerTestHelpers.CreateRoom("origin");
-        var world = await HandlerTestHelpers.CreateWorld(origin);
-
-        var player = HandlerTestHelpers.CreatePlayer();
-        world.MovePlayer(player, origin);
-
-        var handler = new MoveHandler(world, NullLogger<MoveHandler>.Instance);
-
-        var result = await handler.Handle(new()
-        {
-            Player = player,
-            TargetExit = "south"
-        });
-
-        var failure = Assert.Single(result.Messages);
-        Assert.IsType<ExitNotFoundEvent>(failure.Event);
-        Assert.Same(origin, world.GetPlayerLocation(player));
     }
 
     [Fact]
@@ -84,7 +62,7 @@ public class MoveHandlerTests
         var result = await handler.Handle(new()
         {
             Player = actor,
-            TargetExit = "north"
+            TargetExit = destination
         });
 
         var originMessage = Assert.Single(result.Messages, m => m.Player == originObserver);

@@ -33,12 +33,12 @@ public class LockHandlerTests
         chest.MoveTo(room);
         key.MoveTo(player);
 
-        var handler = new LockHandler(world, new());
+        var handler = new UnlockHandler();
 
         var result = await handler.Handle(new()
         {
             Player = player,
-            Target = "chest"
+            Target = chest
         });
 
         var message = Assert.Single(result.Messages);
@@ -65,12 +65,12 @@ public class LockHandlerTests
 
         chest.MoveTo(room);
 
-        var handler = new LockHandler(world, new());
+        var handler = new UnlockHandler();
 
         var result = await handler.Handle(new()
         {
             Player = player,
-            Target = "chest"
+            Target = chest
         });
 
         var message = Assert.Single(result.Messages);
@@ -106,12 +106,12 @@ public class LockHandlerTests
         chest.MoveTo(room);
         key.MoveTo(player);
 
-        var handler = new UnlockHandler(world, new());
+        var handler = new UnlockHandler();
 
         var result = await handler.Handle(new()
         {
             Player = player,
-            Target = "chest"
+            Target = chest
         });
 
         var message = Assert.Single(result.Messages);
@@ -146,12 +146,12 @@ public class LockHandlerTests
         chest.MoveTo(room);
         key.MoveTo(player);
 
-        var handler = new UnlockHandler(world, new());
+        var handler = new UnlockHandler();
 
         var result = await handler.Handle(new()
         {
             Player = player,
-            Target = "chest"
+            Target = chest
         });
 
         var message = Assert.Single(result.Messages);
