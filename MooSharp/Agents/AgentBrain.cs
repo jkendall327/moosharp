@@ -17,15 +17,15 @@ public sealed class AgentBrain(
     // Fire-and-forget tasks
     private Task? _processingTask;
     private Task? _volitionTask;
-    
+
     public PlayerId Id { get; private set; }
-    
+
     public async Task StartAsync(Guid id, CancellationToken cancellationToken = default)
     {
         Id = new(id);
-        
+
         _cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-        
+
         await core.InitializeAsync(_cts.Token);
 
         _processingTask = ProcessLoopAsync();

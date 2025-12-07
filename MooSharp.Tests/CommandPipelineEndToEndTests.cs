@@ -28,7 +28,12 @@ public class CommandPipelineEndToEndTests
     {
         _origin = HandlerTestHelpers.CreateRoom("origin");
         _destination = HandlerTestHelpers.CreateRoom("destination");
-        _origin.Exits["north"] = _destination.Id;
+        _origin.Exits.Add(new Exit
+        {
+            Name = "north",
+            Description = "",
+            Destination = _destination.Id
+        });
 
         var repository = new InMemoryWorldRepository();
         _world = new World.World(repository, NullLogger<World.World>.Instance);

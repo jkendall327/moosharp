@@ -15,6 +15,7 @@ Look in the `agent-docs` directory for more detailed explanations on the solutio
   .GetResult() etc.
 - When writing docs, prefer concision. No emojis, no headers. Only use one level of indentation in lists. Write in
   simple markdown.
+- Please always use braces for if-statements (do not use the one-line style).
 
 ## Tests
 

@@ -1,4 +1,5 @@
 using System.Text;
+using MooSharp.Actors.Rooms;
 using MooSharp.Actors.Players;
 using MooSharp.Commands.Machinery;
 using MooSharp.Commands.Parsing;
@@ -20,7 +21,7 @@ public class ExamineCommandDefinition : ICommandDefinition
 
     public string Description => "Inspect yourself, an item, or the room. Usage: examine <target>.";
     public CommandCategory Category => CommandCategory.General;
-    
+
     public string? TryCreateCommand(ParsingContext ctx, ArgumentBinder binder, out ICommand? command)
     {
         command = new ExamineCommand
@@ -68,7 +69,27 @@ public class ExamineHandler(World.World world, TargetResolver resolver) : IHandl
         switch (search.Status)
         {
             case SearchStatus.NotFound:
-                result.Add(player, new ItemNotFoundEvent(cmd.Target));
+                var exitSearch = resolver.FindExit(current, cmd.Target);
+
+                switch (exitSearch.Status)
+                {
+                    case SearchStatus.Found:
+                        result.Add(player, new ExitExaminedEvent(exitSearch.Match!));
+                        break;
+
+                    case SearchStatus.Ambiguous:
+                        result.Add(player, new AmbiguousExitEvent(cmd.Target, exitSearch.Candidates));
+                        break;
+
+                    case SearchStatus.IndexOutOfRange:
+                        result.Add(player, new SystemMessageEvent($"You don't see that many '{cmd.Target}' exits."));
+                        break;
+
+                    case SearchStatus.NotFound:
+                        result.Add(player, new ItemNotFoundEvent(cmd.Target));
+                        break;
+                }
+
                 break;
 
             case SearchStatus.IndexOutOfRange:
@@ -148,6 +169,15 @@ public class ObjectExaminedEventFormatter : IGameEventFormatter<ObjectExaminedEv
     }
 }
 
+public record ExitExaminedEvent(Exit Exit) : IGameEvent;
+
+public class ExitExaminedEventFormatter : IGameEventFormatter<ExitExaminedEvent>
+{
+    public string FormatForActor(ExitExaminedEvent gameEvent) => gameEvent.Exit.Description;
+
+    public string FormatForObserver(ExitExaminedEvent gameEvent) => gameEvent.Exit.Description;
+}
+
 public record AmbiguousInputEvent(string Input, IReadOnlyCollection<Object> Candidates) : IGameEvent;
 
 public class AmbiguousInputEventFormatter : IGameEventFormatter<AmbiguousInputEvent>
@@ -168,6 +198,28 @@ public class AmbiguousInputEventFormatter : IGameEventFormatter<AmbiguousInputEv
     }
 
     public string? FormatForObserver(AmbiguousInputEvent evt) => null;
+}
+
+public record AmbiguousExitEvent(string Input, IReadOnlyCollection<Exit> Candidates) : IGameEvent;
+
+public class AmbiguousExitEventFormatter : IGameEventFormatter<AmbiguousExitEvent>
+{
+    public string FormatForActor(AmbiguousExitEvent evt)
+    {
+        var sb = new StringBuilder();
+        sb.AppendLine($"Which '{evt.Input}' do you mean?");
+
+        var i = 1;
+        foreach (var candidate in evt.Candidates)
+        {
+            sb.AppendLine($"{i++}. {candidate.Name}");
+        }
+
+        sb.Append("Type the name and the number (e.g., 'north 2').");
+        return sb.ToString();
+    }
+
+    public string? FormatForObserver(AmbiguousExitEvent evt) => null;
 }
 
 public record ItemNotFoundEvent(string ItemName) : IGameEvent;

@@ -13,7 +13,7 @@ public sealed record SaveRoomRequest(RoomSnapshotDto Room) : DatabaseRequest;
 
 public sealed record SaveRoomsRequest(IReadOnlyCollection<RoomSnapshotDto> Rooms) : DatabaseRequest;
 
-public sealed record SaveExitRequest(string FromRoomId, string ToRoomId) : DatabaseRequest;
+public sealed record SaveExitRequest(string FromRoomId, ExitSnapshotDto Exit) : DatabaseRequest;
 
 public sealed record UpdateRoomDescriptionRequest(string RoomId, string Description, string LongDescription) : DatabaseRequest;
 

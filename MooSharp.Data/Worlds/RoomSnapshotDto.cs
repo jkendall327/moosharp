@@ -1,3 +1,6 @@
+using System;
+using System.Collections.Generic;
+
 namespace MooSharp.Data.Worlds;
 
 public sealed record RoomSnapshotDto(
@@ -8,7 +11,7 @@ public sealed record RoomSnapshotDto(
     string EnterText,
     string ExitText,
     string? CreatorUsername,
-    IReadOnlyDictionary<string, string> Exits,
+    IReadOnlyCollection<ExitSnapshotDto> Exits,
     IReadOnlyCollection<ObjectSnapshotDto> Objects);
 
 public sealed record ObjectSnapshotDto(
@@ -20,3 +23,17 @@ public sealed record ObjectSnapshotDto(
     int Flags,
     string? KeyId,
     string? CreatorUsername);
+
+public sealed record ExitSnapshotDto(
+    Guid Id,
+    string Name,
+    string Description,
+    string DestinationRoomId,
+    bool IsHidden,
+    bool IsLocked,
+    bool IsOpen,
+    bool CanBeOpened,
+    bool CanBeLocked,
+    string? KeyId,
+    IReadOnlyCollection<string> Aliases,
+    IReadOnlyCollection<string> Keywords);

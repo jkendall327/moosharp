@@ -1,15 +1,15 @@
+using MooSharp.Actors;
 using MooSharp.Actors.Players;
 using MooSharp.Commands.Machinery;
 using MooSharp.Commands.Parsing;
 using MooSharp.Commands.Presentation;
-using Object = MooSharp.Actors.Objects.Object;
 
 namespace MooSharp.Commands.Commands.Items;
 
 public class LockCommand : CommandBase<LockCommand>
 {
     public required Player Player { get; init; }
-    public required Object Target { get; init; }
+    public required ILockable Target { get; init; }
 }
 
 public class LockCommandDefinition : ICommandDefinition
@@ -21,10 +21,19 @@ public class LockCommandDefinition : ICommandDefinition
     public string? TryCreateCommand(ParsingContext ctx, ArgumentBinder binder, out ICommand? command)
     {
         command = null;
-        var bind = binder.BindNearbyObject(ctx);
-        if (!bind.IsSuccess) return bind.ErrorMessage;
+        var bind = binder.BindLockable(ctx);
 
-        command = new LockCommand { Player = ctx.Player, Target = bind.Value! };
+        if (!bind.IsSuccess)
+        {
+            return bind.ErrorMessage;
+        }
+
+        command = new LockCommand
+        {
+            Player = ctx.Player,
+            Target = bind.Value
+        };
+
         return null;
     }
 }
@@ -32,7 +41,7 @@ public class LockCommandDefinition : ICommandDefinition
 public class UnlockCommand : CommandBase<UnlockCommand>
 {
     public required Player Player { get; init; }
-    public required Object Target { get; init; }
+    public required ILockable Target { get; init; }
 }
 
 public class UnlockCommandDefinition : ICommandDefinition
@@ -44,10 +53,19 @@ public class UnlockCommandDefinition : ICommandDefinition
     public string? TryCreateCommand(ParsingContext ctx, ArgumentBinder binder, out ICommand? command)
     {
         command = null;
-        var bind = binder.BindNearbyObject(ctx);
-        if (!bind.IsSuccess) return bind.ErrorMessage;
+        var bind = binder.BindLockable(ctx);
 
-        command = new UnlockCommand { Player = ctx.Player, Target = bind.Value! };
+        if (!bind.IsSuccess)
+        {
+            return bind.ErrorMessage;
+        }
+
+        command = new UnlockCommand
+        {
+            Player = ctx.Player,
+            Target = bind.Value
+        };
+
         return null;
     }
 }
@@ -59,15 +77,17 @@ public class LockHandler : IHandler<LockCommand>
         var result = new CommandResult();
         var target = cmd.Target;
 
-        if (!target.IsLockable)
+        if (!target.CanBeLocked)
         {
             result.Add(cmd.Player, new SystemMessageEvent("You can't lock that."));
+
             return Task.FromResult(result);
         }
 
         if (target.IsLocked)
         {
             result.Add(cmd.Player, new SystemMessageEvent("It is already locked."));
+
             return Task.FromResult(result);
         }
 
@@ -76,11 +96,19 @@ public class LockHandler : IHandler<LockCommand>
         if (!hasKey)
         {
             result.Add(cmd.Player, new SystemMessageEvent("You don't have the right key."));
+
             return Task.FromResult(result);
         }
 
         target.IsLocked = true;
+
+        if (target is IOpenable openable)
+        {
+            openable.IsOpen = false;
+        }
+
         result.Add(cmd.Player, new ItemLockedEvent(cmd.Player, target));
+
         return Task.FromResult(result);
     }
 }
@@ -92,15 +120,17 @@ public class UnlockHandler : IHandler<UnlockCommand>
         var result = new CommandResult();
         var target = cmd.Target;
 
-        if (!target.IsLockable)
+        if (!target.CanBeLocked)
         {
             result.Add(cmd.Player, new SystemMessageEvent("You can't unlock that."));
+
             return Task.FromResult(result);
         }
 
         if (!target.IsLocked)
         {
             result.Add(cmd.Player, new SystemMessageEvent("It is already unlocked."));
+
             return Task.FromResult(result);
         }
 
@@ -109,16 +139,18 @@ public class UnlockHandler : IHandler<UnlockCommand>
         if (!hasKey)
         {
             result.Add(cmd.Player, new SystemMessageEvent("You don't have the right key."));
+
             return Task.FromResult(result);
         }
 
         target.IsLocked = false;
         result.Add(cmd.Player, new ItemUnlockedEvent(cmd.Player, target));
+
         return Task.FromResult(result);
     }
 }
 
-public record ItemLockedEvent(Player Player, Object Object) : IGameEvent;
+public record ItemLockedEvent(Player Player, ILockable Object) : IGameEvent;
 
 public class ItemLockedEventFormatter : IGameEventFormatter<ItemLockedEvent>
 {
@@ -128,7 +160,7 @@ public class ItemLockedEventFormatter : IGameEventFormatter<ItemLockedEvent>
         $"{gameEvent.Player.Username} locks the {gameEvent.Object.Name}.";
 }
 
-public record ItemUnlockedEvent(Player Player, Object Object) : IGameEvent;
+public record ItemUnlockedEvent(Player Player, ILockable Object) : IGameEvent;
 
 public class ItemUnlockedEventFormatter : IGameEventFormatter<ItemUnlockedEvent>
 {

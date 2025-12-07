@@ -88,20 +88,43 @@ public class WorldSeeder(IOptions<AppOptions> options, ILogger<WorldSeeder> logg
 
                 var currentRoomActor = roomActorsBySlug[roomDto.Slug];
 
-                var exits = roomDto.ConnectedRooms.ToDictionary(exitSlug => exitSlug,
-                    exitSlug =>
-                    {
-                        if (!roomActorsBySlug.ContainsKey(exitSlug))
-                        {
-                            logger.LogError("Missing slug {Slug} for room {Room}", exitSlug, roomDto.Slug);
-                        }
-
-                        return roomActorsBySlug[exitSlug];
-                    });
-
-                foreach (var exit in exits)
+                foreach (var exitDto in roomDto.Exits)
                 {
-                    currentRoomActor.Exits.Add(exit.Key, exit.Value.Id);
+                    if (!roomActorsBySlug.TryGetValue(exitDto.DestinationSlug, out var destinationRoom))
+                    {
+                        logger.LogError("Missing slug {Slug} for room {Room}", exitDto.DestinationSlug, roomDto.Slug);
+                        continue;
+                    }
+
+                    var aliases = exitDto.Aliases.Any()
+                        ? exitDto.Aliases.ToList()
+                        : new List<string>();
+
+                    if (!string.IsNullOrWhiteSpace(exitDto.Direction))
+                    {
+                        var abbreviation = exitDto.Direction[0].ToString();
+
+                        if (!aliases.Contains(abbreviation, StringComparer.OrdinalIgnoreCase))
+                        {
+                            aliases.Add(abbreviation);
+                        }
+                    }
+
+                    var exit = new Exit
+                    {
+                        Name = exitDto.Direction,
+                        Description = exitDto.Description,
+                        Destination = destinationRoom.Id,
+                        Aliases = aliases,
+                        Keywords = exitDto.Keywords.ToList(),
+                        IsHidden = exitDto.IsHidden,
+                        IsLocked = exitDto.IsLocked,
+                        IsOpen = exitDto.IsLocked ? false : exitDto.IsOpen,
+                        KeyId = exitDto.KeyId,
+                        CanBeLocked = exitDto.IsLocked || !string.IsNullOrWhiteSpace(exitDto.KeyId)
+                    };
+
+                    currentRoomActor.Exits.Add(exit);
                 }
             }
             catch (Exception ex)

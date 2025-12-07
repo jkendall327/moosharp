@@ -1,5 +1,6 @@
 using MooSharp.Actors.Players;
 using MooSharp.Actors.Rooms;
+using MooSharp.Actors;
 using MooSharp.Commands.Searching;
 using Object = MooSharp.Actors.Objects.Object;
 
@@ -104,24 +105,76 @@ public class ArgumentBinder(TargetResolver resolver, World.World world)
         };
     }
 
-    public BindingResult<Room> BindExitInRoom(ParsingContext ctx)
+    public BindingResult<IOpenable> BindOpenable(ParsingContext ctx)
     {
         if (ctx.IsFinished)
         {
-            return BindingResult<Room>.Failure("You didn't specify an exit.");
+            return BindingResult<IOpenable>.Failure("You didn't specify a target.");
         }
 
         var token = ctx.Pop()!;
-        
-        var exits = ctx.Room.Exits;
 
-        if (exits.TryGetValue(token, out var id))
+        var search = resolver.FindOpenable(ctx.Player, ctx.Room, token);
+
+        return search.Status switch
         {
-            var room = world.Rooms[id];
-            return BindingResult<Room>.Success(room);
+            SearchStatus.Found => BindingResult<IOpenable>.Success(search.Match!),
+            SearchStatus.NotFound => BindingResult<IOpenable>.Failure($"You don't see a '{token}' here."),
+            SearchStatus.Ambiguous => BindingResult<IOpenable>.Failure($"Which '{token}' do you mean?"),
+            SearchStatus.IndexOutOfRange => BindingResult<IOpenable>.Failure($"You don't see that many '{token}'s."),
+            _ => BindingResult<IOpenable>.Failure("Invalid target.")
+        };
+    }
+
+    public BindingResult<Exit> BindExitInRoom(ParsingContext ctx)
+    {
+        if (ctx.IsFinished)
+        {
+            return BindingResult<Exit>.Failure("You didn't specify an exit.");
         }
-        
-        return BindingResult<Room>.Failure("Exit not found.");
+
+        var token = ctx.Pop()!;
+
+        var search = resolver.FindExit(ctx.Room, token);
+
+        return search.Status switch
+        {
+            SearchStatus.Found => BindingResult<Exit>.Success(search.Match!),
+            SearchStatus.NotFound => BindingResult<Exit>.Failure("Exit not found."),
+            SearchStatus.Ambiguous => BindingResult<Exit>.Failure($"Which '{token}' do you mean?"),
+            SearchStatus.IndexOutOfRange => BindingResult<Exit>.Failure($"You don't see that many '{token}'s."),
+            _ => BindingResult<Exit>.Failure("Exit not found.")
+        };
+    }
+
+    public BindingResult<ILockable> BindLockable(ParsingContext ctx)
+    {
+        if (ctx.IsFinished)
+        {
+            return BindingResult<ILockable>.Failure("You didn't specify a target.");
+        }
+
+        var token = ctx.Pop()!;
+
+        var search = resolver.FindOpenable(ctx.Player, ctx.Room, token);
+
+        if (search is {Status: SearchStatus.Found, Match: ILockable lockable})
+        {
+            return BindingResult<ILockable>.Success(lockable);
+        }
+
+        if (search.Status == SearchStatus.Found)
+        {
+            return BindingResult<ILockable>.Failure("You can't lock that.");
+        }
+
+        return search.Status switch
+        {
+            SearchStatus.NotFound => BindingResult<ILockable>.Failure($"You don't see a '{token}' here."),
+            SearchStatus.Ambiguous => BindingResult<ILockable>.Failure($"Which '{token}' do you mean?"),
+            SearchStatus.IndexOutOfRange => BindingResult<ILockable>.Failure($"You don't see that many '{token}'s."),
+            _ => BindingResult<ILockable>.Failure("Invalid target.")
+        };
     }
 
     // Binds a token to a player in the room

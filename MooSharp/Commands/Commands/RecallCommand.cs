@@ -20,7 +20,7 @@ public class RecallCommandDefinition : ICommandDefinition
         {
             Player = ctx.Player,
         };
-        
+
         return null;
     }
 

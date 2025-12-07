@@ -7,7 +7,7 @@ public static class StringTokenizer
         var tokens = new Queue<string>();
         var currentToken = new System.Text.StringBuilder();
         var inQuotes = false;
-        
+
         // We care about quotes so we can handle inputs like
         // 'give "shiny sword" to bob'
         // where 'shiny sword' should be one token.

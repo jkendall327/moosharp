@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Text.Json.Serialization;
 using JetBrains.Annotations;
 
@@ -15,5 +16,18 @@ public class RoomDto
 
     [JsonConverter(typeof(RoomIdJsonConverter))]
     public required RoomId Slug { get; set; }
-    public IReadOnlyList<string> ConnectedRooms { get; set; } = [];
+    public List<ExitDto> Exits { get; set; } = [];
+}
+
+public class ExitDto
+{
+    public required string Direction { get; set; }
+    public required string DestinationSlug { get; set; }
+    public required string Description { get; set; }
+    public bool IsHidden { get; set; }
+    public bool IsLocked { get; set; }
+    public bool IsOpen { get; set; } = true;
+    public string? KeyId { get; set; }
+    public List<string> Aliases { get; set; } = [];
+    public List<string> Keywords { get; set; } = [];
 }

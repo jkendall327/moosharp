@@ -28,9 +28,9 @@ public class GameEngine(
         {
             throw new InvalidOperationException($"Details for actor {actorId} were not found in database.");
         }
-        
+
         var player = await hydrator.RehydrateAsync(dto);
-        
+
         world.RegisterPlayer(player);
 
         OnPlayerSpawned?.Invoke(player);
@@ -39,7 +39,7 @@ public class GameEngine(
     public async Task DespawnActorAsync(Guid actorId, CancellationToken ct = default)
     {
         var player = world.TryGetPlayer(actorId);
-        
+
         if (player is null)
         {
             return;
@@ -60,7 +60,7 @@ public class GameEngine(
         await playerRepository.SavePlayerAsync(snapshot, WriteType.Deferred, ct);
 
         world.RemovePlayer(player);
-        
+
         OnPlayerDespawned?.Invoke(player);
     }
 
@@ -72,7 +72,7 @@ public class GameEngine(
     public Task<AutocompleteOptions> GetAutocompleteOptions(Guid actorId, CancellationToken ct = default)
     {
         var player = world.TryGetPlayer(actorId);
-        
+
         if (player is null)
         {
             return Task.FromResult(new AutocompleteOptions([], []));
@@ -80,7 +80,10 @@ public class GameEngine(
 
         var room = world.GetPlayerLocation(player);
 
-        var exits = room?.Exits.Keys ?? Enumerable.Empty<string>();
+        var exits = room?.Exits
+                        .Where(e => !e.IsHidden)
+                        .Select(e => e.Name)
+                        ?? Enumerable.Empty<string>();
         var inventory = player.Inventory.Select(item => item.Name);
 
         var options = new AutocompleteOptions(exits.ToList(), inventory.ToList());

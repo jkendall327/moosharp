@@ -1,4 +1,5 @@
 using System.Text.RegularExpressions;
+using MooSharp.Actors;
 using MooSharp.Actors.Players;
 using MooSharp.Actors.Rooms;
 using Object = MooSharp.Actors.Objects.Object;
@@ -41,6 +42,54 @@ public partial class TargetResolver
             };
         }
 
+        var entityResult = FindEntities(contents, query, GetObjectTerms);
+
+        return new SearchResult
+        {
+            Status = entityResult.Status,
+            Match = entityResult.Match,
+            Candidates = entityResult.Candidates,
+            IsSelf = entityResult.IsSelf
+        };
+    }
+
+    public SearchResult<IOpenable> FindOpenable(Player player, Room room, string query)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(query);
+
+        var inventorySearch = FindEntities(player.Inventory.OfType<IOpenable>().ToList(), query, GetOpenableTerms);
+
+        if (inventorySearch.Status != SearchStatus.NotFound)
+        {
+            return inventorySearch;
+        }
+
+        var roomSearch = FindEntities(room.Contents.OfType<IOpenable>().ToList(), query, GetOpenableTerms);
+
+        if (roomSearch.Status != SearchStatus.NotFound)
+        {
+            return roomSearch;
+        }
+
+        var exitSearch = FindEntities(room.Exits.Where(e => !e.IsHidden).Cast<IOpenable>().ToList(), query, GetOpenableTerms);
+
+        return exitSearch;
+    }
+
+    public SearchResult<Exit> FindExit(Room room, string query)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(query);
+
+        return FindEntities(room.Exits.Where(e => !e.IsHidden).ToList(), query, GetExitTerms);
+    }
+
+    private static bool IsSelfReference(string target)
+        => string.Equals(target, "me", StringComparison.OrdinalIgnoreCase) ||
+           string.Equals(target, "self", StringComparison.OrdinalIgnoreCase) ||
+           string.Equals(target, "myself", StringComparison.OrdinalIgnoreCase);
+
+    private SearchResult<T> FindEntities<T>(IReadOnlyCollection<T> contents, string query, Func<T, IEnumerable<string>> termSelector)
+    {
         var match = SearchRegex.Match(query);
         var targetName = query;
         int? targetIndex = null;
@@ -59,9 +108,10 @@ public partial class TargetResolver
         }
 
         var candidates = contents
-            .Where(o => o.Name.Equals(targetName, StringComparison.OrdinalIgnoreCase) ||
-                        o.Keywords.Contains(targetName, StringComparer.OrdinalIgnoreCase) ||
-                        o.Name.Contains(targetName, StringComparison.OrdinalIgnoreCase))
+            .Where(o => termSelector(o)
+                .Where(name => !string.IsNullOrWhiteSpace(name))
+                .Any(name => name.Equals(targetName, StringComparison.OrdinalIgnoreCase) ||
+                             name.Contains(targetName, StringComparison.OrdinalIgnoreCase)))
             .ToList();
 
         if (targetIndex.HasValue)
@@ -100,10 +150,27 @@ public partial class TargetResolver
         };
     }
 
-    private static bool IsSelfReference(string target)
-        => string.Equals(target, "me", StringComparison.OrdinalIgnoreCase) ||
-           string.Equals(target, "self", StringComparison.OrdinalIgnoreCase) ||
-           string.Equals(target, "myself", StringComparison.OrdinalIgnoreCase);
+    private static IEnumerable<string> GetObjectTerms(Object obj)
+    {
+        return new[] { obj.Name }.Concat(obj.Keywords);
+    }
+
+    private static IEnumerable<string> GetOpenableTerms(IOpenable openable)
+    {
+        return openable switch
+        {
+            Exit exit => GetExitTerms(exit),
+            Object obj => GetObjectTerms(obj),
+            _ => new[] { openable.Name }
+        };
+    }
+
+    private static IEnumerable<string> GetExitTerms(Exit exit)
+    {
+        return new[] { exit.Name }
+            .Concat(exit.Aliases)
+            .Concat(exit.Keywords);
+    }
 
     [GeneratedRegex(@"^(\d+)\.(.+)|(.+)\s+(\d+)$", RegexOptions.Compiled)]
     private static partial Regex CreateSearchRegex();

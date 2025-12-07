@@ -37,7 +37,7 @@ public class Room : IContainer
     private readonly List<Object> _contents = [];
     private readonly List<Player> _playersInRoom = [];
     public IReadOnlyCollection<Object> Contents => _contents;
-    public Dictionary<string, RoomId> Exits { get; } = new(StringComparer.OrdinalIgnoreCase);
+    public List<Exit> Exits { get; } = [];
     public IReadOnlyCollection<Player> PlayersInRoom => _playersInRoom;
 
     public string DescribeFor(Player player, bool useLongDescription = false)
@@ -65,8 +65,13 @@ public class Room : IContainer
             sb.AppendLine($"{string.Join(", ", otherPlayers)} are here.");
         }
 
-        var availableExits = Exits.Select(s => s.Key);
-        var availableExitsMessage = $"Available exits: {string.Join(", ", availableExits)}";
+        var visibleExits = Exits
+            .Where(e => !e.IsHidden)
+            .ToList();
+
+        var availableExitsMessage = visibleExits.Any()
+            ? $"Visible exits: {string.Join(", ", visibleExits.Select(DescribeExit))}"
+            : "No visible exits.";
 
         sb.AppendLine(availableExitsMessage);
 
@@ -81,6 +86,18 @@ public class Room : IContainer
     }
 
     public override string ToString() => Id.ToString();
+
+    private static string DescribeExit(Exit exit)
+    {
+        var state = exit.IsOpen ? "Open" : "Closed";
+
+        if (exit is {IsLocked: true, IsOpen: false})
+        {
+            state = "Locked";
+        }
+
+        return $"{exit.Name} ({state})";
+    }
 
     IReadOnlyCollection<Object> IContainer.Contents => _contents;
 

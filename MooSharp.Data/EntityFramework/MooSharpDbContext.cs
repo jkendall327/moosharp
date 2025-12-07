@@ -82,11 +82,19 @@ internal sealed class MooSharpDbContext(DbContextOptions<MooSharpDbContext> opti
 
         modelBuilder.Entity<ExitEntity>(entity =>
         {
-            entity.HasKey(e => new
-            {
-                e.FromRoomId,
-                e.ToRoomId
-            });
+            entity.HasKey(e => e.Id);
+
+            entity
+                .Property(e => e.Name)
+                .IsRequired();
+
+            entity
+                .Property(e => e.Description)
+                .IsRequired();
+
+            entity
+                .Property(e => e.DestinationRoomId)
+                .IsRequired();
 
             entity
                 .HasOne<RoomEntity>()
@@ -97,7 +105,7 @@ internal sealed class MooSharpDbContext(DbContextOptions<MooSharpDbContext> opti
             entity
                 .HasOne<RoomEntity>()
                 .WithMany()
-                .HasForeignKey(e => e.ToRoomId)
+                .HasForeignKey(e => e.DestinationRoomId)
                 .OnDelete(DeleteBehavior.Cascade);
         });
 
@@ -157,8 +165,19 @@ public sealed class RoomEntity
 
 public sealed class ExitEntity
 {
+    public Guid Id { get; init; }
     [MaxLength(100)] public string FromRoomId { get; init; } = string.Empty;
-    [MaxLength(100)] public string ToRoomId { get; init; } = string.Empty;
+    [MaxLength(100)] public string DestinationRoomId { get; init; } = string.Empty;
+    [MaxLength(100)] public string Name { get; init; } = string.Empty;
+    [MaxLength(200)] public string Description { get; init; } = string.Empty;
+    public bool IsHidden { get; init; }
+    public bool IsLocked { get; init; }
+    public bool IsOpen { get; init; }
+    public bool CanBeOpened { get; init; }
+    public bool CanBeLocked { get; init; }
+    [MaxLength(50)] public string? KeyId { get; init; }
+    public string Aliases { get; init; } = string.Empty;
+    public string Keywords { get; init; } = string.Empty;
 }
 
 public sealed class ObjectEntity

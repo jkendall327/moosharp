@@ -16,9 +16,9 @@ public interface ICommandDefinition
     /// Short description of what the command does, for help text.
     /// </summary>
     string Description { get; }
-    
+
     string? TryCreateCommand(ParsingContext ctx, ArgumentBinder binder, out ICommand? command);
-    
+
     CommandCategory Category { get; }
 }
 

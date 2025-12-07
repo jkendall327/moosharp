@@ -30,17 +30,28 @@ internal sealed class EfWorldRepository(IDbContextFactory<MooSharpDbContext> con
         await SaveRoomSnapshotsAsync([room], cancellationToken);
     }
 
-    public async Task SaveExitAsync(string fromRoomId, string toRoomId, string direction, CancellationToken cancellationToken = default)
+    public async Task SaveExitAsync(string fromRoomId, ExitSnapshotDto exitSnapshot, CancellationToken cancellationToken = default)
     {
         await using var context = await contextFactory.CreateDbContextAsync(cancellationToken);
 
-        var exit = new ExitEntity
+        var exitEntity = new ExitEntity
         {
+            Id = exitSnapshot.Id,
             FromRoomId = fromRoomId,
-            ToRoomId = toRoomId
+            DestinationRoomId = exitSnapshot.DestinationRoomId,
+            Name = exitSnapshot.Name,
+            Description = exitSnapshot.Description,
+            IsHidden = exitSnapshot.IsHidden,
+            IsLocked = exitSnapshot.IsLocked,
+            IsOpen = exitSnapshot.IsOpen,
+            CanBeOpened = exitSnapshot.CanBeOpened,
+            CanBeLocked = exitSnapshot.CanBeLocked,
+            KeyId = exitSnapshot.KeyId,
+            Aliases = Serialize(exitSnapshot.Aliases),
+            Keywords = Serialize(exitSnapshot.Keywords)
         };
 
-        await context.Exits.AddAsync(exit, cancellationToken);
+        await context.Exits.AddAsync(exitEntity, cancellationToken);
 
         try
         {
@@ -118,6 +129,7 @@ internal sealed class EfWorldRepository(IDbContextFactory<MooSharpDbContext> con
             var existing = await context.Rooms
                 .Include(r => r.Exits)
                 .Include(r => r.Objects)
+                .AsSplitQuery()
                 .FirstOrDefaultAsync(r => r.Id == room.Id, cancellationToken);
 
             if (existing is null)
@@ -135,7 +147,22 @@ internal sealed class EfWorldRepository(IDbContextFactory<MooSharpDbContext> con
 
             context.Exits.RemoveRange(existing.Exits);
             existing.Exits = room.Exits
-                .Select(exit => new ExitEntity { FromRoomId = room.Id, ToRoomId = exit.Value })
+                .Select(exit => new ExitEntity
+                {
+                    Id = exit.Id,
+                    FromRoomId = room.Id,
+                    DestinationRoomId = exit.DestinationRoomId,
+                    Name = exit.Name,
+                    Description = exit.Description,
+                    IsHidden = exit.IsHidden,
+                    IsLocked = exit.IsLocked,
+                    IsOpen = exit.IsOpen,
+                    CanBeOpened = exit.CanBeOpened,
+                    CanBeLocked = exit.CanBeLocked,
+                    KeyId = exit.KeyId,
+                    Aliases = Serialize(exit.Aliases),
+                    Keywords = Serialize(exit.Keywords)
+                })
                 .ToList();
 
             context.Objects.RemoveRange(existing.Objects);
@@ -159,7 +186,21 @@ internal sealed class EfWorldRepository(IDbContextFactory<MooSharpDbContext> con
 
     private static RoomSnapshotDto ToSnapshot(RoomEntity entity)
     {
-        var exits = entity.Exits.ToDictionary(e => e.ToRoomId, e => e.ToRoomId, StringComparer.OrdinalIgnoreCase);
+        var exits = entity.Exits
+            .Select(e => new ExitSnapshotDto(
+                e.Id,
+                e.Name,
+                e.Description,
+                e.DestinationRoomId,
+                e.IsHidden,
+                e.IsLocked,
+                e.IsOpen,
+                e.CanBeOpened,
+                e.CanBeLocked,
+                e.KeyId,
+                Deserialize(e.Aliases),
+                Deserialize(e.Keywords)))
+            .ToList();
 
         var objects = entity.Objects
             .Select(o => new ObjectSnapshotDto(
@@ -183,5 +224,17 @@ internal sealed class EfWorldRepository(IDbContextFactory<MooSharpDbContext> con
             entity.CreatorUsername,
             exits,
             objects);
+    }
+
+    private static string Serialize(IEnumerable<string> values)
+    {
+        return string.Join('|', values);
+    }
+
+    private static IReadOnlyCollection<string> Deserialize(string data)
+    {
+        return string.IsNullOrWhiteSpace(data)
+            ? []
+            : data.Split('|', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
     }
 }

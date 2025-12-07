@@ -30,7 +30,7 @@ public static class DataServiceCollectionExtensions
         {
             Directory.CreateDirectory(directory);
         }
-        
+
         services.AddDbContextFactory<MooSharpDbContext>(options =>
         {
             options.UseSqlite(connectionString);
@@ -62,7 +62,7 @@ public static class DataServiceCollectionExtensions
 
         await using var context = await factory.CreateDbContextAsync(cancellationToken);
 
-        var connection = (SqliteConnection) context.Database.GetDbConnection();
+        var connection = (SqliteConnection)context.Database.GetDbConnection();
 
         await connection.OpenAsync(cancellationToken);
 

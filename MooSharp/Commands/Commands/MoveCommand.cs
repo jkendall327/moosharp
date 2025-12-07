@@ -10,7 +10,7 @@ namespace MooSharp.Commands.Commands;
 public class MoveCommand : CommandBase<MoveCommand>
 {
     public required Player Player { get; init; }
-    public required Room TargetExit { get; init; }
+    public required Exit TargetExit { get; init; }
 }
 
 public class MoveCommandDefinition : ICommandDefinition
@@ -53,12 +53,33 @@ public class MoveHandler(World.World world, ILogger<MoveHandler> logger) : IHand
 
         var exit = cmd.TargetExit;
 
-        var exitRoom = world.Rooms[exit.Id];
+        if (exit is { IsLocked: true, IsOpen: true })
+        {
+            throw new InvalidOperationException($"Exit {exit.Id} in invalid state - locked and open.");
+        }
+
+        if (exit is { IsLocked: true, IsOpen: false })
+        {
+            result.Add(player, new SystemMessageEvent("The door is locked."));
+
+            return Task.FromResult(result);
+        }
+
+        if (!exit.IsOpen)
+        {
+            result.Add(player, new SystemMessageEvent("That way is closed."));
+
+            return Task.FromResult(result);
+        }
+
+        var exitRoom = world.Rooms[exit.Destination];
 
         result.Add(player, new PlayerDepartedEvent(player, originRoom, cmd.TargetExit.Name));
         result.Add(player, new PlayerMovedEvent(player, exitRoom));
 
-        result.BroadcastToAllButPlayer(originRoom, player, new PlayerDepartedEvent(player, originRoom, cmd.TargetExit.Name));
+        result.BroadcastToAllButPlayer(originRoom,
+            player,
+            new PlayerDepartedEvent(player, originRoom, cmd.TargetExit.Name));
 
         world.MovePlayer(player, exitRoom);
 

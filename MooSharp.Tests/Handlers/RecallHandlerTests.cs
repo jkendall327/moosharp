@@ -54,9 +54,9 @@ public class RecallHandlerTests
         });
 
         Assert.Single(result.Messages, m =>
-            m.Player == originObserver && m is {Audience: MessageAudience.Observer, Event: PlayerRecalledEvent});
+            m.Player == originObserver && m is { Audience: MessageAudience.Observer, Event: PlayerRecalledEvent });
 
         Assert.Single(result.Messages, m =>
-            m.Player == destinationObserver && m is {Audience: MessageAudience.Observer, Event: PlayerArrivedEvent});
+            m.Player == destinationObserver && m is { Audience: MessageAudience.Observer, Event: PlayerArrivedEvent });
     }
 }

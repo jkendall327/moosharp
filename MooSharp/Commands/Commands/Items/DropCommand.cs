@@ -23,12 +23,15 @@ public class DropCommandDefinition : ICommandDefinition
         command = null;
 
         var bind = binder.BindInventoryItem(ctx);
-        if (!bind.IsSuccess) return bind.ErrorMessage;
+        if (!bind.IsSuccess)
+        {
+            return bind.ErrorMessage;
+        }
 
         command = new DropCommand
         {
             Player = ctx.Player,
-            Target = bind.Value!
+            Target = bind.Value
         };
 
         return null;
@@ -41,7 +44,7 @@ public class DropHandler(World.World world) : IHandler<DropCommand>
     {
         var result = new CommandResult();
         var room = world.GetLocationOrThrow(cmd.Player);
-        
+
         cmd.Target.MoveTo(room);
 
         var dropEvent = new ItemDroppedEvent(cmd.Target, cmd.Player);

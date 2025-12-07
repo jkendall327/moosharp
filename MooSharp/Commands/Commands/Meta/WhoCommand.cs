@@ -44,7 +44,11 @@ public class OnlinePlayersEventFormatter : IGameEventFormatter<OnlinePlayersEven
 {
     public string FormatForActor(OnlinePlayersEvent gameEvent)
     {
-        if (gameEvent.Usernames.Count is 0) return "No one is online.";
+        if (gameEvent.Usernames.Count is 0)
+        {
+            return "No one is online.";
+        }
+
         return $"Players online: {string.Join(", ", gameEvent.Usernames)}";
     }
 

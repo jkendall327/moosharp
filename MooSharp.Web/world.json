@@ -7,7 +7,32 @@
       "EnterText": "You phase into the atrium.",
       "ExitText": "You slide out of the atrium.",
       "Slug": "atrium",
-      "ConnectedRooms": ["side-room", "fiber-hall"]
+      "Exits": [
+        {
+          "Direction": "side-room",
+          "DestinationSlug": "side-room",
+          "Description": "A passage leading toward side-room.",
+          "IsHidden": false,
+          "IsLocked": false,
+          "IsOpen": true,
+          "Aliases": [
+            "s"
+          ],
+          "Keywords": []
+        },
+        {
+          "Direction": "fiber-hall",
+          "DestinationSlug": "fiber-hall",
+          "Description": "A passage leading toward fiber-hall.",
+          "IsHidden": false,
+          "IsLocked": false,
+          "IsOpen": true,
+          "Aliases": [
+            "f"
+          ],
+          "Keywords": []
+        }
+      ]
     },
     {
       "Name": "side-room",
@@ -16,7 +41,32 @@
       "EnterText": "You shuffle into the side-room.",
       "ExitText": "You step out of the side-room.",
       "Slug": "side-room",
-      "ConnectedRooms": ["atrium", "closet"]
+      "Exits": [
+        {
+          "Direction": "atrium",
+          "DestinationSlug": "atrium",
+          "Description": "A passage leading toward atrium.",
+          "IsHidden": false,
+          "IsLocked": false,
+          "IsOpen": true,
+          "Aliases": [
+            "a"
+          ],
+          "Keywords": []
+        },
+        {
+          "Direction": "closet",
+          "DestinationSlug": "closet",
+          "Description": "A passage leading toward closet.",
+          "IsHidden": false,
+          "IsLocked": false,
+          "IsOpen": true,
+          "Aliases": [
+            "c"
+          ],
+          "Keywords": []
+        }
+      ]
     },
     {
       "Name": "closet",
@@ -25,7 +75,32 @@
       "EnterText": "You head into the closet.",
       "ExitText": "You leave the closet.",
       "Slug": "closet",
-      "ConnectedRooms": ["side-room", "dark-world"]
+      "Exits": [
+        {
+          "Direction": "side-room",
+          "DestinationSlug": "side-room",
+          "Description": "A passage leading toward side-room.",
+          "IsHidden": false,
+          "IsLocked": false,
+          "IsOpen": true,
+          "Aliases": [
+            "s"
+          ],
+          "Keywords": []
+        },
+        {
+          "Direction": "dark-world",
+          "DestinationSlug": "dark-world",
+          "Description": "A passage leading toward dark-world.",
+          "IsHidden": false,
+          "IsLocked": false,
+          "IsOpen": true,
+          "Aliases": [
+            "d"
+          ],
+          "Keywords": []
+        }
+      ]
     },
     {
       "Name": "dark world",
@@ -34,7 +109,32 @@
       "EnterText": "You cross over into the dark world.",
       "ExitText": "You slip away from the dark world.",
       "Slug": "dark-world",
-      "ConnectedRooms": ["closet", "server-overlook"]
+      "Exits": [
+        {
+          "Direction": "closet",
+          "DestinationSlug": "closet",
+          "Description": "A passage leading toward closet.",
+          "IsHidden": false,
+          "IsLocked": false,
+          "IsOpen": true,
+          "Aliases": [
+            "c"
+          ],
+          "Keywords": []
+        },
+        {
+          "Direction": "server-overlook",
+          "DestinationSlug": "server-overlook",
+          "Description": "A passage leading toward server-overlook.",
+          "IsHidden": false,
+          "IsLocked": false,
+          "IsOpen": true,
+          "Aliases": [
+            "s"
+          ],
+          "Keywords": []
+        }
+      ]
     },
     {
       "Name": "fiber hall",
@@ -43,7 +143,44 @@
       "EnterText": "You stride into the fiber hall.",
       "ExitText": "You slip out of the fiber hall.",
       "Slug": "fiber-hall",
-      "ConnectedRooms": ["atrium", "glitch-market", "holo-garden"]
+      "Exits": [
+        {
+          "Direction": "atrium",
+          "DestinationSlug": "atrium",
+          "Description": "A passage leading toward atrium.",
+          "IsHidden": false,
+          "IsLocked": false,
+          "IsOpen": true,
+          "Aliases": [
+            "a"
+          ],
+          "Keywords": []
+        },
+        {
+          "Direction": "glitch-market",
+          "DestinationSlug": "glitch-market",
+          "Description": "A passage leading toward glitch-market.",
+          "IsHidden": false,
+          "IsLocked": false,
+          "IsOpen": true,
+          "Aliases": [
+            "g"
+          ],
+          "Keywords": []
+        },
+        {
+          "Direction": "holo-garden",
+          "DestinationSlug": "holo-garden",
+          "Description": "A passage leading toward holo-garden.",
+          "IsHidden": false,
+          "IsLocked": false,
+          "IsOpen": true,
+          "Aliases": [
+            "h"
+          ],
+          "Keywords": []
+        }
+      ]
     },
     {
       "Name": "glitch market",
@@ -52,7 +189,32 @@
       "EnterText": "You drift into the glitch market.",
       "ExitText": "You fade from the glitch market.",
       "Slug": "glitch-market",
-      "ConnectedRooms": ["fiber-hall", "holo-garden"]
+      "Exits": [
+        {
+          "Direction": "fiber-hall",
+          "DestinationSlug": "fiber-hall",
+          "Description": "A passage leading toward fiber-hall.",
+          "IsHidden": false,
+          "IsLocked": false,
+          "IsOpen": true,
+          "Aliases": [
+            "f"
+          ],
+          "Keywords": []
+        },
+        {
+          "Direction": "holo-garden",
+          "DestinationSlug": "holo-garden",
+          "Description": "A passage leading toward holo-garden.",
+          "IsHidden": false,
+          "IsLocked": false,
+          "IsOpen": true,
+          "Aliases": [
+            "h"
+          ],
+          "Keywords": []
+        }
+      ]
     },
     {
       "Name": "holo garden",
@@ -61,7 +223,44 @@
       "EnterText": "You step into the holo garden.",
       "ExitText": "You exit the holo garden.",
       "Slug": "holo-garden",
-      "ConnectedRooms": ["fiber-hall", "glitch-market", "server-overlook"]
+      "Exits": [
+        {
+          "Direction": "fiber-hall",
+          "DestinationSlug": "fiber-hall",
+          "Description": "A passage leading toward fiber-hall.",
+          "IsHidden": false,
+          "IsLocked": false,
+          "IsOpen": true,
+          "Aliases": [
+            "f"
+          ],
+          "Keywords": []
+        },
+        {
+          "Direction": "glitch-market",
+          "DestinationSlug": "glitch-market",
+          "Description": "A passage leading toward glitch-market.",
+          "IsHidden": false,
+          "IsLocked": false,
+          "IsOpen": true,
+          "Aliases": [
+            "g"
+          ],
+          "Keywords": []
+        },
+        {
+          "Direction": "server-overlook",
+          "DestinationSlug": "server-overlook",
+          "Description": "A passage leading toward server-overlook.",
+          "IsHidden": false,
+          "IsLocked": false,
+          "IsOpen": true,
+          "Aliases": [
+            "s"
+          ],
+          "Keywords": []
+        }
+      ]
     },
     {
       "Name": "server overlook",
@@ -70,7 +269,44 @@
       "EnterText": "You climb up to the server overlook.",
       "ExitText": "You descend from the server overlook.",
       "Slug": "server-overlook",
-      "ConnectedRooms": ["dark-world", "holo-garden", "debug-sanctum"]
+      "Exits": [
+        {
+          "Direction": "dark-world",
+          "DestinationSlug": "dark-world",
+          "Description": "A passage leading toward dark-world.",
+          "IsHidden": false,
+          "IsLocked": false,
+          "IsOpen": true,
+          "Aliases": [
+            "d"
+          ],
+          "Keywords": []
+        },
+        {
+          "Direction": "holo-garden",
+          "DestinationSlug": "holo-garden",
+          "Description": "A passage leading toward holo-garden.",
+          "IsHidden": false,
+          "IsLocked": false,
+          "IsOpen": true,
+          "Aliases": [
+            "h"
+          ],
+          "Keywords": []
+        },
+        {
+          "Direction": "debug-sanctum",
+          "DestinationSlug": "debug-sanctum",
+          "Description": "A passage leading toward debug-sanctum.",
+          "IsHidden": false,
+          "IsLocked": false,
+          "IsOpen": true,
+          "Aliases": [
+            "d"
+          ],
+          "Keywords": []
+        }
+      ]
     },
     {
       "Name": "debug sanctum",
@@ -79,7 +315,20 @@
       "EnterText": "You slip into the debug sanctum.",
       "ExitText": "You back away from the debug sanctum.",
       "Slug": "debug-sanctum",
-      "ConnectedRooms": ["server-overlook"]
+      "Exits": [
+        {
+          "Direction": "server-overlook",
+          "DestinationSlug": "server-overlook",
+          "Description": "A passage leading toward server-overlook.",
+          "IsHidden": false,
+          "IsLocked": false,
+          "IsOpen": true,
+          "Aliases": [
+            "s"
+          ],
+          "Keywords": []
+        }
+      ]
     }
   ],
   "Objects": [

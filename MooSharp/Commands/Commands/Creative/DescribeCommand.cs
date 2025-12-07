@@ -3,6 +3,7 @@ using MooSharp.Actors.Rooms;
 using MooSharp.Commands.Machinery;
 using MooSharp.Commands.Parsing;
 using MooSharp.Commands.Presentation;
+using MooSharp.Commands.Searching;
 
 namespace MooSharp.Commands.Commands.Creative;
 
@@ -72,7 +73,7 @@ public class DescribeCommandDefinition : ICommandDefinition
     public CommandCategory Category => CommandCategory.General;
 }
 
-public class DescribeHandler(World.World world) : IHandler<DescribeCommand>
+public class DescribeHandler(World.World world, TargetResolver resolver) : IHandler<DescribeCommand>
 {
     public async Task<CommandResult> Handle(DescribeCommand cmd, CancellationToken cancellationToken = default)
     {
@@ -120,12 +121,11 @@ public class DescribeHandler(World.World world) : IHandler<DescribeCommand>
             return currentRoom;
         }
 
-        if (!currentRoom.Exits.TryGetValue(target, out var exitRoomId))
-        {
-            return null;
-        }
+        var exitSearch = resolver.FindExit(currentRoom, target);
 
-        return world.Rooms.GetValueOrDefault(exitRoomId);
+        return exitSearch.Status == SearchStatus.Found
+            ? world.Rooms.GetValueOrDefault(exitSearch.Match!.Destination)
+            : null;
     }
 }
 

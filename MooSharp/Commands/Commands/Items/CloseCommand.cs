@@ -1,15 +1,15 @@
+using MooSharp.Actors;
 using MooSharp.Actors.Players;
 using MooSharp.Commands.Machinery;
 using MooSharp.Commands.Parsing;
 using MooSharp.Commands.Presentation;
-using Object = MooSharp.Actors.Objects.Object;
 
 namespace MooSharp.Commands.Commands.Items;
 
 public class CloseCommand : CommandBase<CloseCommand>
 {
     public required Player Player { get; init; }
-    public required Object Target { get; init; }
+    public required IOpenable Target { get; init; }
 }
 
 public class CloseCommandDefinition : ICommandDefinition
@@ -22,13 +22,16 @@ public class CloseCommandDefinition : ICommandDefinition
     {
         command = null;
 
-        var bind = binder.BindNearbyObject(ctx);
-        if (!bind.IsSuccess) return bind.ErrorMessage;
+        var bind = binder.BindOpenable(ctx);
+        if (!bind.IsSuccess)
+        {
+            return bind.ErrorMessage;
+        }
 
         command = new CloseCommand
         {
             Player = ctx.Player,
-            Target = bind.Value!
+            Target = bind.Value
         };
 
         return null;
@@ -42,7 +45,7 @@ public class CloseHandler : IHandler<CloseCommand>
         var result = new CommandResult();
         var target = cmd.Target;
 
-        if (!target.IsOpenable)
+        if (!target.CanBeOpened)
         {
             result.Add(cmd.Player, new SystemMessageEvent("You can't close that."));
             return Task.FromResult(result);
@@ -61,7 +64,7 @@ public class CloseHandler : IHandler<CloseCommand>
 }
 // Event/Formatter omitted for brevity (unchanged)
 
-public record ItemClosedEvent(Player Player, Object Object) : IGameEvent;
+public record ItemClosedEvent(Player Player, IOpenable Object) : IGameEvent;
 
 public class ItemClosedEventFormatter : IGameEventFormatter<ItemClosedEvent>
 {

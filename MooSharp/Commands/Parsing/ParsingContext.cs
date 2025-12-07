@@ -14,17 +14,20 @@ public class ParsingContext(Player player, Room room, Queue<string> tokens)
 
     // Helper to consume the next token
     public string? Pop() => Tokens.Count > 0 ? Tokens.Dequeue() : null;
-    
+
     // Check if we have more arguments
     public bool IsFinished => Tokens.Count == 0;
-    
+
     /// <summary>
     /// Consumes all remaining tokens and joins them into a single string.
     /// Used for chat messages (Say, Whisper, Emote).
     /// </summary>
     public string GetRemainingText()
     {
-        if (Tokens.Count == 0) return string.Empty;
+        if (Tokens.Count == 0)
+        {
+            return string.Empty;
+        }
 
         // string.Join automatically handles the spacing between tokens.
         // Since our Tokenizer preserved the words but stripped syntax, 

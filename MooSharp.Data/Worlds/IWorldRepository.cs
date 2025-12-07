@@ -8,7 +8,7 @@ public interface IWorldRepository
 
     Task SaveRoomAsync(RoomSnapshotDto room, CancellationToken cancellationToken = default);
 
-    Task SaveExitAsync(string fromRoomId, string toRoomId, string direction, CancellationToken cancellationToken = default);
+    Task SaveExitAsync(string fromRoomId, ExitSnapshotDto exit, CancellationToken cancellationToken = default);
 
     Task SaveRoomsAsync(IEnumerable<RoomSnapshotDto> rooms, CancellationToken cancellationToken = default);
 

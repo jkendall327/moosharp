@@ -144,8 +144,10 @@ public class RenameHandler(World.World world, TargetResolver resolver) : IHandle
             return currentRoom;
         }
 
-        return currentRoom.Exits.TryGetValue(target, out var exitRoomId)
-            ? world.Rooms.GetValueOrDefault(exitRoomId)
+        var exitSearch = resolver.FindExit(currentRoom, target);
+
+        return exitSearch.Status == SearchStatus.Found
+            ? world.Rooms.GetValueOrDefault(exitSearch.Match!.Destination)
             : null;
     }
 }

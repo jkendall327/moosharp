@@ -44,7 +44,7 @@ public class EmoteHandler(World.World world) : IHandler<EmoteCommand>
     public Task<CommandResult> Handle(EmoteCommand cmd, CancellationToken cancellationToken = default)
     {
         var result = new CommandResult();
-        
+
         var room = world.GetLocationOrThrow(cmd.Player);
 
         var gameEvent = new PlayerEmotedEvent(cmd.Player, cmd.Message);

@@ -25,7 +25,9 @@ public class GlobalChannelCommandDefinition : ICommandDefinition
         var message = ctx.GetRemainingText();
 
         if (string.IsNullOrWhiteSpace(message))
+        {
             return "Say what?";
+        }
 
         command = new ChannelCommand
         {
@@ -61,7 +63,9 @@ public class ChannelCommandDefinition : ICommandDefinition
         var message = ctx.GetRemainingText();
 
         if (string.IsNullOrWhiteSpace(message))
+        {
             return "Say what?";
+        }
 
         command = new ChannelCommand
         {
@@ -79,7 +83,7 @@ public class ChannelHandler(World.World world) : IHandler<ChannelCommand>
     public Task<CommandResult> Handle(ChannelCommand cmd, CancellationToken cancellationToken = default)
     {
         var result = new CommandResult();
-        
+
         // Data is already validated and normalized by Definition/Binder
         var gameEvent = new ChannelMessageEvent(cmd.Player, cmd.Channel, cmd.Message);
 

@@ -14,7 +14,7 @@ public class CommandHandlerTests
         // We exclude interfaces and abstract classes (like CommandBase<T>)
         var commandTypes = assembly
             .GetTypes()
-            .Where(t => t is {IsClass: true, IsAbstract: false} && typeof(ICommand).IsAssignableFrom(t))
+            .Where(t => t is { IsClass: true, IsAbstract: false } && typeof(ICommand).IsAssignableFrom(t))
             .ToList();
 
         // 3. Prepare a list to collect errors so we can report ALL failures at once
@@ -28,7 +28,7 @@ public class CommandHandlerTests
             // 5. Find classes in the assembly that implement this specific interface
             var handlers = assembly
                 .GetTypes()
-                .Where(t => t is {IsClass: true, IsAbstract: false} && expectedHandlerInterface.IsAssignableFrom(t))
+                .Where(t => t is { IsClass: true, IsAbstract: false } && expectedHandlerInterface.IsAssignableFrom(t))
                 .ToList();
 
             // 6. Assertions

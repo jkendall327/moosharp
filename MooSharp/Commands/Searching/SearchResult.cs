@@ -1,14 +1,16 @@
-using Object = MooSharp.Actors.Objects.Object;
-
 namespace MooSharp.Commands.Searching;
 
-public class SearchResult
+public class SearchResult : SearchResult<MooSharp.Actors.Objects.Object>
+{
+}
+
+public class SearchResult<T>
 {
     public SearchStatus Status { get; init; } = SearchStatus.Found;
 
-    public Object? Match { get; init; }
+    public T? Match { get; init; }
 
-    public List<Object> Candidates { get; init; } = [];
+    public List<T> Candidates { get; init; } = [];
 
     public bool IsSelf { get; init; }
 }

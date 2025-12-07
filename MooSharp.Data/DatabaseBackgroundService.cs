@@ -48,7 +48,7 @@ internal sealed class DatabaseBackgroundService(
                 await worldRepository.SaveRoomsAsync(saveRoomsRequest.Rooms, stoppingToken);
                 break;
             case SaveExitRequest saveExitRequest:
-                await worldRepository.SaveExitAsync(saveExitRequest.FromRoomId, saveExitRequest.ToRoomId, string.Empty, stoppingToken);
+                await worldRepository.SaveExitAsync(saveExitRequest.FromRoomId, saveExitRequest.Exit, stoppingToken);
                 break;
             case UpdateRoomDescriptionRequest updateRoomDescriptionRequest:
                 await worldRepository.UpdateRoomDescriptionAsync(

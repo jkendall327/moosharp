@@ -63,7 +63,7 @@ public class ChannelMuteHandler : IHandler<ChannelMuteCommand>
         var result = new CommandResult();
 
         // No need to validate ChatChannels.IsValid here anymore.
-        
+
         var changed = cmd.Mute
             ? cmd.Player.MuteChannel(cmd.Channel)
             : cmd.Player.UnmuteChannel(cmd.Channel);

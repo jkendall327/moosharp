@@ -23,9 +23,9 @@ internal sealed class QueuedWorldRepository(
         return EnqueueAsync(new SaveRoomRequest(room), cancellationToken);
     }
 
-    public Task SaveExitAsync(string fromRoomId, string toRoomId, string direction, CancellationToken cancellationToken = default)
+    public Task SaveExitAsync(string fromRoomId, ExitSnapshotDto exit, CancellationToken cancellationToken = default)
     {
-        return EnqueueAsync(new SaveExitRequest(fromRoomId, toRoomId), cancellationToken);
+        return EnqueueAsync(new SaveExitRequest(fromRoomId, exit), cancellationToken);
     }
 
     public Task SaveRoomsAsync(IEnumerable<RoomSnapshotDto> rooms, CancellationToken cancellationToken = default)

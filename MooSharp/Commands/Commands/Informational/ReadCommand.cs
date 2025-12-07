@@ -32,7 +32,7 @@ public class ReadCommandDefinition : ICommandDefinition
         command = new ReadCommand
         {
             Player = ctx.Player,
-            Target = bindResult.Value!
+            Target = bindResult.Value
         };
 
         return null;

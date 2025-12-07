@@ -9,7 +9,7 @@ public class WhisperCommand : CommandBase<WhisperCommand>
 {
     public required Player Player { get; init; }
     // Refactor: We now pass the bound Player object, not the string name
-    public required Player Recipient { get; init; } 
+    public required Player Recipient { get; init; }
     public required string Message { get; init; }
 }
 
@@ -53,7 +53,7 @@ public class WhisperHandler : IHandler<WhisperCommand>
     public Task<CommandResult> Handle(WhisperCommand cmd, CancellationToken cancellationToken = default)
     {
         var result = new CommandResult();
-        
+
         var whisperEvent = new WhisperEvent(cmd.Player, cmd.Recipient, cmd.Message);
 
         result.Add(cmd.Player, whisperEvent);

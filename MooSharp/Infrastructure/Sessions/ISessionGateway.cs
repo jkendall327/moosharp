@@ -36,7 +36,7 @@ public interface ISessionGateway
     /// If the user is Linkdead, this might buffer the message or drop it.
     /// </summary>
     Task DispatchToActorAsync(Guid actorId, string message, CancellationToken ct = default);
-    
+
     /// <summary>
     /// Sends a message to everyone currently connected (e.g. shutdown announcements).
     /// </summary>
