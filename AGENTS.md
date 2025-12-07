@@ -2,16 +2,11 @@
 
 MooSharp is a C# .NET 10 MUD/MOO game engine where human players and LLM-powered agents interact through text commands. The web host uses ASP.NET Core with SignalR for real-time communication and SQLite for persistence.
 
-Key directories:
-- `MooSharp/Commands/` - Command system (definitions, handlers, parsing)
-- `MooSharp/Actors/` - Domain entities (Player, Room, Object)
-- `MooSharp/World/` - World state, clock, initialization
-- `MooSharp/Agents/` - LLM agent integration
-- `MooSharp/Messaging/` - Events and result broadcasting
-- `MooSharp/Persistence/` - SQLite data layer
-- `MooSharp.Web/` - ASP.NET host, SignalR hub, DI registration
+Look in the `agent-docs` directory for more detailed explanations on the solution.
 
-Look in the `agent-docs` directory for more detailed explanations on how to add new commands, how the AI agent subsystem works, etc.
+- `agent-system`: how the AI agents operate in the game engine.
+- `creating-commands`: creating new game commands that players can use to interact with the world.
+- `web-engine-integration`: how the web layer (ASP.NET Core/SignalR) interacts with the transport-agnostic game engine.
 
 ## Coding Style
 
