@@ -23,7 +23,10 @@ public class DropCommandDefinition : ICommandDefinition
         command = null;
 
         var bind = binder.BindInventoryItem(ctx);
-        if (!bind.IsSuccess) return bind.ErrorMessage;
+        if (!bind.IsSuccess)
+        {
+            return bind.ErrorMessage;
+        }
 
         command = new DropCommand
         {

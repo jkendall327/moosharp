@@ -91,7 +91,7 @@ public class Room : IContainer
     {
         var state = exit.IsOpen ? "Open" : "Closed";
 
-        if (exit.IsLocked && !exit.IsOpen)
+        if (exit is {IsLocked: true, IsOpen: false})
         {
             state = "Locked";
         }

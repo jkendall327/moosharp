@@ -22,9 +22,18 @@ public class OpenCommandDefinition : ICommandDefinition
     {
         command = null;
         var bind = binder.BindOpenable(ctx);
-        if (!bind.IsSuccess) return bind.ErrorMessage;
 
-        command = new OpenCommand { Player = ctx.Player, Target = bind.Value! };
+        if (!bind.IsSuccess)
+        {
+            return bind.ErrorMessage;
+        }
+
+        command = new OpenCommand
+        {
+            Player = ctx.Player,
+            Target = bind.Value!
+        };
+
         return null;
     }
 }
@@ -39,23 +48,27 @@ public class OpenHandler : IHandler<OpenCommand>
         if (!target.CanBeOpened)
         {
             result.Add(cmd.Player, new SystemMessageEvent("You can't open that."));
+
             return Task.FromResult(result);
         }
 
-        if (target is ILockable lockable && lockable.IsLocked)
+        if (target is ILockable {IsLocked: true})
         {
             result.Add(cmd.Player, new SystemMessageEvent("It's locked."));
+
             return Task.FromResult(result);
         }
 
         if (target.IsOpen)
         {
             result.Add(cmd.Player, new SystemMessageEvent("It's already open."));
+
             return Task.FromResult(result);
         }
 
         target.IsOpen = true;
         result.Add(cmd.Player, new ItemOpenedEvent(cmd.Player, target));
+
         return Task.FromResult(result);
     }
 }

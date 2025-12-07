@@ -24,7 +24,10 @@ public class ParsingContext(Player player, Room room, Queue<string> tokens)
     /// </summary>
     public string GetRemainingText()
     {
-        if (Tokens.Count == 0) return string.Empty;
+        if (Tokens.Count == 0)
+        {
+            return string.Empty;
+        }
 
         // string.Join automatically handles the spacing between tokens.
         // Since our Tokenizer preserved the words but stripped syntax, 

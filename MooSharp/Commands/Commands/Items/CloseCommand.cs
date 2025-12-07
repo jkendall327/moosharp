@@ -23,7 +23,10 @@ public class CloseCommandDefinition : ICommandDefinition
         command = null;
 
         var bind = binder.BindOpenable(ctx);
-        if (!bind.IsSuccess) return bind.ErrorMessage;
+        if (!bind.IsSuccess)
+        {
+            return bind.ErrorMessage;
+        }
 
         command = new CloseCommand
         {

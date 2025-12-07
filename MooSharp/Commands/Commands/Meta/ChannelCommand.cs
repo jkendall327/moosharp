@@ -25,7 +25,9 @@ public class GlobalChannelCommandDefinition : ICommandDefinition
         var message = ctx.GetRemainingText();
 
         if (string.IsNullOrWhiteSpace(message))
+        {
             return "Say what?";
+        }
 
         command = new ChannelCommand
         {
@@ -61,7 +63,9 @@ public class ChannelCommandDefinition : ICommandDefinition
         var message = ctx.GetRemainingText();
 
         if (string.IsNullOrWhiteSpace(message))
+        {
             return "Say what?";
+        }
 
         command = new ChannelCommand
         {

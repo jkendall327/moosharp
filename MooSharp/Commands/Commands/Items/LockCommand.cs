@@ -23,7 +23,10 @@ public class LockCommandDefinition : ICommandDefinition
         command = null;
         var bind = binder.BindLockable(ctx);
 
-        if (!bind.IsSuccess) return bind.ErrorMessage;
+        if (!bind.IsSuccess)
+        {
+            return bind.ErrorMessage;
+        }
 
         command = new LockCommand
         {
@@ -52,7 +55,10 @@ public class UnlockCommandDefinition : ICommandDefinition
         command = null;
         var bind = binder.BindLockable(ctx);
 
-        if (!bind.IsSuccess) return bind.ErrorMessage;
+        if (!bind.IsSuccess)
+        {
+            return bind.ErrorMessage;
+        }
 
         command = new UnlockCommand
         {

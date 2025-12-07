@@ -158,7 +158,7 @@ public class ArgumentBinder(TargetResolver resolver, World.World world)
 
         var search = resolver.FindOpenable(ctx.Player, ctx.Room, token);
 
-        if (search.Status == SearchStatus.Found && search.Match is ILockable lockable)
+        if (search is {Status: SearchStatus.Found, Match: ILockable lockable})
         {
             return BindingResult<ILockable>.Success(lockable);
         }
