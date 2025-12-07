@@ -1,4 +1,6 @@
 using System.Threading.Channels;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using MooSharp.Messaging;
 using MooSharp.World;
 
