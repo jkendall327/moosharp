@@ -102,7 +102,7 @@ public class VerbScriptResolver : IVerbScriptResolver
 
         // Try exact match first
         var exactMatch = objects.FirstOrDefault(o =>
-            string.Equals(o.Name, targetText, StringComparison.OrdinalIgnoreCase));
+            string.Equals(o.Name, normalizedTarget, StringComparison.OrdinalIgnoreCase));
 
         if (exactMatch is not null)
         {
@@ -111,8 +111,8 @@ public class VerbScriptResolver : IVerbScriptResolver
 
         // Try partial match (object name contains target or vice versa)
         var partialMatch = objects.FirstOrDefault(o =>
-            o.Name.Contains(targetText, StringComparison.OrdinalIgnoreCase) ||
-            targetText.Contains(o.Name, StringComparison.OrdinalIgnoreCase));
+            o.Name.Contains(normalizedTarget, StringComparison.OrdinalIgnoreCase) ||
+            normalizedTarget.Contains(o.Name, StringComparison.OrdinalIgnoreCase));
 
         if (partialMatch is not null)
         {
@@ -121,7 +121,7 @@ public class VerbScriptResolver : IVerbScriptResolver
 
         // Try keyword match
         var keywordMatch = objects.FirstOrDefault(o =>
-            o.Keywords.Any(k => string.Equals(k, targetText, StringComparison.OrdinalIgnoreCase)));
+            o.Keywords.Any(k => string.Equals(k, normalizedTarget, StringComparison.OrdinalIgnoreCase)));
 
         return keywordMatch;
     }
