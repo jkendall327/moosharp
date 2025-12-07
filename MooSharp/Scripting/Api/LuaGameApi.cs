@@ -4,15 +4,9 @@ using MooSharp.Actors.Players;
 namespace MooSharp.Scripting.Api;
 
 [MoonSharpUserData]
-public class LuaGameApi
+public class LuaGameApi(ScriptExecutionContext context)
 {
-    private readonly ScriptExecutionContext _context;
     private readonly List<ScriptMessage> _messages = [];
-
-    public LuaGameApi(ScriptExecutionContext context)
-    {
-        _context = context;
-    }
 
     public void Tell(string playerName, string message)
     {
@@ -25,7 +19,7 @@ public class LuaGameApi
 
     public void TellRoom(string message)
     {
-        foreach (var player in _context.Location.PlayersInRoom)
+        foreach (var player in context.Location.PlayersInRoom)
         {
             _messages.Add(new(player, message));
         }
@@ -33,7 +27,7 @@ public class LuaGameApi
 
     public void TellRoomExcept(string message, string excludePlayerName)
     {
-        foreach (var player in _context.Location.PlayersInRoom)
+        foreach (var player in context.Location.PlayersInRoom)
         {
             if (!string.Equals(player.Username, excludePlayerName, StringComparison.OrdinalIgnoreCase))
             {
@@ -46,7 +40,7 @@ public class LuaGameApi
 
     private Player? FindPlayer(string name)
     {
-        return _context.Location.PlayersInRoom
+        return context.Location.PlayersInRoom
             .FirstOrDefault(p => string.Equals(p.Username, name, StringComparison.OrdinalIgnoreCase));
     }
 }

@@ -4,37 +4,30 @@ using MooSharp.Actors.Rooms;
 namespace MooSharp.Scripting.Api;
 
 [MoonSharpUserData]
-public class LuaRoomApi
+public class LuaRoomApi(Room room)
 {
-    private readonly Room _room;
-
-    public LuaRoomApi(Room room)
-    {
-        _room = room;
-    }
-
-    public string Name => _room.Name;
-    public string Description => _room.Description;
+    public string Name => room.Name;
+    public string Description => room.Description;
 
     public string[] GetPlayers()
     {
-        return _room.PlayersInRoom.Select(p => p.Username).ToArray();
+        return room.PlayersInRoom.Select(p => p.Username).ToArray();
     }
 
     public string[] GetObjects()
     {
-        return _room.Contents.Select(o => o.Name).ToArray();
+        return room.Contents.Select(o => o.Name).ToArray();
     }
 
     public bool HasObject(string objectName)
     {
-        return _room.Contents.Any(obj =>
+        return room.Contents.Any(obj =>
             string.Equals(obj.Name, objectName, StringComparison.OrdinalIgnoreCase));
     }
 
     public bool HasPlayer(string playerName)
     {
-        return _room.PlayersInRoom.Any(p =>
+        return room.PlayersInRoom.Any(p =>
             string.Equals(p.Username, playerName, StringComparison.OrdinalIgnoreCase));
     }
 

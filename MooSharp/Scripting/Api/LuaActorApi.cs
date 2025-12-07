@@ -4,26 +4,19 @@ using MooSharp.Actors.Players;
 namespace MooSharp.Scripting.Api;
 
 [MoonSharpUserData]
-public class LuaActorApi
+public class LuaActorApi(Player player)
 {
-    private readonly Player _player;
-
-    public LuaActorApi(Player player)
-    {
-        _player = player;
-    }
-
-    public string Name => _player.Username;
+    public string Name => player.Username;
 
     public bool HasItem(string itemName)
     {
-        return _player.Inventory.Any(obj =>
+        return player.Inventory.Any(obj =>
             string.Equals(obj.Name, itemName, StringComparison.OrdinalIgnoreCase));
     }
 
     public string[] GetInventory()
     {
-        return _player.Inventory.Select(obj => obj.Name).ToArray();
+        return player.Inventory.Select(obj => obj.Name).ToArray();
     }
 
     // Full manipulation methods - will be fully implemented in Phase 4

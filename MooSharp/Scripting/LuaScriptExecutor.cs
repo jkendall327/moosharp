@@ -5,10 +5,9 @@ using MooSharp.Scripting.Api;
 
 namespace MooSharp.Scripting;
 
-public class LuaScriptExecutor : IScriptExecutor
+public class LuaScriptExecutor(IOptions<LuaScriptOptions> options, ILogger<LuaScriptExecutor> logger) : IScriptExecutor
 {
-    private readonly LuaScriptOptions _options;
-    private readonly ILogger<LuaScriptExecutor> _logger;
+    private readonly LuaScriptOptions _options = options.Value;
 
     static LuaScriptExecutor()
     {
@@ -17,12 +16,6 @@ public class LuaScriptExecutor : IScriptExecutor
         UserData.RegisterType<LuaSelfApi>();
         UserData.RegisterType<LuaActorApi>();
         UserData.RegisterType<LuaRoomApi>();
-    }
-
-    public LuaScriptExecutor(IOptions<LuaScriptOptions> options, ILogger<LuaScriptExecutor> logger)
-    {
-        _options = options.Value;
-        _logger = logger;
     }
 
     public async Task<ScriptResult> ExecuteAsync(ScriptExecutionContext context, CancellationToken ct = default)
@@ -35,7 +28,7 @@ public class LuaScriptExecutor : IScriptExecutor
 
         RegisterApis(script, gameApi, selfApi, actorApi, roomApi, context);
 
-        script.Options.DebugPrint = s => _logger.LogDebug("Lua print: {Message}", s);
+        script.Options.DebugPrint = s => logger.LogDebug("Lua print: {Message}", s);
 
         try
         {
@@ -47,7 +40,7 @@ public class LuaScriptExecutor : IScriptExecutor
 
             await executeTask.WaitAsync(cts.Token);
 
-            _logger.LogDebug(
+            logger.LogDebug(
                 "Script '{Verb}' on '{Object}' completed successfully",
                 context.VerbName,
                 context.TargetObject.Name);
@@ -56,7 +49,7 @@ public class LuaScriptExecutor : IScriptExecutor
         }
         catch (OperationCanceledException)
         {
-            _logger.LogWarning(
+            logger.LogWarning(
                 "Script '{Verb}' on '{Object}' timed out after {Timeout}ms",
                 context.VerbName,
                 context.TargetObject.Name,
@@ -66,7 +59,7 @@ public class LuaScriptExecutor : IScriptExecutor
         }
         catch (ScriptRuntimeException ex)
         {
-            _logger.LogWarning(
+            logger.LogWarning(
                 ex,
                 "Script '{Verb}' on '{Object}' failed with runtime error",
                 context.VerbName,
@@ -76,7 +69,7 @@ public class LuaScriptExecutor : IScriptExecutor
         }
         catch (SyntaxErrorException ex)
         {
-            _logger.LogWarning(
+            logger.LogWarning(
                 ex,
                 "Script '{Verb}' on '{Object}' has syntax error",
                 context.VerbName,
@@ -86,7 +79,7 @@ public class LuaScriptExecutor : IScriptExecutor
         }
         catch (Exception ex)
         {
-            _logger.LogError(
+            logger.LogError(
                 ex,
                 "Script '{Verb}' on '{Object}' failed with unexpected error",
                 context.VerbName,

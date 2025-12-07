@@ -4,22 +4,15 @@ using Object = MooSharp.Actors.Objects.Object;
 namespace MooSharp.Scripting.Api;
 
 [MoonSharpUserData]
-public class LuaSelfApi
+public class LuaSelfApi(Object obj)
 {
-    private readonly Object _object;
-
-    public LuaSelfApi(Object obj)
-    {
-        _object = obj;
-    }
-
     // Read-only standard properties
-    public string Name => _object.Name;
-    public string Description => _object.Description;
-    public string Id => _object.Id.Value.ToString();
-    public bool IsOpen => _object.IsOpen;
-    public bool IsLocked => _object.IsLocked;
-    public bool IsContainer => _object.IsContainer;
+    public string Name => obj.Name;
+    public string Description => obj.Description;
+    public string Id => obj.Id.Value.ToString();
+    public bool IsOpen => obj.IsOpen;
+    public bool IsLocked => obj.IsLocked;
+    public bool IsContainer => obj.IsContainer;
 
     // Dynamic property access - will be implemented in Phase 2
     // For now, returns nil for any property
@@ -59,7 +52,7 @@ public class LuaSelfApi
 
     private DynValue GetDynamicProperty(string key)
     {
-        if (!_object.Properties.TryGetValue(key, out var value) || value is null)
+        if (!obj.Properties.TryGetValue(key, out var value) || value is null)
         {
             return DynValue.Nil;
         }
@@ -84,7 +77,7 @@ public class LuaSelfApi
             return;
         }
 
-        _object.Properties[key] = value.Type switch
+        obj.Properties[key] = value.Type switch
         {
             DataType.String => value.String,
             DataType.Number => value.Number,
