@@ -68,8 +68,6 @@ public static class DataServiceCollectionExtensions
         await context.Database.EnsureCreatedAsync(cancellationToken);
 
         // Enforce WAL Mode.
-        // We run this OUTSIDE the 'if (created)' block. 
-        // This ensures that even if the DB already exists, we force it to WAL mode.
         // This is very fast if it is already in WAL mode.
         await using var command = connection.CreateCommand();
         command.CommandText = "PRAGMA journal_mode=WAL;";
