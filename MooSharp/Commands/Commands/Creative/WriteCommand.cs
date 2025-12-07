@@ -1,9 +1,8 @@
 using MooSharp.Actors.Objects;
 using MooSharp.Actors.Players;
-using MooSharp.Commands.Commands.Informational;
 using MooSharp.Commands.Machinery;
+using MooSharp.Commands.Parsing;
 using MooSharp.Commands.Presentation;
-using MooSharp.Commands.Searching;
 using Object = MooSharp.Actors.Objects.Object;
 
 namespace MooSharp.Commands.Commands.Creative;
@@ -11,7 +10,7 @@ namespace MooSharp.Commands.Commands.Creative;
 public class WriteCommand : CommandBase<WriteCommand>
 {
     public required Player Player { get; init; }
-    public required string Target { get; init; }
+    public required Object Target { get; init; }
     public required string Text { get; init; }
 }
 
@@ -19,96 +18,65 @@ public class WriteCommandDefinition : ICommandDefinition
 {
     public IReadOnlyCollection<string> Verbs { get; } = ["write"];
     public CommandCategory Category => CommandCategory.General;
+    public string Description => "Write a message on an item. Usage: write [on] <item> <text>.";
 
-    public string Description => "Write a message on an item. Usage: write on <item> <text>.";
-
-    public ICommand Create(Player player, string args)
+    public string? TryCreateCommand(ParsingContext ctx, ArgumentBinder binder, out ICommand? command)
     {
-        var trimmedArgs = args.Trim();
+        command = null;
 
-        if (trimmedArgs.StartsWith("on ", StringComparison.OrdinalIgnoreCase))
+        // Optionally consume "on". e.g. "Write on board" vs "Write board"
+        binder.ConsumePreposition(ctx, "on");
+
+        var itemResult = binder.BindNearbyObject(ctx);
+        if (!itemResult.IsSuccess)
         {
-            trimmedArgs = trimmedArgs[3..];
+            return itemResult.ErrorMessage;
         }
 
-        var split = trimmedArgs.Split(' ', 2, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-
-        var target = split.ElementAtOrDefault(0) ?? string.Empty;
-        var text = split.ElementAtOrDefault(1) ?? string.Empty;
-
-        return new WriteCommand
+        var text = ctx.GetRemainingText();
+        if (string.IsNullOrWhiteSpace(text))
         {
-            Player = player,
-            Target = target,
+            return "Write what?";
+        }
+
+        command = new WriteCommand
+        {
+            Player = ctx.Player,
+            Target = itemResult.Value!,
             Text = text
         };
+
+        return null;
     }
 }
 
-public class WriteHandler(World.World world, TargetResolver resolver) : IHandler<WriteCommand>
+public class WriteHandler(World.World world) : IHandler<WriteCommand>
 {
     public Task<CommandResult> Handle(WriteCommand cmd, CancellationToken cancellationToken = default)
     {
         var result = new CommandResult();
+        var item = cmd.Target;
 
-        var target = cmd.Target.Trim();
-        var text = cmd.Text.Trim();
-
-        if (string.IsNullOrWhiteSpace(target))
+        // State Check: Is the object physically capable of being written on?
+        if (!item.Flags.HasFlag(ObjectFlags.Writeable))
         {
-            result.Add(cmd.Player, new SystemMessageEvent("Write on what?"));
-
+            result.Add(cmd.Player, new SystemMessageEvent("You can't write on that."));
             return Task.FromResult(result);
         }
 
-        if (string.IsNullOrWhiteSpace(text))
+        // Execute
+        item.WriteText(cmd.Text);
+
+        var writeEvent = new ObjectWrittenOnEvent(cmd.Player, item, cmd.Text);
+        result.Add(cmd.Player, writeEvent);
+
+        // Logic: If the item is in the room (public), show everyone. 
+        // If it's in the player's inventory (private), only show the player.
+        var currentRoom = world.GetLocationOrThrow(cmd.Player);
+        
+        if (item.Location is { } location && ReferenceEquals(location, currentRoom))
         {
-            result.Add(cmd.Player, new SystemMessageEvent("Write what?"));
-
-            return Task.FromResult(result);
-        }
-
-        var room = world.GetLocationOrThrow(cmd.Player);
-
-        var search = resolver.FindNearbyObject(cmd.Player, room, target);
-
-        switch (search.Status)
-        {
-            case SearchStatus.NotFound:
-                result.Add(cmd.Player, new ItemNotFoundEvent(target));
-
-                break;
-
-            case SearchStatus.IndexOutOfRange:
-                result.Add(cmd.Player, new SystemMessageEvent($"You can't see a '{target}' here."));
-
-                break;
-
-            case SearchStatus.Ambiguous:
-                result.Add(cmd.Player, new AmbiguousInputEvent(target, search.Candidates));
-
-                break;
-
-            case SearchStatus.Found:
-                var item = search.Match!;
-
-                if (!item.Flags.HasFlag(ObjectFlags.Writeable))
-                {
-                    result.Add(cmd.Player, new SystemMessageEvent("You can't write on that."));
-                    return Task.FromResult(result);
-                }
-
-                item.WriteText(text);
-
-                var writeEvent = new ObjectWrittenOnEvent(cmd.Player, item, text);
-                result.Add(cmd.Player, writeEvent);
-
-                if (item.Location is { } location && ReferenceEquals(location, room))
-                {
-                    result.BroadcastToAllButPlayer(room, cmd.Player, writeEvent);
-                }
-
-                break;
+            result.BroadcastToAllButPlayer(currentRoom, cmd.Player, writeEvent);
         }
 
         return Task.FromResult(result);
