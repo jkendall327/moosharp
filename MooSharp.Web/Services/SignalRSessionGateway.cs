@@ -41,7 +41,7 @@ public class SignalRSessionGateway(IGameEngine engine, ILogger<SignalRSessionGat
     {
         var linkdead = new Linkdead(actorId, null!);
 
-        var timer = new Timer(OnLinkdeadTimer, linkdead, TimeSpan.Zero, TimeSpan.Zero);
+        var timer = new Timer(OnLinkdeadTimer, linkdead, TimeSpan.Zero, TimeSpan.FromMinutes(1));
 
         linkdead = new(actorId, timer);
 
