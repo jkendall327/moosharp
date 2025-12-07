@@ -1,5 +1,6 @@
 using MooSharp.Actors.Players;
 using MooSharp.Commands.Machinery;
+using MooSharp.Commands.Parsing;
 using MooSharp.Commands.Presentation;
 
 namespace MooSharp.Commands.Commands.Social;
@@ -14,15 +15,28 @@ public class EmoteCommandDefinition : ICommandDefinition
 {
     public IReadOnlyCollection<string> Verbs { get; } = ["/me"];
     public CommandCategory Category => CommandCategory.Social;
-
     public string Description => "Emote an action to everyone in your current room. Usage: /me <action>.";
 
-    public ICommand Create(Player player, string args) =>
-        new EmoteCommand
+    public string? TryCreateCommand(ParsingContext ctx, ArgumentBinder binder, out ICommand? command)
+    {
+        command = null;
+
+        // "GetRemainingText" is a helper on ParsingContext that joins the remaining tokens
+        var message = ctx.GetRemainingText();
+
+        if (string.IsNullOrWhiteSpace(message))
         {
-            Player = player,
-            Message = args
+            return "Emote what?";
+        }
+
+        command = new EmoteCommand
+        {
+            Player = ctx.Player,
+            Message = message
         };
+
+        return null;
+    }
 }
 
 public class EmoteHandler(World.World world) : IHandler<EmoteCommand>
@@ -30,17 +44,10 @@ public class EmoteHandler(World.World world) : IHandler<EmoteCommand>
     public Task<CommandResult> Handle(EmoteCommand cmd, CancellationToken cancellationToken = default)
     {
         var result = new CommandResult();
-        var content = cmd.Message.Trim();
-
-        if (string.IsNullOrWhiteSpace(content))
-        {
-            result.Add(cmd.Player, new SystemMessageEvent("Emote what?"));
-            return Task.FromResult(result);
-        }
-
+        
         var room = world.GetLocationOrThrow(cmd.Player);
 
-        var gameEvent = new PlayerEmotedEvent(cmd.Player, content);
+        var gameEvent = new PlayerEmotedEvent(cmd.Player, cmd.Message);
 
         result.Broadcast(room.PlayersInRoom, gameEvent);
 

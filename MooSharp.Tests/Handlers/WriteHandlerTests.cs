@@ -27,12 +27,12 @@ public class WriteHandlerTests
 
         item.MoveTo(room);
 
-        var handler = new WriteHandler(world, new());
+        var handler = new WriteHandler(world);
 
         var result = await handler.Handle(new()
         {
             Player = writer,
-            Target = "Sign",
+            Target = item,
             Text = "welcome"
         });
 

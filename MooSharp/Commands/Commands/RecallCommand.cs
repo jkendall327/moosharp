@@ -1,5 +1,6 @@
 using MooSharp.Actors.Players;
 using MooSharp.Commands.Machinery;
+using MooSharp.Commands.Parsing;
 using MooSharp.Commands.Presentation;
 
 namespace MooSharp.Commands.Commands;
@@ -13,15 +14,19 @@ public class RecallCommandDefinition : ICommandDefinition
 {
     public IReadOnlyCollection<string> Verbs { get; } = ["recall", "home"];
 
+    public string? TryCreateCommand(ParsingContext ctx, ArgumentBinder binder, out ICommand? command)
+    {
+        command = new RecallCommand
+        {
+            Player = ctx.Player,
+        };
+        
+        return null;
+    }
+
     public CommandCategory Category => CommandCategory.General;
 
     public string Description => "Return to the Atrium. Usage: recall.";
-
-    public ICommand Create(Player player, string args)
-        => new RecallCommand
-        {
-            Player = player
-        };
 }
 
 public class RecallHandler(World.World world) : IHandler<RecallCommand>

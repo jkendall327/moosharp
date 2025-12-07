@@ -2,6 +2,7 @@ using MooSharp.Actors.Players;
 using MooSharp.Actors.Rooms;
 using MooSharp.Commands.Commands.Informational;
 using MooSharp.Commands.Machinery;
+using MooSharp.Commands.Parsing;
 using MooSharp.Commands.Presentation;
 using MooSharp.Commands.Searching;
 
@@ -17,21 +18,17 @@ public class RenameCommand : CommandBase<RenameCommand>
 public class RenameCommandDefinition : ICommandDefinition
 {
     public IReadOnlyCollection<string> Verbs { get; } = ["@rename"];
-    public CommandCategory Category => CommandCategory.General;
 
-    public string Description => "Rename a room or item you created. Usage: @rename <target> <new name>.";
-
-    public ICommand Create(Player player, string args)
+    public string? TryCreateCommand(ParsingContext ctx, ArgumentBinder binder, out ICommand? command)
     {
-        ArgumentNullException.ThrowIfNull(player);
-
+        var args = ctx.GetRemainingText();
         var trimmed = args.Trim();
 
         if (string.IsNullOrWhiteSpace(trimmed))
         {
-            return new RenameCommand
+            command = new RenameCommand
             {
-                Player = player,
+                Player = ctx.Player,
                 Target = string.Empty,
                 NewName = string.Empty
             };
@@ -39,13 +36,19 @@ public class RenameCommandDefinition : ICommandDefinition
 
         var parts = trimmed.Split(' ', 2, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
 
-        return new RenameCommand
+        command = new RenameCommand
         {
-            Player = player,
+            Player = ctx.Player,
             Target = parts.ElementAtOrDefault(0) ?? string.Empty,
             NewName = parts.ElementAtOrDefault(1) ?? string.Empty
         };
+
+        return null;
     }
+
+    public CommandCategory Category => CommandCategory.General;
+
+    public string Description => "Rename a room or item you created. Usage: @rename <target> <new name>.";
 }
 
 public class RenameHandler(World.World world, TargetResolver resolver) : IHandler<RenameCommand>
@@ -60,6 +63,7 @@ public class RenameHandler(World.World world, TargetResolver resolver) : IHandle
         if (string.IsNullOrWhiteSpace(target) || string.IsNullOrWhiteSpace(newName))
         {
             result.Add(cmd.Player, new SystemMessageEvent("Usage: @rename <target> <new name>."));
+
             return result;
         }
 
@@ -72,6 +76,7 @@ public class RenameHandler(World.World world, TargetResolver resolver) : IHandle
             if (!targetRoom.IsOwnedBy(cmd.Player))
             {
                 result.Add(cmd.Player, new SystemMessageEvent("You can only rename rooms you created."));
+
                 return result;
             }
 
@@ -95,12 +100,15 @@ public class RenameHandler(World.World world, TargetResolver resolver) : IHandle
         {
             case SearchStatus.NotFound:
                 result.Add(cmd.Player, new ItemNotFoundEvent(target));
+
                 break;
             case SearchStatus.IndexOutOfRange:
                 result.Add(cmd.Player, new SystemMessageEvent($"You can't see a '{target}' here."));
+
                 break;
             case SearchStatus.Ambiguous:
                 result.Add(cmd.Player, new AmbiguousInputEvent(target, search.Candidates));
+
                 break;
             case SearchStatus.Found:
                 var item = search.Match!;
@@ -108,6 +116,7 @@ public class RenameHandler(World.World world, TargetResolver resolver) : IHandle
                 if (!item.IsOwnedBy(cmd.Player))
                 {
                     result.Add(cmd.Player, new SystemMessageEvent("You can only rename items you created."));
+
                     break;
                 }
 
@@ -135,9 +144,10 @@ public class RenameHandler(World.World world, TargetResolver resolver) : IHandle
             return currentRoom;
         }
 
-        return currentRoom.Exits.TryGetValue(target, out var exitRoomId) ? world.Rooms.GetValueOrDefault(exitRoomId) : null;
+        return currentRoom.Exits.TryGetValue(target, out var exitRoomId)
+            ? world.Rooms.GetValueOrDefault(exitRoomId)
+            : null;
     }
-
 }
 
 public record RoomRenamedEvent(Player Player, string OldName, string NewName) : IGameEvent;

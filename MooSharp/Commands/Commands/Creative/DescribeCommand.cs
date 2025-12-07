@@ -1,6 +1,7 @@
 using MooSharp.Actors.Players;
 using MooSharp.Actors.Rooms;
 using MooSharp.Commands.Machinery;
+using MooSharp.Commands.Parsing;
 using MooSharp.Commands.Presentation;
 
 namespace MooSharp.Commands.Commands.Creative;
@@ -19,51 +20,56 @@ public class DescribeCommandDefinition : ICommandDefinition
     public string Description =>
         "Update a room description. Usage: @describe here <description> or @describe <exit> <description>.";
 
-    public CommandCategory Category => CommandCategory.General;
-
-    public ICommand Create(Player player, string args)
+    public string? TryCreateCommand(ParsingContext ctx, ArgumentBinder binder, out ICommand? command)
     {
-        ArgumentNullException.ThrowIfNull(player);
-
+        var args = ctx.GetRemainingText();
         var trimmed = args.Trim();
 
         if (string.IsNullOrWhiteSpace(trimmed))
         {
-            return new DescribeCommand
+            command = new DescribeCommand
             {
-                Player = player,
+                Player = ctx.Player,
                 Target = string.Empty,
                 Description = string.Empty
             };
+
+            return null;
         }
 
         var firstSpace = trimmed.IndexOf(' ');
 
         if (firstSpace < 0)
         {
-            return new DescribeCommand
+            command = new DescribeCommand
             {
-                Player = player,
+                Player = ctx.Player,
                 Target = trimmed,
                 Description = string.Empty
             };
         }
 
         var target = trimmed[..firstSpace];
-        var description = trimmed[(firstSpace + 1)..].Trim();
+
+        var description = trimmed[(firstSpace + 1)..]
+            .Trim();
 
         if (description.StartsWith('"') && description.EndsWith('"') && description.Length > 1)
         {
             description = description[1..^1];
         }
 
-        return new DescribeCommand
+        command = new DescribeCommand
         {
-            Player = player,
+            Player = ctx.Player,
             Target = target,
             Description = description
         };
+
+        return null;
     }
+
+    public CommandCategory Category => CommandCategory.General;
 }
 
 public class DescribeHandler(World.World world) : IHandler<DescribeCommand>
@@ -76,7 +82,9 @@ public class DescribeHandler(World.World world) : IHandler<DescribeCommand>
 
         if (string.IsNullOrWhiteSpace(cmd.Target) || string.IsNullOrWhiteSpace(cmd.Description))
         {
-            result.Add(player, new SystemMessageEvent("Usage: @describe here <description> or @describe <exit> <description>."));
+            result.Add(player,
+                new SystemMessageEvent("Usage: @describe here <description> or @describe <exit> <description>."));
+
             return result;
         }
 
@@ -87,12 +95,14 @@ public class DescribeHandler(World.World world) : IHandler<DescribeCommand>
         if (targetRoom is null)
         {
             result.Add(player, new ExitNotFoundEvent(cmd.Target));
+
             return result;
         }
 
         if (!targetRoom.IsOwnedBy(player))
         {
             result.Add(player, new SystemMessageEvent("You can only describe rooms you created."));
+
             return result;
         }
 
@@ -117,7 +127,6 @@ public class DescribeHandler(World.World world) : IHandler<DescribeCommand>
 
         return world.Rooms.GetValueOrDefault(exitRoomId);
     }
-
 }
 
 public record RoomDescriptionUpdatedEvent(Room Room) : IGameEvent;

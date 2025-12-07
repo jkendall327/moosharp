@@ -2,6 +2,7 @@ using MooSharp.Actors.Players;
 using MooSharp.Actors.Rooms;
 using MooSharp.Commands.Commands.Informational;
 using MooSharp.Commands.Machinery;
+using MooSharp.Commands.Parsing;
 using MooSharp.Commands.Presentation;
 using MooSharp.Commands.Searching;
 using Object = MooSharp.Actors.Objects.Object;
@@ -23,14 +24,18 @@ public class TakeCommandDefinition : ICommandDefinition
 
     public string Description => "Pick up an item from the room. Usage: take <item>.";
 
-    public CommandCategory Category => CommandCategory.General;
-
-    public ICommand Create(Player player, string args) =>
-        new TakeCommand
+    public string? TryCreateCommand(ParsingContext ctx, ArgumentBinder binder, out ICommand? command)
+    {
+        command = new TakeCommand
         {
-            Player = player,
-            Target = args
+            Player = ctx.Player,
+            Target = ctx.GetRemainingText()
         };
+
+        return null;
+    }
+
+    public CommandCategory Category => CommandCategory.General;
 }
 
 public class TakeHandler(World.World world, TargetResolver resolver) : IHandler<TakeCommand>

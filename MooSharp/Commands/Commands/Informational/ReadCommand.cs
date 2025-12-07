@@ -1,7 +1,7 @@
 using MooSharp.Actors.Players;
 using MooSharp.Commands.Machinery;
+using MooSharp.Commands.Parsing;
 using MooSharp.Commands.Presentation;
-using MooSharp.Commands.Searching;
 using Object = MooSharp.Actors.Objects.Object;
 
 namespace MooSharp.Commands.Commands.Informational;
@@ -9,65 +9,50 @@ namespace MooSharp.Commands.Commands.Informational;
 public class ReadCommand : CommandBase<ReadCommand>
 {
     public required Player Player { get; init; }
-    public required string Target { get; init; }
+    // Refactor: Holds the actual object now
+    public required Object Target { get; init; }
 }
 
 public class ReadCommandDefinition : ICommandDefinition
 {
     public IReadOnlyCollection<string> Verbs { get; } = ["read"];
-
-    public string Description => "Read writing on an item. Usage: read <item>.";
     public CommandCategory Category => CommandCategory.General;
+    public string Description => "Read writing on an item. Usage: read <item>.";
 
-    public ICommand Create(Player player, string args) => new ReadCommand
+    public string? TryCreateCommand(ParsingContext ctx, ArgumentBinder binder, out ICommand? command)
     {
-        Player = player,
-        Target = args
-    };
-}
+        command = null;
 
-public class ReadHandler(World.World world, TargetResolver resolver) : IHandler<ReadCommand>
-{
-    public Task<CommandResult> Handle(ReadCommand cmd, CancellationToken cancellationToken = default)
-    {
-        var result = new CommandResult();
-        var target = cmd.Target.Trim();
-
-        if (string.IsNullOrWhiteSpace(target))
+        var bindResult = binder.BindNearbyObject(ctx);
+        if (!bindResult.IsSuccess)
         {
-            result.Add(cmd.Player, new SystemMessageEvent("Read what?"));
-            return Task.FromResult(result);
+            return bindResult.ErrorMessage;
         }
 
-        var room = world.GetLocationOrThrow(cmd.Player);
-
-        var search = resolver.FindNearbyObject(cmd.Player, room, target);
-
-        switch (search.Status)
+        command = new ReadCommand
         {
-            case SearchStatus.NotFound:
-                result.Add(cmd.Player, new ItemNotFoundEvent(target));
-                break;
+            Player = ctx.Player,
+            Target = bindResult.Value!
+        };
 
-            case SearchStatus.IndexOutOfRange:
-                result.Add(cmd.Player, new SystemMessageEvent($"You can't see a '{target}' here."));
-                break;
+        return null;
+    }
+}
 
-            case SearchStatus.Ambiguous:
-                result.Add(cmd.Player, new AmbiguousInputEvent(target, search.Candidates));
-                break;
+public class ReadHandler : IHandler<ReadCommand>
+{
+    public Task<CommandResult> Handle(ReadCommand cmd, CancellationToken ct = default)
+    {
+        var result = new CommandResult();
+        var item = cmd.Target;
 
-            case SearchStatus.Found:
-                var item = search.Match!;
-
-                if (string.IsNullOrWhiteSpace(item.TextContent))
-                {
-                    result.Add(cmd.Player, new SystemMessageEvent($"There is nothing written on the {item.Name}."));
-                    break;
-                }
-
-                result.Add(cmd.Player, new ObjectReadEvent(item, item.TextContent));
-                break;
+        if (string.IsNullOrWhiteSpace(item.TextContent))
+        {
+            result.Add(cmd.Player, new SystemMessageEvent($"There is nothing written on the {item.Name}."));
+        }
+        else
+        {
+            result.Add(cmd.Player, new ObjectReadEvent(item, item.TextContent));
         }
 
         return Task.FromResult(result);
@@ -78,8 +63,6 @@ public record ObjectReadEvent(Object Item, string Content) : IGameEvent;
 
 public class ObjectReadEventFormatter : IGameEventFormatter<ObjectReadEvent>
 {
-    public string FormatForActor(ObjectReadEvent gameEvent)
-        => $"It reads: \"{gameEvent.Content}\"";
-
+    public string FormatForActor(ObjectReadEvent gameEvent) => $"It reads: \"{gameEvent.Content}\"";
     public string? FormatForObserver(ObjectReadEvent gameEvent) => null;
 }

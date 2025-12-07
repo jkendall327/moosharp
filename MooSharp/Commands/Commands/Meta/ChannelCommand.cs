@@ -1,5 +1,6 @@
 using MooSharp.Actors.Players;
 using MooSharp.Commands.Machinery;
+using MooSharp.Commands.Parsing;
 using MooSharp.Commands.Presentation;
 using MooSharp.Features.Chats;
 
@@ -14,70 +15,62 @@ public class ChannelCommand : CommandBase<ChannelCommand>
 
 public class GlobalChannelCommandDefinition : ICommandDefinition
 {
-    public IReadOnlyCollection<string> Verbs { get; } = ["/global", "/shout"];
+    public IReadOnlyCollection<string> Verbs { get; } = ["/global", "/shout", "/g"];
     public CommandCategory Category => CommandCategory.Meta;
-
     public string Description => "Send a message to the global channel. Usage: /g <message>.";
 
-    public ICommand Create(Player player, string args)
-        => new ChannelCommand
+    public string? TryCreateCommand(ParsingContext ctx, ArgumentBinder binder, out ICommand? command)
+    {
+        command = null;
+        var message = ctx.GetRemainingText();
+
+        if (string.IsNullOrWhiteSpace(message))
+            return "Say what?";
+
+        command = new ChannelCommand
         {
-            Player = player,
+            Player = ctx.Player,
             Channel = ChatChannels.Global,
-            Message = args
+            Message = message
         };
+
+        return null;
+    }
 }
 
 public class ChannelCommandDefinition : ICommandDefinition
 {
     public IReadOnlyCollection<string> Verbs { get; } = ["channel", "ch", "/channel", "/ch"];
     public CommandCategory Category => CommandCategory.Meta;
+    public string Description => "Send a message to a chat channel. Usage: channel <channel> <message> (defaults to global).";
 
-    public string Description =>
-        "Send a message to a chat channel. Usage: channel <channel> <message> (defaults to global).";
-
-    public ICommand Create(Player player, string args)
+    public string? TryCreateCommand(ParsingContext ctx, ArgumentBinder binder, out ICommand? command)
     {
-        var trimmed = args.Trim();
+        command = null;
 
-        if (string.IsNullOrWhiteSpace(trimmed))
+        // Logic: Peek at the first word. If it is a known channel, consume it.
+        // Otherwise, assume the user is typing a message to Global.
+        var channel = ChatChannels.Global;
+        var nextToken = ctx.Peek();
+
+        if (nextToken != null && ChatChannels.IsValid(nextToken))
         {
-            return new ChannelCommand
-            {
-                Player = player,
-                Channel = ChatChannels.Global,
-                Message = string.Empty
-            };
+            channel = ChatChannels.Normalize(ctx.Pop()!);
         }
 
-        var split = trimmed.Split(' ', 2, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        var message = ctx.GetRemainingText();
 
-        if (split.Length == 1)
+        if (string.IsNullOrWhiteSpace(message))
+            return "Say what?";
+
+        command = new ChannelCommand
         {
-            return new ChannelCommand
-            {
-                Player = player,
-                Channel = ChatChannels.Global,
-                Message = trimmed
-            };
-        }
-
-        var potentialChannel = split[0];
-
-        var channel = ChatChannels.IsValid(potentialChannel)
-            ? potentialChannel
-            : ChatChannels.Global;
-
-        var message = channel == ChatChannels.Global
-            ? trimmed
-            : split[1];
-
-        return new ChannelCommand
-        {
-            Player = player,
+            Player = ctx.Player,
             Channel = channel,
             Message = message
         };
+
+        return null;
     }
 }
 
@@ -86,31 +79,15 @@ public class ChannelHandler(World.World world) : IHandler<ChannelCommand>
     public Task<CommandResult> Handle(ChannelCommand cmd, CancellationToken cancellationToken = default)
     {
         var result = new CommandResult();
-
-        var content = cmd.Message.Trim();
-        var channel = ChatChannels.Normalize(cmd.Channel);
-
-        if (string.IsNullOrWhiteSpace(content))
-        {
-            result.Add(cmd.Player, new SystemMessageEvent("Say what?"));
-
-            return Task.FromResult(result);
-        }
-
-        if (!ChatChannels.IsValid(channel))
-        {
-            result.Add(cmd.Player, new SystemMessageEvent("That channel does not exist."));
-
-            return Task.FromResult(result);
-        }
-
-        var gameEvent = new ChannelMessageEvent(cmd.Player, channel, content);
+        
+        // Data is already validated and normalized by Definition/Binder
+        var gameEvent = new ChannelMessageEvent(cmd.Player, cmd.Channel, cmd.Message);
 
         result.Add(cmd.Player, gameEvent);
 
         var otherPlayers = world.GetActivePlayers()
             .Where(p => p != cmd.Player)
-            .Where(p => !p.IsChannelMuted(channel));
+            .Where(p => !p.IsChannelMuted(cmd.Channel));
 
         result.Broadcast(otherPlayers, gameEvent);
 
@@ -122,11 +99,8 @@ public record ChannelMessageEvent(Player Sender, string Channel, string Message)
 
 public class ChannelMessageEventFormatter : IGameEventFormatter<ChannelMessageEvent>
 {
-    public string FormatForActor(ChannelMessageEvent gameEvent) =>
-        Format(gameEvent);
-
-    public string FormatForObserver(ChannelMessageEvent gameEvent) =>
-        Format(gameEvent);
+    public string FormatForActor(ChannelMessageEvent gameEvent) => Format(gameEvent);
+    public string FormatForObserver(ChannelMessageEvent gameEvent) => Format(gameEvent);
 
     private static string Format(ChannelMessageEvent gameEvent)
         => $"[{gameEvent.Channel}] {gameEvent.Sender.Username}: \"{gameEvent.Message}\"";

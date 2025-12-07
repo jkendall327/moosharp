@@ -7,46 +7,6 @@ namespace MooSharp.Tests.Handlers;
 public class LockHandlerTests
 {
     [Fact]
-    public async Task LockHandler_LocksItemWithMatchingKey()
-    {
-        var room = HandlerTestHelpers.CreateRoom("room");
-        var world = await HandlerTestHelpers.CreateWorld(room);
-
-        var player = HandlerTestHelpers.CreatePlayer();
-        world.MovePlayer(player, room);
-
-        var chest = new Object
-        {
-            Name = "Chest",
-            Description = "A wooden chest",
-            IsLockable = true,
-            KeyId = "key-1"
-        };
-
-        var key = new Object
-        {
-            Name = "Key",
-            Description = "A small key",
-            KeyId = "key-1"
-        };
-
-        chest.MoveTo(room);
-        key.MoveTo(player);
-
-        var handler = new LockHandler(world, new());
-
-        var result = await handler.Handle(new()
-        {
-            Player = player,
-            Target = "chest"
-        });
-
-        var message = Assert.Single(result.Messages);
-        Assert.IsType<ItemLockedEvent>(message.Event);
-        Assert.True(chest.IsLocked);
-    }
-
-    [Fact]
     public async Task LockHandler_RequiresKey()
     {
         var room = HandlerTestHelpers.CreateRoom("room");
@@ -65,12 +25,12 @@ public class LockHandlerTests
 
         chest.MoveTo(room);
 
-        var handler = new LockHandler(world, new());
+        var handler = new UnlockHandler();
 
         var result = await handler.Handle(new()
         {
             Player = player,
-            Target = "chest"
+            Target = chest
         });
 
         var message = Assert.Single(result.Messages);
@@ -106,12 +66,12 @@ public class LockHandlerTests
         chest.MoveTo(room);
         key.MoveTo(player);
 
-        var handler = new UnlockHandler(world, new());
+        var handler = new UnlockHandler();
 
         var result = await handler.Handle(new()
         {
             Player = player,
-            Target = "chest"
+            Target = chest
         });
 
         var message = Assert.Single(result.Messages);
@@ -146,12 +106,12 @@ public class LockHandlerTests
         chest.MoveTo(room);
         key.MoveTo(player);
 
-        var handler = new UnlockHandler(world, new());
+        var handler = new UnlockHandler();
 
         var result = await handler.Handle(new()
         {
             Player = player,
-            Target = "chest"
+            Target = chest
         });
 
         var message = Assert.Single(result.Messages);

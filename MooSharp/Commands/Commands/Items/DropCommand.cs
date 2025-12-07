@@ -1,8 +1,7 @@
 using MooSharp.Actors.Players;
-using MooSharp.Commands.Commands.Informational;
 using MooSharp.Commands.Machinery;
+using MooSharp.Commands.Parsing;
 using MooSharp.Commands.Presentation;
-using MooSharp.Commands.Searching;
 using Object = MooSharp.Actors.Objects.Object;
 
 namespace MooSharp.Commands.Commands.Items;
@@ -10,69 +9,49 @@ namespace MooSharp.Commands.Commands.Items;
 public class DropCommand : CommandBase<DropCommand>
 {
     public required Player Player { get; init; }
-    public required string Target { get; init; }
+    public required Object Target { get; init; }
 }
 
 public class DropCommandDefinition : ICommandDefinition
 {
     public IReadOnlyCollection<string> Verbs { get; } = ["drop"];
     public CommandCategory Category => CommandCategory.General;
-
     public string Description => "Drop an item from your inventory. Usage: drop <item>.";
 
-    public ICommand Create(Player player, string args) =>
-        new DropCommand
+    public string? TryCreateCommand(ParsingContext ctx, ArgumentBinder binder, out ICommand? command)
+    {
+        command = null;
+
+        var bind = binder.BindInventoryItem(ctx);
+        if (!bind.IsSuccess) return bind.ErrorMessage;
+
+        command = new DropCommand
         {
-            Player = player,
-            Target = args
+            Player = ctx.Player,
+            Target = bind.Value!
         };
+
+        return null;
+    }
 }
 
-public class DropHandler(World.World world, TargetResolver resolver) : IHandler<DropCommand>
+public class DropHandler(World.World world) : IHandler<DropCommand>
 {
-    public Task<CommandResult> Handle(DropCommand cmd, CancellationToken cancellationToken = default)
+    public Task<CommandResult> Handle(DropCommand cmd, CancellationToken ct = default)
     {
         var result = new CommandResult();
-        var player = cmd.Player;
-        var target = cmd.Target.Trim();
+        var room = world.GetLocationOrThrow(cmd.Player);
+        
+        cmd.Target.MoveTo(room);
 
-        if (string.IsNullOrWhiteSpace(target))
-        {
-            result.Add(player, new SystemMessageEvent("Drop what?"));
-            return Task.FromResult(result);
-        }
-
-        var room = world.GetLocationOrThrow(player);
-
-        var search = resolver.FindObjects(player.Inventory, target);
-
-        switch (search.Status)
-        {
-            case SearchStatus.NotFound:
-                result.Add(player, new ItemNotCarriedEvent(target));
-                break;
-
-            case SearchStatus.IndexOutOfRange:
-                result.Add(player, new SystemMessageEvent($"You don't have a '{target}'."));
-                break;
-
-            case SearchStatus.Ambiguous:
-                result.Add(player, new AmbiguousInputEvent(target, search.Candidates));
-                break;
-
-            case SearchStatus.Found:
-                var item = search.Match!;
-                item.MoveTo(room);
-
-                var dropEvent = new ItemDroppedEvent(item, player);
-                result.Add(player, dropEvent);
-                result.Broadcast(room.PlayersInRoom, dropEvent, MessageAudience.Observer, player);
-                break;
-        }
+        var dropEvent = new ItemDroppedEvent(cmd.Target, cmd.Player);
+        result.Add(cmd.Player, dropEvent);
+        result.Broadcast(room.PlayersInRoom, dropEvent, MessageAudience.Observer, cmd.Player);
 
         return Task.FromResult(result);
     }
 }
+// Events/Formatters omitted
 
 public record ItemNotCarriedEvent(string ItemName) : IGameEvent;
 

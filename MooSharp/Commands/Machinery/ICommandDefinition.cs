@@ -1,4 +1,4 @@
-using MooSharp.Actors.Players;
+using MooSharp.Commands.Parsing;
 
 namespace MooSharp.Commands.Machinery;
 
@@ -16,12 +16,9 @@ public interface ICommandDefinition
     /// Short description of what the command does, for help text.
     /// </summary>
     string Description { get; }
-
-    /// <summary>
-    /// Parses raw text into the command.
-    /// </summary>
-    ICommand Create(Player player, string args);
-
+    
+    string? TryCreateCommand(ParsingContext ctx, ArgumentBinder binder, out ICommand? command);
+    
     CommandCategory Category { get; }
 }
 

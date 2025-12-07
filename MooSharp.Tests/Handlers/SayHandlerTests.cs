@@ -32,26 +32,4 @@ public class SayHandlerTests
         Assert.Equal(MessageAudience.Observer, observerMessage.Audience);
         Assert.IsType<PlayerSaidEvent>(observerMessage.Event);
     }
-
-    [Fact]
-    public async Task SayHandler_ReturnsSystemMessageForEmptyContent()
-    {
-        var room = HandlerTestHelpers.CreateRoom("room");
-        var world = await HandlerTestHelpers.CreateWorld(room);
-
-        var speaker = HandlerTestHelpers.CreatePlayer();
-        world.MovePlayer(speaker, room);
-
-        var handler = new SayHandler(world);
-
-        var result = await handler.Handle(new()
-        {
-            Player = speaker,
-            Message = "   "
-        });
-
-        var message = Assert.Single(result.Messages);
-        var evt = Assert.IsType<SystemMessageEvent>(message.Event);
-        Assert.False(string.IsNullOrWhiteSpace(evt.Message));
-    }
 }

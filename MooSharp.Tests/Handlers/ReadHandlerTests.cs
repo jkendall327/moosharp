@@ -26,12 +26,12 @@ public class ReadHandlerTests
 
         item.MoveTo(room);
 
-        var handler = new ReadHandler(world, new());
+        var handler = new ReadHandler();
 
         var result = await handler.Handle(new()
         {
             Player = player,
-            Target = "Note"
+            Target = item
         });
 
         var message = Assert.Single(result.Messages);
@@ -56,12 +56,12 @@ public class ReadHandlerTests
 
         item.MoveTo(room);
 
-        var handler = new ReadHandler(world, new());
+        var handler = new ReadHandler();
 
         var result = await handler.Handle(new()
         {
             Player = player,
-            Target = "Note"
+            Target = item
         });
 
         var message = Assert.Single(result.Messages);
