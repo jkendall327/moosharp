@@ -1,11 +1,56 @@
 using MooSharp.Actors.Players;
 using MooSharp.Actors.Rooms;
+using MooSharp.Commands.Commands.Scripting;
 using Object = MooSharp.Actors.Objects.Object;
 
 namespace MooSharp.Scripting;
 
 public class VerbScriptResolver : IVerbScriptResolver
 {
+    public ScriptCommand? TryResolveCommand(Player player, Room room, string input)
+    {
+        // Parse the input: first word is verb, rest is target
+        var parts = input.Trim().Split(' ', 2, StringSplitOptions.RemoveEmptyEntries);
+        if (parts.Length == 0)
+        {
+            return null;
+        }
+
+        var verb = parts[0];
+        var targetText = parts.Length > 1 ? parts[1] : string.Empty;
+
+        var resolution = Resolve(player, room, verb, targetText);
+
+        if (!resolution.Found || resolution.TargetObject is null || resolution.Script is null)
+        {
+            return null;
+        }
+
+        // Parse remaining arguments after the target
+        var arguments = Array.Empty<string>();
+        if (parts.Length > 1)
+        {
+            var argsStart = parts[1].IndexOf(resolution.TargetObject.Name, StringComparison.OrdinalIgnoreCase);
+            if (argsStart >= 0)
+            {
+                var afterTarget = parts[1][(argsStart + resolution.TargetObject.Name.Length)..].Trim();
+                if (!string.IsNullOrEmpty(afterTarget))
+                {
+                    arguments = afterTarget.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+                }
+            }
+        }
+
+        return new ScriptCommand
+        {
+            Player = player,
+            TargetObject = resolution.TargetObject,
+            Script = resolution.Script,
+            VerbName = verb,
+            Arguments = arguments
+        };
+    }
+
     public VerbResolutionResult Resolve(Player player, Room room, string verb, string targetText)
     {
         // If there's no target text, we can't find an object

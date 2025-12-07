@@ -1,9 +1,11 @@
 using Microsoft.Extensions.Logging;
 using MooSharp.Actors.Players;
+using MooSharp.Commands.Commands.Scripting;
 using MooSharp.Commands.Machinery;
 using MooSharp.Commands.Parsing;
 using MooSharp.Commands.Presentation;
 using MooSharp.Infrastructure.Messaging;
+using MooSharp.Scripting;
 
 namespace MooSharp.Game;
 
@@ -12,6 +14,7 @@ public class GameInputProcessor(
     CommandParser parser,
     CommandExecutor executor,
     IGameMessageEmitter emitter,
+    IVerbScriptResolver verbScriptResolver,
     ILogger<GameInputProcessor> logger)
 {
     public async Task ProcessInputAsync(InputCommand inputCommand, CancellationToken ct = default)
@@ -62,9 +65,29 @@ public class GameInputProcessor(
                 break;
 
             case ParseStatus.NotFound:
-                // The user typed gibberish or a command that doesn't exist
-                var notFoundMsg = new GameMessage(player, new SystemMessageEvent("I don't understand that command."));
-                _ = emitter.SendGameMessagesAsync([notFoundMsg], ct);
+                // Try to find a script-based verb before giving up
+                var room = world.GetLocationOrThrow(player);
+                var scriptCommand = verbScriptResolver.TryResolveCommand(player, room, command);
+                if (scriptCommand is not null)
+                {
+                    try
+                    {
+                        var scriptResult = await executor.Handle(scriptCommand, ct);
+                        _ = emitter.SendGameMessagesAsync(scriptResult.Messages, ct);
+                    }
+                    catch (Exception ex)
+                    {
+                        logger.LogError(ex, "Error executing script command for {Command}", command);
+                        var scriptError = new GameMessage(player, new SystemMessageEvent("An error occurred while running the script."));
+                        _ = emitter.SendGameMessagesAsync([scriptError], ct);
+                    }
+                }
+                else
+                {
+                    // The user typed gibberish or a command that doesn't exist
+                    var notFoundMsg = new GameMessage(player, new SystemMessageEvent("I don't understand that command."));
+                    _ = emitter.SendGameMessagesAsync([notFoundMsg], ct);
+                }
 
                 break;
         }
