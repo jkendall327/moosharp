@@ -1,7 +1,12 @@
+using MooSharp.Actors;
+
 namespace MooSharp.Game;
 
 public interface IGameEngine
 {
+    event Action<Player> OnPlayerSpawned;
+    event Action<Player> OnPlayerDespawned;
+
     /// <summary>
     /// The main entry point for gameplay. 
     /// Called by the SignalR Hub or Agent Loop when text arrives.

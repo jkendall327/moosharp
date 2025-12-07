@@ -95,6 +95,7 @@ public static class ServiceCollectionExtensions
             services.AddHostedService<AgentBackgroundService>();
             services.AddHostedService<WorldClockService>();
             services.AddHostedService<TreasureSpawnerService>();
+            services.AddHostedService<PlayerLoginService>();
         }
 
         public void AddMooSharpOptions()
