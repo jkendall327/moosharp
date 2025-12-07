@@ -63,7 +63,9 @@ internal class EfPlayerStore(IDbContextFactory<MooSharpDbContext> contextFactory
                 TextContent = i.TextContent,
                 Flags = i.Flags,
                 KeyId = i.KeyId,
-                CreatorUsername = i.CreatorUsername
+                CreatorUsername = i.CreatorUsername,
+                DynamicPropertiesJson = i.DynamicPropertiesJson,
+                VerbScriptsJson = i.VerbScriptsJson
             })
             .ToList();
 
@@ -93,7 +95,9 @@ internal class EfPlayerStore(IDbContextFactory<MooSharpDbContext> contextFactory
                 i.TextContent,
                 i.Flags,
                 i.KeyId,
-                i.CreatorUsername))
+                i.CreatorUsername,
+                i.DynamicPropertiesJson,
+                i.VerbScriptsJson))
             .ToList();
 
         return new(player.Id, player.Username, player.CurrentLocation, inventory);

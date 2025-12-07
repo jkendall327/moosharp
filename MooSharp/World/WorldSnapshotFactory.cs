@@ -36,7 +36,9 @@ public static class WorldSnapshotFactory
                 o.TextContent,
                 (int)o.Flags,
                 o.KeyId,
-                o.CreatorUsername))
+                o.CreatorUsername,
+                o.Properties.ToJson(),
+                o.Verbs.ToJson()))
             .ToList();
 
         return new RoomSnapshotDto(
@@ -113,7 +115,9 @@ public static class WorldSnapshotFactory
                     Description = obj.Description,
                     Flags = (ObjectFlags)obj.Flags,
                     KeyId = obj.KeyId,
-                    CreatorUsername = obj.CreatorUsername
+                    CreatorUsername = obj.CreatorUsername,
+                    Properties = DynamicPropertyBag.FromJson(obj.DynamicPropertiesJson),
+                    Verbs = VerbCollection.FromJson(obj.VerbScriptsJson)
                 };
 
                 if (!string.IsNullOrWhiteSpace(obj.TextContent))

@@ -23,6 +23,16 @@ public class Object : IOpenable, ILockable
     public string? KeyId { get; init; }
     public decimal Value { get; init; }
 
+    /// <summary>
+    /// Bag of dynamic properties that can be set/get by players via scripts.
+    /// </summary>
+    public DynamicPropertyBag Properties { get; init; } = new();
+
+    /// <summary>
+    /// Collection of verb scripts attached to this object.
+    /// </summary>
+    public VerbCollection Verbs { get; init; } = new();
+
     public IContainer? Container { get; private set; }
 
     public Player? Owner => Container as Player;
@@ -34,6 +44,10 @@ public class Object : IOpenable, ILockable
 
         return string.Equals(CreatorUsername, player.Username, StringComparison.OrdinalIgnoreCase);
     }
+
+    public bool HasVerb(string verbName) => Verbs.HasVerb(verbName);
+
+    public VerbScript? GetVerb(string verbName) => Verbs[verbName];
 
     public void MoveTo(IContainer destination)
     {

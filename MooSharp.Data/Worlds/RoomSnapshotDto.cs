@@ -22,7 +22,9 @@ public sealed record ObjectSnapshotDto(
     string? TextContent,
     int Flags,
     string? KeyId,
-    string? CreatorUsername);
+    string? CreatorUsername,
+    string? DynamicPropertiesJson = null,
+    string? VerbScriptsJson = null);
 
 public sealed record ExitSnapshotDto(
     Guid Id,

@@ -9,6 +9,7 @@ using MooSharp.Commands.Presentation;
 using MooSharp.Commands.Searching;
 using MooSharp.Game;
 using MooSharp.Infrastructure.Messaging;
+using MooSharp.Scripting;
 using MooSharp.Tests.Handlers;
 using MooSharp.Tests.TestDoubles;
 using NSubstitute;
@@ -59,7 +60,8 @@ public class CommandPipelineEndToEndTests
         var provider = services.BuildServiceProvider();
         var executor = new CommandExecutor(provider, NullLogger<CommandExecutor>.Instance);
 
-        _inputProcessor = new GameInputProcessor(_world, parser, executor, _emitter,
+        var verbResolver = new VerbScriptResolver();
+        _inputProcessor = new GameInputProcessor(_world, parser, executor, _emitter, verbResolver,
             NullLogger<GameInputProcessor>.Instance);
     }
 

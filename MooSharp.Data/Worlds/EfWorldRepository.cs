@@ -176,7 +176,9 @@ internal sealed class EfWorldRepository(IDbContextFactory<MooSharpDbContext> con
                     TextContent = o.TextContent,
                     Flags = o.Flags,
                     KeyId = o.KeyId,
-                    CreatorUsername = o.CreatorUsername
+                    CreatorUsername = o.CreatorUsername,
+                    DynamicPropertiesJson = o.DynamicPropertiesJson,
+                    VerbScriptsJson = o.VerbScriptsJson
                 })
                 .ToList();
         }
@@ -211,7 +213,9 @@ internal sealed class EfWorldRepository(IDbContextFactory<MooSharpDbContext> con
                 o.TextContent,
                 o.Flags,
                 o.KeyId,
-                o.CreatorUsername))
+                o.CreatorUsername,
+                o.DynamicPropertiesJson,
+                o.VerbScriptsJson))
             .ToList();
 
         return new RoomSnapshotDto(
