@@ -4,7 +4,7 @@ public static class PlayerCountEndpoint
 {
     public static void MapPlayerCountEndpoint(this IEndpointRouteBuilder app)
     {
-        app.MapGet("/api/player-count", (World.World world) => Results.Ok(new PlayerCountResponse(world.Players.Count)))
+        app.MapGet("/api/player-count", (World.World world) => Results.Ok(new PlayerCountResponse(world.GetActivePlayers().Count)))
             .WithName("GetPlayerCount");
     }
 

@@ -15,7 +15,9 @@ public class GameInputProcessor(
 {
     public async Task ProcessInputAsync(InputCommand inputCommand, CancellationToken ct = default)
     {
-        if (world.Players.TryGetValue(inputCommand.ActorId.ToString(), out var player))
+        var player = world.TryGetPlayer(inputCommand.ActorId);
+        
+        if (player is not null)
         {
             await ProcessWorldCommand(player, inputCommand.Command, ct);
         }

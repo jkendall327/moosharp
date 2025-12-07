@@ -45,8 +45,7 @@ public class WhisperHandler(World.World world) : IHandler<WhisperCommand>
             return Task.FromResult(result);
         }
 
-        var recipient = world.Players
-            .Values
+        var recipient = world.GetActivePlayers()
             .FirstOrDefault(p => p.Username.Equals(targetName, StringComparison.OrdinalIgnoreCase));
 
         if (recipient is null)

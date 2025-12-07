@@ -13,7 +13,7 @@ public class World(IWorldRepository worldRepository, ILogger<World> logger)
     private readonly Dictionary<RoomId, Room> _rooms = [];
     private readonly ConcurrentDictionary<Player, Room> _playerLocations = [];
 
-    public ConcurrentDictionary<string, Player> Players { get; } = [];
+    private ConcurrentDictionary<string, Player> Players { get; } = [];
     public DayPeriod CurrentDayPeriod { get; set; } = DayPeriod.Morning;
     public IReadOnlyDictionary<RoomId, Room> Rooms => _rooms;
 
@@ -30,6 +30,18 @@ public class World(IWorldRepository worldRepository, ILogger<World> logger)
         }
     }
 
+    public void RegisterPlayer(Player player)
+    {
+        Players[player.Id.Value.ToString()] = player;
+    }
+    
+    public Player? TryGetPlayer(Guid id)
+    {
+        _ = Players.TryGetValue(id.ToString(), out var player);
+
+        return player;
+    }
+    
     public Room GetDefaultRoom()
     {
         return Rooms.First()

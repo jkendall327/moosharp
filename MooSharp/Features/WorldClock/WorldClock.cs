@@ -34,7 +34,7 @@ public class WorldClock(
 
         logger.LogInformation("Day period changed to {DayPeriod}", nextPeriod);
 
-        if (world.Players.IsEmpty)
+        if (!world.GetActivePlayers().Any())
         {
             return;
         }
@@ -69,7 +69,7 @@ public class WorldClock(
     {
         var gameEvent = new SystemMessageEvent(messageText);
 
-        var sends = world.Players.Values.Select(player => new GameMessage(player, gameEvent));
+        var sends = world.GetActivePlayers().Select(player => new GameMessage(player, gameEvent));
 
         await emitter.SendGameMessagesAsync(sends, cancellationToken);
     }

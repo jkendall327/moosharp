@@ -31,14 +31,16 @@ public class GameEngine(
         
         var player = await hydrator.RehydrateAsync(dto);
         
-        world.Players[player.Id.Value.ToString()] = player;
+        world.RegisterPlayer(player);
 
         OnPlayerSpawned?.Invoke(player);
     }
 
     public async Task DespawnActorAsync(Guid actorId, CancellationToken ct = default)
     {
-        if (!world.Players.TryGetValue(actorId.ToString(), out var player))
+        var player = world.TryGetPlayer(actorId);
+        
+        if (player is null)
         {
             return;
         }
@@ -64,12 +66,14 @@ public class GameEngine(
 
     public bool IsActorSpawned(Guid actorId)
     {
-        return world.Players.TryGetValue(actorId.ToString(), out var _);
+        return world.TryGetPlayer(actorId) is null;
     }
 
     public Task<AutocompleteOptions> GetAutocompleteOptions(Guid actorId, CancellationToken ct = default)
     {
-        if (!world.Players.TryGetValue(actorId.ToString(), out var player))
+        var player = world.TryGetPlayer(actorId);
+        
+        if (player is null)
         {
             return Task.FromResult(new AutocompleteOptions([], []));
         }

@@ -26,8 +26,7 @@ public class WhoHandler(World.World world) : IHandler<WhoCommand>
 {
     public Task<CommandResult> Handle(WhoCommand cmd, CancellationToken cancellationToken = default)
     {
-        var usernames = world.Players
-            .Values
+        var usernames = world.GetActivePlayers()
             .Select(player => player.Username)
             .OrderBy(username => username, StringComparer.OrdinalIgnoreCase)
             .ToArray();
