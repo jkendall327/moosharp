@@ -1,5 +1,6 @@
 using MooSharp.Actors.Players;
 using MooSharp.Commands.Machinery;
+using MooSharp.Commands.Parsing;
 using MooSharp.Commands.Presentation;
 
 namespace MooSharp.Commands.Commands.Meta;
@@ -12,14 +13,14 @@ public class WhoCommand : CommandBase<WhoCommand>
 public class WhoCommandDefinition : ICommandDefinition
 {
     public IReadOnlyCollection<string> Verbs { get; } = ["who"];
-
     public CommandCategory Category => CommandCategory.Meta;
     public string Description => "List all players currently online.";
 
-    public ICommand Create(Player player, string args) => new WhoCommand
+    public string? TryCreateCommand(ParsingContext ctx, ArgumentBinder binder, out ICommand? command)
     {
-        Player = player
-    };
+        command = new WhoCommand { Player = ctx.Player };
+        return null;
+    }
 }
 
 public class WhoHandler(World.World world) : IHandler<WhoCommand>
@@ -32,9 +33,7 @@ public class WhoHandler(World.World world) : IHandler<WhoCommand>
             .ToArray();
 
         var result = new CommandResult();
-
         result.Add(cmd.Player, new OnlinePlayersEvent(usernames));
-
         return Task.FromResult(result);
     }
 }
@@ -45,11 +44,7 @@ public class OnlinePlayersEventFormatter : IGameEventFormatter<OnlinePlayersEven
 {
     public string FormatForActor(OnlinePlayersEvent gameEvent)
     {
-        if (gameEvent.Usernames.Count is 0)
-        {
-            return "No one is online.";
-        }
-
+        if (gameEvent.Usernames.Count is 0) return "No one is online.";
         return $"Players online: {string.Join(", ", gameEvent.Usernames)}";
     }
 

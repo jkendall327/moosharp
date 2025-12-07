@@ -53,6 +53,23 @@ public class ArgumentBinder(TargetResolver resolver, World.World world)
         return BindingResult<Player>.Success(target);
     }
 
+    public BindingResult<string> BindChannelName(ParsingContext ctx)
+    {
+        if (ctx.IsFinished)
+        {
+            return BindingResult<string>.Failure("You didn't specify a channel.");
+        }
+
+        var token = ctx.Pop()!;
+
+        if (!Features.Chats.ChatChannels.IsValid(token))
+        {
+            return BindingResult<string>.Failure($"Channel '{token}' does not exist.");
+        }
+
+        return BindingResult<string>.Success(Features.Chats.ChatChannels.Normalize(token));
+    }
+
     public BindingResult<Room> BindExitInRoom(ParsingContext ctx)
     {
         if (ctx.IsFinished)
