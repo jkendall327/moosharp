@@ -74,8 +74,8 @@ public class CreateObjectHandler(World.World world) : IHandler<CreateObjectComma
             Name = cmd.ObjectName,
             Description = $"A newly created object called '{cmd.ObjectName}'.",
             CreatorUsername = player.Username,
-            Properties = new DynamicPropertyBag(),
-            Verbs = new VerbCollection()
+            Properties = new(),
+            Verbs = new()
         };
 
         newObject.MoveTo(room);

@@ -19,7 +19,7 @@ public class LuaGameApi
         var player = FindPlayer(playerName);
         if (player is not null)
         {
-            _messages.Add(new ScriptMessage(player, message));
+            _messages.Add(new(player, message));
         }
     }
 
@@ -27,7 +27,7 @@ public class LuaGameApi
     {
         foreach (var player in _context.Location.PlayersInRoom)
         {
-            _messages.Add(new ScriptMessage(player, message));
+            _messages.Add(new(player, message));
         }
     }
 
@@ -37,7 +37,7 @@ public class LuaGameApi
         {
             if (!string.Equals(player.Username, excludePlayerName, StringComparison.OrdinalIgnoreCase))
             {
-                _messages.Add(new ScriptMessage(player, message));
+                _messages.Add(new(player, message));
             }
         }
     }

@@ -41,7 +41,7 @@ public class VerbScriptResolver : IVerbScriptResolver
             }
         }
 
-        return new ScriptCommand
+        return new()
         {
             Player = player,
             TargetObject = resolution.TargetObject,

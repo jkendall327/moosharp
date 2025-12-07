@@ -11,7 +11,7 @@ public record VerbScript(
 {
     public static VerbScript Create(string verbName, string luaCode, string? creatorUsername = null)
     {
-        return new VerbScript(verbName, luaCode, creatorUsername, DateTime.UtcNow);
+        return new(verbName, luaCode, creatorUsername, DateTime.UtcNow);
     }
 
     public static VerbScript CreateStub(string verbName, string? creatorUsername = null)
