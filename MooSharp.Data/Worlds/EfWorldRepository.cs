@@ -134,7 +134,8 @@ internal sealed class EfWorldRepository(IDbContextFactory<MooSharpDbContext> con
 
             if (existing is null)
             {
-                existing = new RoomEntity { Id = room.Id };
+                existing = new()
+                    { Id = room.Id };
                 context.Rooms.Add(existing);
             }
 
@@ -176,7 +177,9 @@ internal sealed class EfWorldRepository(IDbContextFactory<MooSharpDbContext> con
                     TextContent = o.TextContent,
                     Flags = o.Flags,
                     KeyId = o.KeyId,
-                    CreatorUsername = o.CreatorUsername
+                    CreatorUsername = o.CreatorUsername,
+                    DynamicPropertiesJson = o.DynamicPropertiesJson,
+                    VerbScriptsJson = o.VerbScriptsJson
                 })
                 .ToList();
         }
@@ -211,10 +214,12 @@ internal sealed class EfWorldRepository(IDbContextFactory<MooSharpDbContext> con
                 o.TextContent,
                 o.Flags,
                 o.KeyId,
-                o.CreatorUsername))
+                o.CreatorUsername,
+                o.DynamicPropertiesJson,
+                o.VerbScriptsJson))
             .ToList();
 
-        return new RoomSnapshotDto(
+        return new(
             entity.Id,
             entity.Name,
             entity.Description,

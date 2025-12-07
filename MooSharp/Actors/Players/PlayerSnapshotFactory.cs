@@ -23,7 +23,9 @@ public static class PlayerSnapshotFactory
                 o.TextContent,
                 (int)o.Flags,
                 o.KeyId,
-                o.CreatorUsername))
+                o.CreatorUsername,
+                o.Properties.ToJson(),
+                o.Verbs.ToJson()))
             .ToList();
     }
 }

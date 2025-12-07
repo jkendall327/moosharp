@@ -52,7 +52,7 @@ public class OpenHandler : IHandler<OpenCommand>
             return Task.FromResult(result);
         }
 
-        if (target is ILockable {IsLocked: true})
+        if (target is ILockable { IsLocked: true })
         {
             result.Add(cmd.Player, new SystemMessageEvent("It's locked."));
 

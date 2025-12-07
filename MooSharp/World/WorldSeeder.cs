@@ -98,7 +98,7 @@ public class WorldSeeder(IOptions<AppOptions> options, ILogger<WorldSeeder> logg
 
                     var aliases = exitDto.Aliases.Any()
                         ? exitDto.Aliases.ToList()
-                        : new List<string>();
+                        : new();
 
                     if (!string.IsNullOrWhiteSpace(exitDto.Direction))
                     {

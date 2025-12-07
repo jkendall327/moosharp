@@ -44,7 +44,7 @@ public partial class TargetResolver
 
         var entityResult = FindEntities(contents, query, GetObjectTerms);
 
-        return new SearchResult
+        return new()
         {
             Status = entityResult.Status,
             Match = entityResult.Match,

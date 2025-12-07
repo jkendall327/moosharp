@@ -9,6 +9,7 @@ using MooSharp.Commands.Presentation;
 using MooSharp.Commands.Searching;
 using MooSharp.Game;
 using MooSharp.Infrastructure.Messaging;
+using MooSharp.Scripting;
 using MooSharp.Tests.Handlers;
 using MooSharp.Tests.TestDoubles;
 using NSubstitute;
@@ -28,7 +29,7 @@ public class CommandPipelineEndToEndTests
     {
         _origin = HandlerTestHelpers.CreateRoom("origin");
         _destination = HandlerTestHelpers.CreateRoom("destination");
-        _origin.Exits.Add(new Exit
+        _origin.Exits.Add(new()
         {
             Name = "north",
             Description = "",
@@ -36,7 +37,7 @@ public class CommandPipelineEndToEndTests
         });
 
         var repository = new InMemoryWorldRepository();
-        _world = new World.World(repository, NullLogger<World.World>.Instance);
+        _world = new(repository, NullLogger<World.World>.Instance);
         _world.Initialize([_origin, _destination]);
 
         _player = HandlerTestHelpers.CreatePlayer("Tester");
@@ -59,7 +60,8 @@ public class CommandPipelineEndToEndTests
         var provider = services.BuildServiceProvider();
         var executor = new CommandExecutor(provider, NullLogger<CommandExecutor>.Instance);
 
-        _inputProcessor = new GameInputProcessor(_world, parser, executor, _emitter,
+        var verbResolver = new VerbScriptResolver();
+        _inputProcessor = new(_world, parser, executor, _emitter, verbResolver,
             NullLogger<GameInputProcessor>.Instance);
     }
 
@@ -82,7 +84,7 @@ public class CommandPipelineEndToEndTests
     {
         var startingLocation = _world.GetLocationOrThrow(_player);
 
-        await _inputProcessor.ProcessInputAsync(new InputCommand(_player.Id.Value, "dance"));
+        await _inputProcessor.ProcessInputAsync(new(_player.Id.Value, "dance"));
 
         Assert.Same(startingLocation, _world.GetLocationOrThrow(_player));
 
@@ -96,7 +98,7 @@ public class CommandPipelineEndToEndTests
     {
         var startingLocation = _world.GetLocationOrThrow(_player);
 
-        await _inputProcessor.ProcessInputAsync(new InputCommand(_player.Id.Value, "move"));
+        await _inputProcessor.ProcessInputAsync(new(_player.Id.Value, "move"));
 
         Assert.Same(startingLocation, _world.GetLocationOrThrow(_player));
 

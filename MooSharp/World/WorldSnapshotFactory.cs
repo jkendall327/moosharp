@@ -36,10 +36,12 @@ public static class WorldSnapshotFactory
                 o.TextContent,
                 (int)o.Flags,
                 o.KeyId,
-                o.CreatorUsername))
+                o.CreatorUsername,
+                o.Properties.ToJson(),
+                o.Verbs.ToJson()))
             .ToList();
 
-        return new RoomSnapshotDto(
+        return new(
             room.Id.Value,
             room.Name,
             room.Description,
@@ -64,7 +66,7 @@ public static class WorldSnapshotFactory
             r => r.Id,
             r => new Room
             {
-                Id = new RoomId(r.Id),
+                Id = new(r.Id),
                 Name = r.Name,
                 Description = r.Description,
                 LongDescription = r.LongDescription,
@@ -79,12 +81,12 @@ public static class WorldSnapshotFactory
 
             foreach (var exit in roomSnapshot.Exits)
             {
-                room.Exits.Add(new Exit
+                room.Exits.Add(new()
                 {
                     Id = exit.Id,
                     Name = exit.Name,
                     Description = exit.Description,
-                    Destination = new RoomId(exit.DestinationRoomId),
+                    Destination = new(exit.DestinationRoomId),
                     Aliases = exit.Aliases.ToList(),
                     Keywords = exit.Keywords.ToList(),
                     IsHidden = exit.IsHidden,
@@ -108,12 +110,14 @@ public static class WorldSnapshotFactory
             {
                 var item = new Object
                 {
-                    Id = new ObjectId(Guid.Parse(obj.Id)),
+                    Id = new(Guid.Parse(obj.Id)),
                     Name = obj.Name,
                     Description = obj.Description,
                     Flags = (ObjectFlags)obj.Flags,
                     KeyId = obj.KeyId,
-                    CreatorUsername = obj.CreatorUsername
+                    CreatorUsername = obj.CreatorUsername,
+                    Properties = DynamicPropertyBag.FromJson(obj.DynamicPropertiesJson),
+                    Verbs = VerbCollection.FromJson(obj.VerbScriptsJson)
                 };
 
                 if (!string.IsNullOrWhiteSpace(obj.TextContent))

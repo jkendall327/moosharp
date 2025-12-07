@@ -235,4 +235,18 @@ public class World(IWorldRepository worldRepository, ILogger<World> logger)
 
         logger.LogInformation("Spawned {TreasureName} in room {RoomName}", treasure.Name, room.Name);
     }
+
+    /// <summary>
+    /// Marks a room as modified so it will be saved to the database.
+    /// Use this when objects in the room have been created, modified, or deleted.
+    /// </summary>
+    public void MarkRoomModified(Room room)
+    {
+        ArgumentNullException.ThrowIfNull(room);
+
+        // Queue the room for saving via the background service
+        _ = worldRepository.SaveRoomAsync(WorldSnapshotFactory.CreateSnapshot(room));
+
+        logger.LogDebug("Room {RoomName} marked as modified", room.Name);
+    }
 }

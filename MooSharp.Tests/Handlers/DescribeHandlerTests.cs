@@ -18,7 +18,7 @@ public class DescribeHandlerTests
         var world = await HandlerTestHelpers.CreateWorld(store, room);
         world.MovePlayer(player, room);
 
-        var handler = new DescribeHandler(world, new TargetResolver());
+        var handler = new DescribeHandler(world, new());
 
         var result = await handler.Handle(new()
         {
@@ -46,7 +46,7 @@ public class DescribeHandlerTests
         var player = HandlerTestHelpers.CreatePlayer();
         var origin = HandlerTestHelpers.CreateRoom("origin", player.Username);
         var destination = HandlerTestHelpers.CreateRoom("destination", player.Username);
-        origin.Exits.Add(new Exit
+        origin.Exits.Add(new()
         {
             Name = "east",
             Description = "",
@@ -56,7 +56,7 @@ public class DescribeHandlerTests
         var world = await HandlerTestHelpers.CreateWorld(store, origin, destination);
         world.MovePlayer(player, origin);
 
-        var handler = new DescribeHandler(world, new TargetResolver());
+        var handler = new DescribeHandler(world, new());
 
         var result = await handler.Handle(new()
         {
@@ -83,7 +83,7 @@ public class DescribeHandlerTests
         var player = HandlerTestHelpers.CreatePlayer("NotBuilder");
         world.MovePlayer(player, room);
 
-        var handler = new DescribeHandler(world, new TargetResolver());
+        var handler = new DescribeHandler(world, new());
 
         var result = await handler.Handle(new()
         {

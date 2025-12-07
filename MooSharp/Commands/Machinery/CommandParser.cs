@@ -43,7 +43,7 @@ public class CommandParser
 
         if (!_verbs.TryGetValue(verb, out var def))
         {
-            return Task.FromResult(ParseResult.Error("Command not recognised. Use '/help' to see all pre-set commands."));
+            return Task.FromResult(ParseResult.NotFound());
         }
 
         var room = _world.GetLocationOrThrow(player);
@@ -57,5 +57,5 @@ public class CommandParser
         }
 
         return Task.FromResult(ParseResult.Success(command!));
-    } 
+    }
 }

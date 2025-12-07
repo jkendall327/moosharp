@@ -15,6 +15,7 @@ using MooSharp.Game;
 using MooSharp.Infrastructure;
 using MooSharp.Infrastructure.Messaging;
 using MooSharp.Infrastructure.Sessions;
+using MooSharp.Scripting;
 using MooSharp.Web.Endpoints;
 using MooSharp.Web.Services;
 using MooSharp.Web.Services.Auth;
@@ -89,6 +90,10 @@ public static class ServiceCollectionExtensions
             // Systems
             services.AddSingleton<IWorldClock, WorldClock>();
             services.AddSingleton<GameInputProcessor>();
+
+            // Scripting
+            services.AddSingleton<IScriptExecutor, LuaScriptExecutor>();
+            services.AddSingleton<IVerbScriptResolver, VerbScriptResolver>();
         }
 
         public void AddMooSharpMessaging()
@@ -128,6 +133,11 @@ public static class ServiceCollectionExtensions
             services
                 .AddOptionsWithValidateOnStart<TreasureSpawnerOptions>()
                 .BindConfiguration(TreasureSpawnerOptions.SectionName)
+                .ValidateDataAnnotations();
+
+            services
+                .AddOptionsWithValidateOnStart<LuaScriptOptions>()
+                .BindConfiguration(LuaScriptOptions.SectionName)
                 .ValidateDataAnnotations();
 
             services.Configure<ServiceProviderOptions>(s =>

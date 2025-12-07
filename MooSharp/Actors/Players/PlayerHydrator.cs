@@ -26,7 +26,9 @@ public class PlayerHydrator(World.World world)
                 Description = item.Description,
                 Flags = (ObjectFlags)item.Flags,
                 KeyId = item.KeyId,
-                CreatorUsername = item.CreatorUsername
+                CreatorUsername = item.CreatorUsername,
+                Properties = DynamicPropertyBag.FromJson(item.DynamicPropertiesJson),
+                Verbs = VerbCollection.FromJson(item.VerbScriptsJson)
             };
 
             if (!string.IsNullOrWhiteSpace(item.TextContent))

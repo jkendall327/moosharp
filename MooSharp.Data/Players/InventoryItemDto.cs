@@ -7,4 +7,6 @@ public sealed record InventoryItemDto(
     string? TextContent,
     int Flags,
     string? KeyId,
-    string? CreatorUsername);
+    string? CreatorUsername,
+    string? DynamicPropertiesJson = null,
+    string? VerbScriptsJson = null);

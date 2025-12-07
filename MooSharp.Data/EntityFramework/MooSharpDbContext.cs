@@ -147,6 +147,8 @@ public sealed class InventoryItemEntity
     public int Flags { get; init; }
     [MaxLength(50)] public string? KeyId { get; init; }
     [MaxLength(100)] public string? CreatorUsername { get; init; }
+    public string? DynamicPropertiesJson { get; init; }
+    public string? VerbScriptsJson { get; init; }
     public PlayerEntity? Player { get; init; }
 }
 
@@ -190,5 +192,7 @@ public sealed class ObjectEntity
     public int Flags { get; init; }
     [MaxLength(100)] public string? KeyId { get; init; }
     [MaxLength(100)] public string? CreatorUsername { get; init; }
+    public string? DynamicPropertiesJson { get; init; }
+    public string? VerbScriptsJson { get; init; }
     public RoomEntity? Room { get; init; }
 }
