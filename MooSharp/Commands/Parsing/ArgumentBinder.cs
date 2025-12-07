@@ -1,4 +1,5 @@
 using MooSharp.Actors.Players;
+using MooSharp.Actors.Rooms;
 using MooSharp.Commands.Searching;
 using Object = MooSharp.Actors.Objects.Object;
 
@@ -24,6 +25,20 @@ public class ArgumentBinder(TargetResolver resolver)
             SearchStatus.Ambiguous => BindingResult<Object>.Failure($"Which '{token}' do you mean?"),
             var _ => BindingResult<Object>.Failure("Invalid item.")
         };
+    }
+
+    public BindingResult<Room> BindExitInRoom(ParsingContext ctx)
+    {
+        if (ctx.IsFinished)
+        {
+            return BindingResult<Room>.Failure("You didn't specify an exit.");
+        }
+
+        var token = ctx.Pop()!;
+        
+        var exits = ctx.Room.Exits;
+        
+        return BindingResult<Room>.Failure("Not implemented.");
     }
 
     // Binds a token to a player in the room

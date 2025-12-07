@@ -2,6 +2,7 @@ using Microsoft.Extensions.Logging;
 using MooSharp.Actors.Players;
 using MooSharp.Actors.Rooms;
 using MooSharp.Commands.Machinery;
+using MooSharp.Commands.Parsing;
 using MooSharp.Commands.Presentation;
 
 namespace MooSharp.Commands.Commands;
@@ -9,23 +10,36 @@ namespace MooSharp.Commands.Commands;
 public class MoveCommand : CommandBase<MoveCommand>
 {
     public required Player Player { get; init; }
-    public required string TargetExit { get; init; }
-
+    public required Room TargetExit { get; init; }
 }
 
 public class MoveCommandDefinition : ICommandDefinition
 {
     public IReadOnlyCollection<string> Verbs { get; } = ["move", "m", "go", "walk"];
+
+    public string? TryCreateCommand(ParsingContext ctx, ArgumentBinder binder, out ICommand? command)
+    {
+        command = null;
+
+        var roomResult = binder.BindExitInRoom(ctx);
+
+        if (roomResult.IsSuccess)
+        {
+            command = new MoveCommand
+            {
+                Player = ctx.Player,
+                TargetExit = roomResult.Value!
+            };
+
+            return null;
+        }
+
+        return roomResult.ErrorMessage;
+    }
+
     public CommandCategory Category => CommandCategory.General;
 
     public string Description => "Move to an adjacent room. Usage: move <exit>.";
-
-    public ICommand Create(Player player, string args)
-        => new MoveCommand
-        {
-            Player = player,
-            TargetExit = args
-        };
 }
 
 public class MoveHandler(World.World world, ILogger<MoveHandler> logger) : IHandler<MoveCommand>
@@ -37,20 +51,14 @@ public class MoveHandler(World.World world, ILogger<MoveHandler> logger) : IHand
 
         var originRoom = world.GetLocationOrThrow(player);
 
-        var exits = originRoom.Exits;
+        var exit = cmd.TargetExit;
 
-        if (!exits.TryGetValue(cmd.TargetExit, out var exit))
-        {
-            result.Add(player, new ExitNotFoundEvent(cmd.TargetExit));
-            return Task.FromResult(result);
-        }
+        var exitRoom = world.Rooms[exit.Id];
 
-        var exitRoom = world.Rooms[exit];
-
-        result.Add(player, new PlayerDepartedEvent(player, originRoom, cmd.TargetExit));
+        result.Add(player, new PlayerDepartedEvent(player, originRoom, cmd.TargetExit.Name));
         result.Add(player, new PlayerMovedEvent(player, exitRoom));
 
-        result.BroadcastToAllButPlayer(originRoom, player, new PlayerDepartedEvent(player, originRoom, cmd.TargetExit));
+        result.BroadcastToAllButPlayer(originRoom, player, new PlayerDepartedEvent(player, originRoom, cmd.TargetExit.Name));
 
         world.MovePlayer(player, exitRoom);
 
@@ -89,28 +97,23 @@ public class PlayerMovedEventFormatter : IGameEventFormatter<PlayerMovedEvent>
 {
     public string FormatForActor(PlayerMovedEvent gameEvent) => gameEvent.Destination.EnterText;
 
-    public string FormatForObserver(PlayerMovedEvent gameEvent) =>
-        $"{gameEvent.Player.Username} arrives.";
+    public string FormatForObserver(PlayerMovedEvent gameEvent) => $"{gameEvent.Player.Username} arrives.";
 }
 
 public record PlayerDepartedEvent(Player Player, Room Origin, string ExitName) : IGameEvent;
 
 public class PlayerDepartedEventFormatter : IGameEventFormatter<PlayerDepartedEvent>
 {
-    public string FormatForActor(PlayerDepartedEvent gameEvent) =>
-        gameEvent.Origin.ExitText;
+    public string FormatForActor(PlayerDepartedEvent gameEvent) => gameEvent.Origin.ExitText;
 
-    public string FormatForObserver(PlayerDepartedEvent gameEvent) =>
-        $"{gameEvent.Player.Username} leaves.";
+    public string FormatForObserver(PlayerDepartedEvent gameEvent) => $"{gameEvent.Player.Username} leaves.";
 }
 
 public record PlayerArrivedEvent(Player Player, Room Destination) : IGameEvent;
 
 public class PlayerArrivedEventFormatter : IGameEventFormatter<PlayerArrivedEvent>
 {
-    public string FormatForActor(PlayerArrivedEvent gameEvent) =>
-        gameEvent.Destination.EnterText;
+    public string FormatForActor(PlayerArrivedEvent gameEvent) => gameEvent.Destination.EnterText;
 
-    public string FormatForObserver(PlayerArrivedEvent gameEvent) =>
-        $"{gameEvent.Player.Username} arrives.";
+    public string FormatForObserver(PlayerArrivedEvent gameEvent) => $"{gameEvent.Player.Username} arrives.";
 }
