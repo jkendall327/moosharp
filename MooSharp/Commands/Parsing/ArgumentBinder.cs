@@ -112,10 +112,16 @@ public class ArgumentBinder(TargetResolver resolver, World.World world)
         }
 
         var token = ctx.Pop()!;
-
+        
         var exits = ctx.Room.Exits;
 
-        return BindingResult<Room>.Failure("Not implemented.");
+        if (exits.TryGetValue(token, out var id))
+        {
+            var room = world.Rooms[id];
+            return BindingResult<Room>.Success(room);
+        }
+        
+        return BindingResult<Room>.Failure("Exit not found.");
     }
 
     // Binds a token to a player in the room
