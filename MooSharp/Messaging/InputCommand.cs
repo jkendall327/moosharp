@@ -9,3 +9,5 @@ public abstract record GameCommand
 public record InputCommand(Guid ActorId, string Command) : GameCommand;
 
 public record SpawnTreasureCommand(MooSharp.Actors.Object Treasure) : GameCommand;
+
+public record IncrementWorldClockCommand : GameCommand;

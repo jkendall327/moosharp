@@ -1,11 +1,13 @@
+using System.Threading.Channels;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 using MooSharp.Infrastructure;
+using MooSharp.Messaging;
 
 namespace MooSharp.World;
 
 public class WorldClockService(
-    IWorldClock worldClock,
+    ChannelWriter<GameCommand> writer,
     IOptions<WorldClockOptions> options,
     TimeProvider timeProvider) : BackgroundService
 {
@@ -17,7 +19,7 @@ public class WorldClockService(
 
         while (await timer.WaitForNextTickAsync(stoppingToken))
         {
-            await worldClock.TriggerTickAsync(stoppingToken);
+            await writer.WriteAsync(new IncrementWorldClockCommand(), stoppingToken);
         }
     }
 }

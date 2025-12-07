@@ -11,7 +11,6 @@ public class GameEngine(
     World.World world,
     PlayerHydrator hydrator,
     IPlayerRepository playerRepository,
-    PlayerMessageProvider messageProvider,
     ChannelWriter<InputCommand> writer) : IGameEngine
 {
     public event Action<Player>? OnPlayerSpawned;
