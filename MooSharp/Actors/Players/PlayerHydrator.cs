@@ -16,7 +16,7 @@ public class PlayerHydrator(World.World world)
             Id = new(dto.Id),
             Username = dto.Username
         };
-        
+
         foreach (var item in dto.Inventory)
         {
             var obj = new Object
@@ -24,7 +24,7 @@ public class PlayerHydrator(World.World world)
                 Id = new(Guid.Parse(item.Id)),
                 Name = item.Name,
                 Description = item.Description,
-                Flags = (ObjectFlags) item.Flags,
+                Flags = (ObjectFlags)item.Flags,
                 KeyId = item.KeyId,
                 CreatorUsername = item.CreatorUsername
             };

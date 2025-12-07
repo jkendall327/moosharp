@@ -36,14 +36,14 @@ public class MooHub(
         logger.LogInformation("Got command {Command}", command);
 
         var actor = GetActorIdOrThrow();
-        
+
         await engine.ProcessInputAsync(actor, command);
     }
 
     public async Task<AutocompleteOptions> GetAutocompleteOptions()
     {
         var actor = GetActorIdOrThrow();
-        
+
         return await engine.GetAutocompleteOptions(actor);
     }
 

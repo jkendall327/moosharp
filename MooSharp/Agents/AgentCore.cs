@@ -71,7 +71,7 @@ public class AgentCore(
             {
                 yield break;
             }
-            
+
             logger.LogInformation("Got agent response: {AgentResponse}", responseText);
 
             _history.AddAssistantMessage(responseText);

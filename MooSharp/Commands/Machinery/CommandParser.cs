@@ -12,7 +12,7 @@ public class CommandParser
     private readonly World.World _world;
     private readonly ArgumentBinder _binder;
     private readonly ILogger<CommandParser> _logger;
-    
+
     private readonly Dictionary<string, ICommandDefinition> _verbs;
 
     public CommandParser(ILogger<CommandParser> logger,
@@ -125,5 +125,5 @@ public class CommandParser
 
     private static string NormalizeShortcutArgs(string shortcutBody) =>
         string.Join(' ',
-            shortcutBody.Split((char[]?) null, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries));
+            shortcutBody.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries));
 }

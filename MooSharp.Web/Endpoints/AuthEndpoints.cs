@@ -38,7 +38,7 @@ public static class AuthEndpoints
                 var defaultRoom = world.GetDefaultRoom();
 
                 var id = Guid.NewGuid();
-                
+
                 var request = new NewPlayerRequest(id, rc.Username, rc.Password, defaultRoom.Id.Value);
 
                 await store.SaveNewPlayerAsync(request, WriteType.Immediate);
@@ -77,7 +77,7 @@ public static class AuthEndpoints
                 {
                     throw new InvalidOperationException("Player not found despite login passing validity check.");
                 }
-                
+
                 var token = tokenService.GenerateToken(player.Id, req.Username);
 
                 return Results.Ok(new LoginAttemptResult(token));

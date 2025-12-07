@@ -22,7 +22,7 @@ public class AgentFactory(
 
         var bundle = new AgentCreationBundle(identity.Name, identity.Persona, identity.Source, volition, cooldown);
         var core = new AgentCore(bundle, promptProvider, responseProvider, clock, options, logger);
-        
+
         var brain = new AgentBrain(core, writer, clock, options);
 
         return brain;

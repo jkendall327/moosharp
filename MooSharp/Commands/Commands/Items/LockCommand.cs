@@ -22,9 +22,15 @@ public class LockCommandDefinition : ICommandDefinition
     {
         command = null;
         var bind = binder.BindLockable(ctx);
+
         if (!bind.IsSuccess) return bind.ErrorMessage;
 
-        command = new LockCommand { Player = ctx.Player, Target = bind.Value! };
+        command = new LockCommand
+        {
+            Player = ctx.Player,
+            Target = bind.Value!
+        };
+
         return null;
     }
 }
@@ -45,9 +51,15 @@ public class UnlockCommandDefinition : ICommandDefinition
     {
         command = null;
         var bind = binder.BindLockable(ctx);
+
         if (!bind.IsSuccess) return bind.ErrorMessage;
 
-        command = new UnlockCommand { Player = ctx.Player, Target = bind.Value! };
+        command = new UnlockCommand
+        {
+            Player = ctx.Player,
+            Target = bind.Value!
+        };
+
         return null;
     }
 }
@@ -62,12 +74,14 @@ public class LockHandler : IHandler<LockCommand>
         if (!target.CanBeLocked)
         {
             result.Add(cmd.Player, new SystemMessageEvent("You can't lock that."));
+
             return Task.FromResult(result);
         }
 
         if (target.IsLocked)
         {
             result.Add(cmd.Player, new SystemMessageEvent("It is already locked."));
+
             return Task.FromResult(result);
         }
 
@@ -76,15 +90,19 @@ public class LockHandler : IHandler<LockCommand>
         if (!hasKey)
         {
             result.Add(cmd.Player, new SystemMessageEvent("You don't have the right key."));
+
             return Task.FromResult(result);
         }
 
         target.IsLocked = true;
+
         if (target is IOpenable openable)
         {
             openable.IsOpen = false;
         }
+
         result.Add(cmd.Player, new ItemLockedEvent(cmd.Player, target));
+
         return Task.FromResult(result);
     }
 }
@@ -99,12 +117,14 @@ public class UnlockHandler : IHandler<UnlockCommand>
         if (!target.CanBeLocked)
         {
             result.Add(cmd.Player, new SystemMessageEvent("You can't unlock that."));
+
             return Task.FromResult(result);
         }
 
         if (!target.IsLocked)
         {
             result.Add(cmd.Player, new SystemMessageEvent("It is already unlocked."));
+
             return Task.FromResult(result);
         }
 
@@ -113,11 +133,13 @@ public class UnlockHandler : IHandler<UnlockCommand>
         if (!hasKey)
         {
             result.Add(cmd.Player, new SystemMessageEvent("You don't have the right key."));
+
             return Task.FromResult(result);
         }
 
         target.IsLocked = false;
         result.Add(cmd.Player, new ItemUnlockedEvent(cmd.Player, target));
+
         return Task.FromResult(result);
     }
 }

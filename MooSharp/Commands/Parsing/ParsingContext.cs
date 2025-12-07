@@ -14,10 +14,10 @@ public class ParsingContext(Player player, Room room, Queue<string> tokens)
 
     // Helper to consume the next token
     public string? Pop() => Tokens.Count > 0 ? Tokens.Dequeue() : null;
-    
+
     // Check if we have more arguments
     public bool IsFinished => Tokens.Count == 0;
-    
+
     /// <summary>
     /// Consumes all remaining tokens and joins them into a single string.
     /// Used for chat messages (Say, Whisper, Emote).

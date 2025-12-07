@@ -73,7 +73,7 @@ public class WriteHandler(World.World world) : IHandler<WriteCommand>
         // Logic: If the item is in the room (public), show everyone. 
         // If it's in the player's inventory (private), only show the player.
         var currentRoom = world.GetLocationOrThrow(cmd.Player);
-        
+
         if (item.Location is { } location && ReferenceEquals(location, currentRoom))
         {
             result.BroadcastToAllButPlayer(currentRoom, cmd.Player, writeEvent);

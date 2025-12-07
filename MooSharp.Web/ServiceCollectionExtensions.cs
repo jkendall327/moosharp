@@ -199,7 +199,7 @@ public static class ServiceCollectionExtensions
             {
                 var handlerTypes = assembly
                     .GetTypes()
-                    .Where(t => t is {IsAbstract: false, IsInterface: false})
+                    .Where(t => t is { IsAbstract: false, IsInterface: false })
                     .SelectMany(t => t
                         .GetInterfaces()
                         .Where(i => i.IsGenericType && i.GetGenericTypeDefinition() == handlerInterfaceType)
@@ -232,7 +232,7 @@ public static class ServiceCollectionExtensions
             {
                 var types = assembly
                     .GetTypes()
-                    .Where(t => t is {IsAbstract: false, IsInterface: false} && definitionType.IsAssignableFrom(t));
+                    .Where(t => t is { IsAbstract: false, IsInterface: false } && definitionType.IsAssignableFrom(t));
 
                 foreach (var type in types)
                 {
@@ -257,7 +257,7 @@ public static class ServiceCollectionExtensions
             {
                 var formatterTypes = assembly
                     .GetTypes()
-                    .Where(t => t is {IsAbstract: false, IsInterface: false})
+                    .Where(t => t is { IsAbstract: false, IsInterface: false })
                     .SelectMany(t => t
                         .GetInterfaces()
                         .Where(i => i.IsGenericType && i.GetGenericTypeDefinition() == formatterInterfaceType)

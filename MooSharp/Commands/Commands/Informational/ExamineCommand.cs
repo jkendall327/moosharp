@@ -21,7 +21,7 @@ public class ExamineCommandDefinition : ICommandDefinition
 
     public string Description => "Inspect yourself, an item, or the room. Usage: examine <target>.";
     public CommandCategory Category => CommandCategory.General;
-    
+
     public string? TryCreateCommand(ParsingContext ctx, ArgumentBinder binder, out ICommand? command)
     {
         command = new ExamineCommand

@@ -34,14 +34,14 @@ public class World(IWorldRepository worldRepository, ILogger<World> logger)
     {
         Players[player.Id.Value] = player;
     }
-    
+
     public Player? TryGetPlayer(Guid id)
     {
         _ = Players.TryGetValue(id, out var player);
 
         return player;
     }
-    
+
     public Room GetDefaultRoom()
     {
         return Rooms.First()

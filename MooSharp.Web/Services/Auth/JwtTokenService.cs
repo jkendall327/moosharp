@@ -17,7 +17,7 @@ public class JwtTokenService(IConfiguration config, TimeProvider clock)
         // signing key
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(keyString));
         var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
-        
+
         var claims = new List<Claim>
         {
             // effectively the "User ID"
@@ -34,7 +34,7 @@ public class JwtTokenService(IConfiguration config, TimeProvider clock)
         };
 
         var configuredExpiry = jwtSettings.GetValue<TimeSpan>("Expiration");
-        
+
         var expiration = clock
             .GetUtcNow()
             .Add(configuredExpiry)

@@ -23,7 +23,7 @@ public class DigCommandDefinition : ICommandDefinition
     public string? TryCreateCommand(ParsingContext ctx, ArgumentBinder binder, out ICommand? command)
     {
         var args = ctx.GetRemainingText();
-        
+
         var name = args.StartsWith("to ", StringComparison.OrdinalIgnoreCase)
             ? args[3..].Trim()
             : args.Trim();
@@ -122,15 +122,15 @@ public class DigHandler(World.World world, SlugCreator slugCreator) : IHandler<D
         var longDescription =
             $"Freshly carved walls surround this new space extending from {currentRoom.Name}. Dust still hangs in the air.";
 
-            var newRoom = await world.CreateRoomAsync(
-                slug,
-                cmd.RoomName,
-                description,
-                longDescription,
-                DefaultEnterText,
-                DefaultExitText,
-                player.Username,
-                cancellationToken);
+        var newRoom = await world.CreateRoomAsync(
+            slug,
+            cmd.RoomName,
+            description,
+            longDescription,
+            DefaultEnterText,
+            DefaultExitText,
+            player.Username,
+            cancellationToken);
 
         await world.AddExitAsync(currentRoom, newRoom, slug, cancellationToken);
         await world.AddExitAsync(newRoom, currentRoom, currentRoom.Id.Value, cancellationToken);

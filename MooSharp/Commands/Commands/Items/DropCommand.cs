@@ -41,7 +41,7 @@ public class DropHandler(World.World world) : IHandler<DropCommand>
     {
         var result = new CommandResult();
         var room = world.GetLocationOrThrow(cmd.Player);
-        
+
         cmd.Target.MoveTo(room);
 
         var dropEvent = new ItemDroppedEvent(cmd.Target, cmd.Player);

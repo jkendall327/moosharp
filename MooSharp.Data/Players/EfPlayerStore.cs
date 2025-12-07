@@ -109,7 +109,7 @@ internal class EfPlayerStore(IDbContextFactory<MooSharpDbContext> contextFactory
         {
             return null;
         }
-        
+
         return new(player.Id, player.Username, player.CurrentLocation, []);
     }
 

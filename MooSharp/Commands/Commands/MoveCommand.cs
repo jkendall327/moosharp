@@ -53,12 +53,12 @@ public class MoveHandler(World.World world, ILogger<MoveHandler> logger) : IHand
 
         var exit = cmd.TargetExit;
 
-        if (exit is {IsLocked: true, IsOpen: true})
+        if (exit is { IsLocked: true, IsOpen: true })
         {
             throw new InvalidOperationException($"Exit {exit.Id} in invalid state - locked and open.");
         }
 
-        if (exit is {IsLocked: true, IsOpen: false})
+        if (exit is { IsLocked: true, IsOpen: false })
         {
             result.Add(player, new SystemMessageEvent("The door is locked."));
 

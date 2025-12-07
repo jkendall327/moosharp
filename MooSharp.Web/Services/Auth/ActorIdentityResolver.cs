@@ -16,7 +16,7 @@ public class ActorIdentityResolver
         {
             return null;
         }
-        
+
         return Guid.TryParse(sub.Value, out var id) ? id : null;
     }
 }
