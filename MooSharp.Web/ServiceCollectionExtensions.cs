@@ -99,7 +99,7 @@ public static class ServiceCollectionExtensions
 
         public void AddMooSharpHostedServices()
         {
-            services.AddHostedService<GameEngineBackgroundService>();
+            services.AddHostedService<GameCommandBackgroundService>();
             services.AddHostedService<AgentBackgroundService>();
             services.AddHostedService<WorldClockService>();
             services.AddHostedService<TreasureSpawnerService>();

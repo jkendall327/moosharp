@@ -5,12 +5,12 @@ using MooSharp.Features.WorldClock;
 
 namespace MooSharp.Game;
 
-public class GameEngineBackgroundService(
+public class GameCommandBackgroundService(
     GameInputProcessor inputProcessor,
     World.World world,
     IWorldClock worldClock,
     ChannelReader<GameCommand> reader,
-    ILogger<GameEngineBackgroundService> logger) : BackgroundService
+    ILogger<GameCommandBackgroundService> logger) : BackgroundService
 {
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
