@@ -1,9 +1,10 @@
 using System.Text;
-using Microsoft.Extensions.Logging;
-using MooSharp.Messaging;
+using MooSharp.Features.Autocomplete;
+using MooSharp.Features.Chats;
+using MooSharp.Game;
 using MooSharp.Web.Endpoints;
 
-namespace MooSharp.Game;
+namespace MooSharp.Web.Services;
 
 public sealed class GameClientViewModel : IDisposable
 {

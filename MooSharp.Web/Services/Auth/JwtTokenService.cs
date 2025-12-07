@@ -3,7 +3,7 @@ using System.Text;
 using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.IdentityModel.Tokens;
 
-namespace MooSharp.Web.Services;
+namespace MooSharp.Web.Services.Auth;
 
 public class JwtTokenService(IConfiguration config, TimeProvider clock)
 {

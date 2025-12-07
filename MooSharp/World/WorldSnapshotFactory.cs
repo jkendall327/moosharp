@@ -1,8 +1,9 @@
-using MooSharp.Actors;
-using MooSharp.Data.Dtos;
-using Object = MooSharp.Actors.Object;
+using MooSharp.Actors.Objects;
+using MooSharp.Actors.Rooms;
+using MooSharp.Data.Worlds;
+using Object = MooSharp.Actors.Objects.Object;
 
-namespace MooSharp.Data.Mapping;
+namespace MooSharp.World;
 
 public static class WorldSnapshotFactory
 {

@@ -3,7 +3,7 @@ using Microsoft.Extensions.Options;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.ChatCompletion;
 using MooSharp.Agents;
-using MooSharp.Messaging;
+using MooSharp.Game;
 using NSubstitute;
 
 namespace MooSharp.Tests;

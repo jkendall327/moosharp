@@ -1,7 +1,6 @@
-using MooSharp.Actors;
-using MooSharp.Messaging;
+using MooSharp.Commands.Presentation;
 
-namespace MooSharp.Infrastructure;
+namespace MooSharp.Infrastructure.Messaging;
 
 public interface IGameMessageEmitter
 {

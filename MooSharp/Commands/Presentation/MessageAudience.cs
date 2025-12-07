@@ -1,4 +1,4 @@
-namespace MooSharp.Messaging;
+namespace MooSharp.Commands.Presentation;
 
 public enum MessageAudience
 {

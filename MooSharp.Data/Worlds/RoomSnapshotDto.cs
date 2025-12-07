@@ -1,4 +1,4 @@
-namespace MooSharp.Data.Dtos;
+namespace MooSharp.Data.Worlds;
 
 public sealed record RoomSnapshotDto(
     string Id,

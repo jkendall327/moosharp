@@ -1,7 +1,9 @@
 using Microsoft.Extensions.Logging.Abstractions;
 using MooSharp.Actors;
-using MooSharp.Data.Mapping;
+using MooSharp.Actors.Players;
+using MooSharp.Actors.Rooms;
 using MooSharp.Tests.TestDoubles;
+using MooSharp.World;
 
 namespace MooSharp.Tests.Handlers;
 

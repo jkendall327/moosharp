@@ -1,3 +1,5 @@
+using MooSharp.Features.Autocomplete;
+
 namespace MooSharp.Game;
 
 public interface IGameConnectionService : IAsyncDisposable

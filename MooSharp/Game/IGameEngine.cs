@@ -1,4 +1,6 @@
 using MooSharp.Actors;
+using MooSharp.Actors.Players;
+using MooSharp.Features.Autocomplete;
 
 namespace MooSharp.Game;
 

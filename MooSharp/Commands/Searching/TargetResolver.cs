@@ -1,6 +1,8 @@
 using System.Text.RegularExpressions;
 using MooSharp.Actors;
-using Object = MooSharp.Actors.Object;
+using MooSharp.Actors.Players;
+using MooSharp.Actors.Rooms;
+using Object = MooSharp.Actors.Objects.Object;
 
 namespace MooSharp.Commands.Searching;
 

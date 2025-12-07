@@ -2,8 +2,7 @@ using MooSharp.Data;
 using MooSharp.Web;
 using MooSharp.Web.Components;
 using MooSharp.Web.Endpoints;
-using MooSharp.Web.Game;
-using MooSharp.Web.Services;
+using MooSharp.Web.Services.SignalR;
 using MooSharp.World;
 
 var builder = WebApplication.CreateBuilder(args);

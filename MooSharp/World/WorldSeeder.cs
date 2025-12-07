@@ -3,9 +3,10 @@ using System.Text.Json.Serialization;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using MooSharp.Actors;
+using MooSharp.Actors.Objects;
+using MooSharp.Actors.Rooms;
 using MooSharp.Infrastructure;
-using MooSharp.World.Dtos;
-using Object = MooSharp.Actors.Object;
+using Object = MooSharp.Actors.Objects.Object;
 
 namespace MooSharp.World;
 

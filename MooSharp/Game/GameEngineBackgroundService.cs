@@ -1,10 +1,9 @@
 using System.Threading.Channels;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using MooSharp.Messaging;
-using MooSharp.World;
+using MooSharp.Features.WorldClock;
 
-namespace MooSharp.Web.Game;
+namespace MooSharp.Game;
 
 public class GameEngineBackgroundService(
     GameInputProcessor inputProcessor,

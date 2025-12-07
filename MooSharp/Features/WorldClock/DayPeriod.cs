@@ -1,4 +1,4 @@
-namespace MooSharp.World;
+namespace MooSharp.Features.WorldClock;
 
 public enum DayPeriod
 {

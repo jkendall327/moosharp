@@ -1,8 +1,8 @@
 using System.Collections.Concurrent;
 using MooSharp.Game;
-using MooSharp.Infrastructure;
+using MooSharp.Infrastructure.Sessions;
 
-namespace MooSharp.Web.Services;
+namespace MooSharp.Web.Services.Session;
 
 public record Linkdead(Guid ActorId, Timer Timer);
 

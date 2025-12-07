@@ -1,12 +1,11 @@
 using System.Text;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using MooSharp.Commands;
+using MooSharp.Actors.Players;
 using MooSharp.Commands.Commands;
-using MooSharp.Infrastructure;
-using MooSharp.Messaging;
+using MooSharp.Commands.Presentation;
 
-namespace MooSharp.Actors;
+namespace MooSharp.Infrastructure.Messaging;
 
 public class PlayerMessageProvider(
     World.World world,

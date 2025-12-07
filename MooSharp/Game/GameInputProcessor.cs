@@ -1,19 +1,10 @@
-using System.Text;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
-using MooSharp.Actors;
-using MooSharp.Agents;
-using MooSharp.Commands;
-using MooSharp.Commands.Commands;
+using MooSharp.Actors.Players;
 using MooSharp.Commands.Machinery;
-using MooSharp.Data;
-using MooSharp.Data.Dtos;
-using MooSharp.Data.Mapping;
-using MooSharp.Infrastructure;
-using MooSharp.Messaging;
-using Object = MooSharp.Actors.Object;
+using MooSharp.Commands.Presentation;
+using MooSharp.Infrastructure.Messaging;
 
-namespace MooSharp;
+namespace MooSharp.Game;
 
 public class GameInputProcessor(
     World.World world,

@@ -1,7 +1,7 @@
 using System.Threading.Channels;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using MooSharp.Messaging;
+using MooSharp.Game;
 
 namespace MooSharp.Agents;
 

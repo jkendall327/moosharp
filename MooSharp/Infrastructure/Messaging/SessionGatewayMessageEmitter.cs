@@ -1,7 +1,8 @@
 using Microsoft.Extensions.Logging;
-using MooSharp.Infrastructure;
+using MooSharp.Commands.Presentation;
+using MooSharp.Infrastructure.Sessions;
 
-namespace MooSharp.Messaging;
+namespace MooSharp.Infrastructure.Messaging;
 
 public class SessionGatewayMessageEmitter(
     ISessionGateway gateway,

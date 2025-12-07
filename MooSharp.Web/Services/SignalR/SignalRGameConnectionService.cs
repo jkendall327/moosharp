@@ -1,8 +1,8 @@
 using Microsoft.AspNetCore.SignalR.Client;
+using MooSharp.Features.Autocomplete;
 using MooSharp.Game;
-using MooSharp.Web.Services;
 
-namespace MooSharp.Web.Game;
+namespace MooSharp.Web.Services.SignalR;
 
 public sealed class SignalRGameConnectionService : IGameConnectionService
 {

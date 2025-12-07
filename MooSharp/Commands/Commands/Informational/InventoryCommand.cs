@@ -1,8 +1,9 @@
 using System.Text;
 using MooSharp.Actors;
+using MooSharp.Actors.Players;
 using MooSharp.Commands.Machinery;
-using MooSharp.Messaging;
-using Object = MooSharp.Actors.Object;
+using MooSharp.Commands.Presentation;
+using Object = MooSharp.Actors.Objects.Object;
 
 namespace MooSharp.Commands.Commands.Informational;
 

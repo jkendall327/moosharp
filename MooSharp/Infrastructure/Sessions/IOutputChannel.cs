@@ -1,4 +1,4 @@
-namespace MooSharp.Infrastructure;
+namespace MooSharp.Infrastructure.Sessions;
 
 /// <summary>
 /// Represents a pipe to send data back to a connected user (or agent).

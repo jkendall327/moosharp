@@ -1,9 +1,10 @@
 using System.Threading.Channels;
 using MooSharp.Actors;
+using MooSharp.Actors.Players;
 using MooSharp.Data;
-using MooSharp.Data.Mapping;
+using MooSharp.Data.Players;
+using MooSharp.Features.Autocomplete;
 using MooSharp.Infrastructure;
-using MooSharp.Messaging;
 
 namespace MooSharp.Game;
 

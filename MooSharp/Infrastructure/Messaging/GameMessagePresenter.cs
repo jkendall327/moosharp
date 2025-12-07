@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Logging;
+using MooSharp.Commands.Presentation;
 
-namespace MooSharp.Messaging;
+namespace MooSharp.Infrastructure.Messaging;
 
 public interface IGameMessagePresenter
 {

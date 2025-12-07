@@ -1,13 +1,12 @@
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using MooSharp.Commands;
-using MooSharp.Infrastructure;
-using MooSharp.Messaging;
+using MooSharp.Commands.Presentation;
+using MooSharp.Infrastructure.Messaging;
 
-namespace MooSharp.World;
+namespace MooSharp.Features.WorldClock;
 
 public class WorldClock(
-    World world,
+    World.World world,
     IOptions<WorldClockOptions> options,
     TimeProvider timeProvider,
     IGameMessageEmitter emitter,

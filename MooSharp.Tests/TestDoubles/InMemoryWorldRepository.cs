@@ -1,5 +1,5 @@
 using MooSharp.Data;
-using MooSharp.Data.Dtos;
+using MooSharp.Data.Worlds;
 
 namespace MooSharp.Tests.TestDoubles;
 

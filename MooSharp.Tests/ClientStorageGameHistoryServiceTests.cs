@@ -1,6 +1,6 @@
 using System.Text.Json;
 using Microsoft.Extensions.Logging.Abstractions;
-using MooSharp.Web.Game;
+using MooSharp.Web.Services.ClientStorage;
 using NSubstitute;
 
 namespace MooSharp.Tests;

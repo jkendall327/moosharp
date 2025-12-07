@@ -1,5 +1,5 @@
 using MooSharp.Commands.Commands.Informational;
-using Object = MooSharp.Actors.Object;
+using Object = MooSharp.Actors.Objects.Object;
 
 namespace MooSharp.Tests.Handlers;
 

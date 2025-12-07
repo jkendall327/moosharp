@@ -1,8 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using MooSharp.Data;
-using MooSharp.Data.Dtos;
-using MooSharp.Data.Mapping;
-using MooSharp.Web.Services;
+using MooSharp.Data.Players;
+using MooSharp.Web.Services.Auth;
 
 namespace MooSharp.Web.Endpoints;
 

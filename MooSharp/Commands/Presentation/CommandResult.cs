@@ -1,6 +1,7 @@
-using MooSharp.Actors;
+using MooSharp.Actors.Players;
+using MooSharp.Actors.Rooms;
 
-namespace MooSharp.Messaging;
+namespace MooSharp.Commands.Presentation;
 
 public class CommandResult
 {

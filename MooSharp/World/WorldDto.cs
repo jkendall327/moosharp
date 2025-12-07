@@ -1,4 +1,7 @@
-namespace MooSharp.World.Dtos;
+using MooSharp.Actors.Objects;
+using MooSharp.Actors.Rooms;
+
+namespace MooSharp.World;
 
 public class WorldDto
 {

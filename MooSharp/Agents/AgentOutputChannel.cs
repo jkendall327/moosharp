@@ -1,6 +1,6 @@
-using MooSharp.Infrastructure;
+using MooSharp.Infrastructure.Sessions;
 
-namespace MooSharp.Web.Services;
+namespace MooSharp.Agents;
 
 public class AgentOutputChannel(Func<string, Task> onMessageReceived) : IOutputChannel
 {

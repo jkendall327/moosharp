@@ -1,10 +1,9 @@
 using System.Threading.Channels;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
-using MooSharp.Infrastructure;
-using MooSharp.Messaging;
+using MooSharp.Game;
 
-namespace MooSharp.World;
+namespace MooSharp.Features.WorldClock;
 
 public class WorldClockService(
     ChannelWriter<GameCommand> writer,

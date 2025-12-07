@@ -1,3 +1,3 @@
-namespace MooSharp.Messaging;
+namespace MooSharp.Commands.Presentation;
 
 public interface IGameEvent;

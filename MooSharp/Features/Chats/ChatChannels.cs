@@ -1,4 +1,4 @@
-namespace MooSharp.Messaging;
+namespace MooSharp.Features.Chats;
 
 public static class ChatChannels
 {

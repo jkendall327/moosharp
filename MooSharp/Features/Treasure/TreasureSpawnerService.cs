@@ -1,11 +1,10 @@
 using System.Threading.Channels;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
-using MooSharp.Infrastructure;
-using MooSharp.Messaging;
-using Object = MooSharp.Actors.Object;
+using MooSharp.Game;
+using Object = MooSharp.Actors.Objects.Object;
 
-namespace MooSharp.World;
+namespace MooSharp.Features.Treasure;
 
 public class TreasureSpawnerService(
     ChannelWriter<GameCommand> writer,

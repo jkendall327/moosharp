@@ -1,7 +1,6 @@
 using System.ComponentModel.DataAnnotations;
-using MooSharp.World;
 
-namespace MooSharp.Infrastructure;
+namespace MooSharp.Features.WorldClock;
 
 public class WorldClockOptions
 {

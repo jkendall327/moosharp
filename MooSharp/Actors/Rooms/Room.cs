@@ -1,8 +1,10 @@
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using MooSharp.Actors.Players;
+using Object = MooSharp.Actors.Objects.Object;
 
-namespace MooSharp.Actors;
+namespace MooSharp.Actors.Rooms;
 
 public readonly record struct RoomId(string Value)
 {

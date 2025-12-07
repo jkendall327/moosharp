@@ -1,7 +1,7 @@
-using MooSharp.Actors;
-using MooSharp.Data.Dtos;
+using MooSharp.Actors.Rooms;
+using MooSharp.Data.Players;
 
-namespace MooSharp.Data.Mapping;
+namespace MooSharp.Actors.Players;
 
 public static class PlayerSnapshotFactory
 {

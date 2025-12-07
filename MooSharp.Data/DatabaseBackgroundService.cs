@@ -1,9 +1,10 @@
 using System.Threading.Channels;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using MooSharp.Data.EntityFramework;
+using MooSharp.Data.Players;
+using MooSharp.Data.Worlds;
 
-namespace MooSharp.Data.Queueing;
+namespace MooSharp.Data;
 
 internal sealed class DatabaseBackgroundService(
     ChannelReader<DatabaseRequest> reader,

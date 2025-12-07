@@ -1,7 +1,8 @@
 using Microsoft.Extensions.Logging;
 using MooSharp.Actors;
+using MooSharp.Actors.Rooms;
 using MooSharp.Data;
-using MooSharp.Data.Mapping;
+using MooSharp.Data.Worlds;
 
 namespace MooSharp.World;
 

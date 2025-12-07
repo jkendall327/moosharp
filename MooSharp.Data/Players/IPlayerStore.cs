@@ -1,6 +1,4 @@
-using MooSharp.Data.Dtos;
-
-namespace MooSharp.Data;
+namespace MooSharp.Data.Players;
 
 internal interface IPlayerStore
 {

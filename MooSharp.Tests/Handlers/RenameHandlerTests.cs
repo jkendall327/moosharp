@@ -1,7 +1,8 @@
 using MooSharp.Commands;
 using MooSharp.Commands.Commands.Creative;
+using MooSharp.Commands.Presentation;
 using MooSharp.Tests.TestDoubles;
-using Object = MooSharp.Actors.Object;
+using Object = MooSharp.Actors.Objects.Object;
 
 namespace MooSharp.Tests.Handlers;
 

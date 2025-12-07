@@ -1,6 +1,8 @@
-using MooSharp.Data.Dtos;
+using MooSharp.Actors.Objects;
+using MooSharp.Data.Players;
+using Object = MooSharp.Actors.Objects.Object;
 
-namespace MooSharp.Actors;
+namespace MooSharp.Actors.Players;
 
 public class PlayerHydrator(World.World world)
 {

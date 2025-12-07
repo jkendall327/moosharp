@@ -1,6 +1,4 @@
-using MooSharp.Messaging;
-
-namespace MooSharp.Commands;
+namespace MooSharp.Commands.Presentation;
 
 public record SystemMessageEvent(string Message) : IGameEvent;
 

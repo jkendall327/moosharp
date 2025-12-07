@@ -1,6 +1,7 @@
 using MooSharp.Commands;
 using MooSharp.Commands.Commands.Items;
-using Object = MooSharp.Actors.Object;
+using MooSharp.Commands.Presentation;
+using Object = MooSharp.Actors.Objects.Object;
 
 namespace MooSharp.Tests.Handlers;
 

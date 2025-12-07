@@ -1,8 +1,7 @@
 using Microsoft.EntityFrameworkCore;
-using MooSharp.Data.Dtos;
 using MooSharp.Data.EntityFramework;
 
-namespace MooSharp.Data;
+namespace MooSharp.Data.Players;
 
 internal class EfPlayerStore(IDbContextFactory<MooSharpDbContext> contextFactory) : IPlayerStore, ILoginChecker
 {

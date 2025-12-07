@@ -1,10 +1,9 @@
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using MooSharp.Actors;
-using MooSharp.Game;
-using MooSharp.Infrastructure;
+using MooSharp.Actors.Players;
+using MooSharp.Infrastructure.Messaging;
 
-namespace MooSharp.Web.Services;
+namespace MooSharp.Game;
 
 /// <summary>
 /// Provides messages to players when they log in.

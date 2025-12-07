@@ -1,4 +1,4 @@
-using Object = MooSharp.Actors.Object;
+using Object = MooSharp.Actors.Objects.Object;
 
 namespace MooSharp.Commands.Searching;
 

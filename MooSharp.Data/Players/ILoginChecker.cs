@@ -1,4 +1,4 @@
-namespace MooSharp.Data;
+namespace MooSharp.Data.Players;
 
 public interface ILoginChecker
 {

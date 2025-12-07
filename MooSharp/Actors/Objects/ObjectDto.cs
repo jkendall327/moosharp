@@ -1,7 +1,7 @@
 using JetBrains.Annotations;
-using MooSharp.Actors;
+using MooSharp.Actors.Rooms;
 
-namespace MooSharp.World.Dtos;
+namespace MooSharp.Actors.Objects;
 
 [UsedImplicitly]
 public class ObjectDto

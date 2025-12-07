@@ -1,7 +1,7 @@
 using Microsoft.EntityFrameworkCore;
-using MooSharp.Data.Dtos;
+using MooSharp.Data.EntityFramework;
 
-namespace MooSharp.Data.EntityFramework;
+namespace MooSharp.Data.Worlds;
 
 internal sealed class EfWorldRepository(IDbContextFactory<MooSharpDbContext> contextFactory) : IWorldRepository
 {

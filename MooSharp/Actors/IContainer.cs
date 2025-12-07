@@ -1,3 +1,5 @@
+using Object = MooSharp.Actors.Objects.Object;
+
 namespace MooSharp.Actors;
 
 public interface IContainer

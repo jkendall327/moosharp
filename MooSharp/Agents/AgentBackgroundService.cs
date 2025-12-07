@@ -1,8 +1,7 @@
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
-using MooSharp.Agents;
 
-namespace MooSharp.Web.Game;
+namespace MooSharp.Agents;
 
 public class AgentBackgroundService(AgentSpawner spawner, IOptions<AgentOptions> options) : BackgroundService
 {

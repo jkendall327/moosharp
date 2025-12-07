@@ -1,7 +1,8 @@
 using System.Threading.Channels;
 using Microsoft.Extensions.Options;
 using MooSharp.Actors;
-using MooSharp.Messaging;
+using MooSharp.Actors.Players;
+using MooSharp.Game;
 
 namespace MooSharp.Agents;
 

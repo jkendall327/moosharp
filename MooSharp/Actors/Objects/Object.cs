@@ -1,6 +1,8 @@
 using System.Collections.Frozen;
+using MooSharp.Actors.Players;
+using MooSharp.Actors.Rooms;
 
-namespace MooSharp.Actors;
+namespace MooSharp.Actors.Objects;
 
 public readonly record struct ObjectId(Guid Value)
 {

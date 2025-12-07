@@ -1,6 +1,6 @@
 using System.Security.Claims;
 
-namespace MooSharp.Web.Services;
+namespace MooSharp.Web.Services.Auth;
 
 public class ActorIdentityResolver
 {

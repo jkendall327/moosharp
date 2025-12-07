@@ -1,8 +1,7 @@
 using System.Threading.Channels;
 using Microsoft.Extensions.Logging;
-using MooSharp.Data.Dtos;
 
-namespace MooSharp.Data.EntityFramework;
+namespace MooSharp.Data.Players;
 
 internal sealed class EfPlayerRepository(
     ChannelWriter<DatabaseRequest> writer,

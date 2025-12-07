@@ -1,10 +1,12 @@
 using MooSharp.Actors;
+using MooSharp.Actors.Players;
+using MooSharp.Actors.Rooms;
 using MooSharp.Commands.Commands.Informational;
 using MooSharp.Commands.Machinery;
+using MooSharp.Commands.Presentation;
 using MooSharp.Commands.Searching;
-using MooSharp.Messaging;
 using MooSharp.World;
-using Object = MooSharp.Actors.Object;
+using Object = MooSharp.Actors.Objects.Object;
 
 namespace MooSharp.Commands.Commands.Items;
 

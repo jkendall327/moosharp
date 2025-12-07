@@ -1,8 +1,7 @@
 using System.Text.Json.Serialization;
 using JetBrains.Annotations;
-using MooSharp.Actors;
 
-namespace MooSharp.World.Dtos;
+namespace MooSharp.Actors.Rooms;
 
 [UsedImplicitly]
 public class RoomDto

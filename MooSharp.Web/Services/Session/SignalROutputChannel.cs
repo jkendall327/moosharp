@@ -1,7 +1,8 @@
 using Microsoft.AspNetCore.SignalR;
-using MooSharp.Infrastructure;
+using MooSharp.Infrastructure.Sessions;
+using MooSharp.Web.Services.SignalR;
 
-namespace MooSharp.Web.Services;
+namespace MooSharp.Web.Services.Session;
 
 public class SignalROutputChannel(ISingleClientProxy client) : IOutputChannel
 {

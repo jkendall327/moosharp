@@ -1,6 +1,6 @@
-using MooSharp.Messaging;
+using Object = MooSharp.Actors.Objects.Object;
 
-namespace MooSharp.Actors;
+namespace MooSharp.Actors.Players;
 
 public readonly record struct PlayerId(Guid Value)
 {

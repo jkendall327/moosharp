@@ -1,9 +1,7 @@
 using System.Threading.Channels;
 using Microsoft.Extensions.Logging;
-using MooSharp.Data.Dtos;
-using MooSharp.Data.EntityFramework;
 
-namespace MooSharp.Data.Queueing;
+namespace MooSharp.Data.Worlds;
 
 internal sealed class QueuedWorldRepository(
     ChannelWriter<DatabaseRequest> writer,

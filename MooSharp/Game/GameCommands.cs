@@ -1,4 +1,6 @@
-namespace MooSharp.Messaging;
+using Object = MooSharp.Actors.Objects.Object;
+
+namespace MooSharp.Game;
 
 /// <summary>
 /// Represents a command given to the game engine.
@@ -13,6 +15,6 @@ public abstract record GameCommand
 
 public record InputCommand(Guid ActorId, string Command) : GameCommand;
 
-public record SpawnTreasureCommand(MooSharp.Actors.Object Treasure) : GameCommand;
+public record SpawnTreasureCommand(Object Treasure) : GameCommand;
 
 public record IncrementWorldClockCommand : GameCommand;

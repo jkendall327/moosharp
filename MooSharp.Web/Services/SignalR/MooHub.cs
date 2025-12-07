@@ -1,9 +1,12 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
+using MooSharp.Features.Autocomplete;
 using MooSharp.Game;
-using MooSharp.Infrastructure;
+using MooSharp.Infrastructure.Sessions;
+using MooSharp.Web.Services.Auth;
+using MooSharp.Web.Services.Session;
 
-namespace MooSharp.Web.Services;
+namespace MooSharp.Web.Services.SignalR;
 
 [Authorize]
 public class MooHub(

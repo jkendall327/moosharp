@@ -1,4 +1,4 @@
-namespace MooSharp.Data.Dtos;
+namespace MooSharp.Data.Players;
 
 public sealed record PlayerDto(
     Guid Id,

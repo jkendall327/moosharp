@@ -1,6 +1,6 @@
 using Microsoft.JSInterop;
 
-namespace MooSharp.Web.Game;
+namespace MooSharp.Web.Services.ClientStorage;
 
 public interface IClientStorageService
 {

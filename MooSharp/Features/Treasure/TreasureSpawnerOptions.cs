@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace MooSharp.Infrastructure;
+namespace MooSharp.Features.Treasure;
 
 public class TreasureSpawnerOptions
 {
