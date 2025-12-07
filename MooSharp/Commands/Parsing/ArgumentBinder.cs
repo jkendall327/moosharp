@@ -5,7 +5,7 @@ using Object = MooSharp.Actors.Objects.Object;
 
 namespace MooSharp.Commands.Parsing;
 
-public class ArgumentBinder(TargetResolver resolver)
+public class ArgumentBinder(TargetResolver resolver, World.World world)
 {
     // Binds a token to an object in the player's inventory
     public BindingResult<Object> BindInventoryItem(ParsingContext ctx)
@@ -27,6 +27,32 @@ public class ArgumentBinder(TargetResolver resolver)
         };
     }
 
+    /// <summary>
+    /// Attempts to find a player currently connected to the game (Global search).
+    /// Used for 'Whisper'.
+    /// </summary>
+    public BindingResult<Player> BindOnlinePlayer(ParsingContext ctx)
+    {
+        if (ctx.IsFinished)
+        {
+            return BindingResult<Player>.Failure("You didn't specify a player.");
+        }
+
+        var token = ctx.Pop()!;
+
+        // Exact match or Case-insensitive match on Username
+        var target = world
+            .GetActivePlayers()
+            .FirstOrDefault(p => p.Username.Equals(token, StringComparison.OrdinalIgnoreCase));
+
+        if (target is null)
+        {
+            return BindingResult<Player>.Failure($"Player '{token}' is not online.");
+        }
+
+        return BindingResult<Player>.Success(target);
+    }
+
     public BindingResult<Room> BindExitInRoom(ParsingContext ctx)
     {
         if (ctx.IsFinished)
@@ -35,9 +61,9 @@ public class ArgumentBinder(TargetResolver resolver)
         }
 
         var token = ctx.Pop()!;
-        
+
         var exits = ctx.Room.Exits;
-        
+
         return BindingResult<Room>.Failure("Not implemented.");
     }
 

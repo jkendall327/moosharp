@@ -17,4 +17,21 @@ public class ParsingContext(Player player, Room room, Queue<string> tokens)
     
     // Check if we have more arguments
     public bool IsFinished => Tokens.Count == 0;
+    
+    /// <summary>
+    /// Consumes all remaining tokens and joins them into a single string.
+    /// Used for chat messages (Say, Whisper, Emote).
+    /// </summary>
+    public string GetRemainingText()
+    {
+        if (Tokens.Count == 0) return string.Empty;
+
+        // string.Join automatically handles the spacing between tokens.
+        // Since our Tokenizer preserved the words but stripped syntax, 
+        // this reconstructs a clean sentence.
+        var text = string.Join(" ", Tokens);
+        Tokens.Clear();
+        return text;
+    }
+
 }
