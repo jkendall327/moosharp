@@ -129,6 +129,7 @@ internal sealed class EfWorldRepository(IDbContextFactory<MooSharpDbContext> con
             var existing = await context.Rooms
                 .Include(r => r.Exits)
                 .Include(r => r.Objects)
+                .AsSplitQuery()
                 .FirstOrDefaultAsync(r => r.Id == room.Id, cancellationToken);
 
             if (existing is null)
