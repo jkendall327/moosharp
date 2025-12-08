@@ -2,6 +2,7 @@
   "permissions": {
     "allow": [
       "Bash(ls:*)",
+      "Bash(ls -la:*)",
       "Bash(cat:*)",
       "Bash(head:*)",
       "Bash(tail:*)",
