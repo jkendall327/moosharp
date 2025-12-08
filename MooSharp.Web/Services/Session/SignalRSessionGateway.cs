@@ -1,10 +1,17 @@
 using System.Collections.Concurrent;
+using MooSharp.Commands.Presentation;
 using MooSharp.Game;
+using MooSharp.Infrastructure.Messaging;
 using MooSharp.Infrastructure.Sessions;
 
 namespace MooSharp.Web.Services.Session;
 
-public class SignalRSessionGateway(IGameEngine engine, ILogger<SignalRSessionGateway> logger) : ISessionGateway
+public class SignalRSessionGateway(
+    IGameEngine engine,
+    World.World world,
+    PlayerMessageProvider messageProvider,
+    IGameMessagePresenter presenter,
+    ILogger<SignalRSessionGateway> logger) : ISessionGateway
 {
     private const int MaxQueuedMessages = 50;
 
@@ -28,6 +35,7 @@ public class SignalRSessionGateway(IGameEngine engine, ILogger<SignalRSessionGat
         if (playerInWorld)
         {
             await ReplayQueuedMessagesAsync(actorId, channel);
+            await SendReconnectionMessagesAsync(actorId);
         }
         else
         {
@@ -130,6 +138,35 @@ public class SignalRSessionGateway(IGameEngine engine, ILogger<SignalRSessionGat
         while (queue.TryDequeue(out var message))
         {
             await channel.WriteOutputAsync(message);
+        }
+    }
+
+    private async Task SendReconnectionMessagesAsync(Guid actorId)
+    {
+        var player = world.TryGetPlayer(actorId);
+
+        if (player is null)
+        {
+            logger.LogWarning("Player {ActorId} not found when sending reconnection messages", actorId);
+            return;
+        }
+
+        try
+        {
+            var messages = await messageProvider.GetMessagesForLogin(player);
+
+            // Present and dispatch messages directly (avoiding circular dependency with IGameMessageEmitter)
+            // TODO: find better way to architect this
+            var tasks = messages
+                .Select(msg => (msg.Player, Content: presenter.Present(msg)))
+                .Where(msg => !string.IsNullOrWhiteSpace(msg.Content))
+                .Select(msg => DispatchToActorAsync(msg.Player.Id.Value, msg.Content!));
+
+            await Task.WhenAll(tasks);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Failed to send reconnection messages to {Username}", player.Username);
         }
     }
 

@@ -10,9 +10,9 @@ public sealed class SignalRGameConnectionService : IGameConnectionService
 
     public event Action<string>? OnMessageReceived;
 
-    public event Action? OnReconnecting;
-    public event Action? OnReconnected;
-    public event Action? OnClosed;
+    public event Func<Task>? OnReconnecting;
+    public event Func<Task>? OnReconnected;
+    public event Func<Task>? OnClosed;
 
     private HubConnectionState State => _hubConnection?.State ?? HubConnectionState.Disconnected;
 
@@ -33,13 +33,9 @@ public sealed class SignalRGameConnectionService : IGameConnectionService
 
         _hubConnection.On<string>(MooHub.ReceiveMessage, msg => OnMessageReceived?.Invoke(msg));
 
-        _hubConnection.Reconnecting += _ => { OnReconnecting?.Invoke(); return Task.CompletedTask; };
-        _hubConnection.Reconnected += _ => { OnReconnected?.Invoke(); return Task.CompletedTask; };
-        _hubConnection.Closed += e =>
-        {
-            var u = e?.Message;
-            OnClosed?.Invoke(); return Task.CompletedTask;
-        };
+        _hubConnection.Reconnecting += _ => OnReconnecting?.Invoke() ?? Task.CompletedTask;
+        _hubConnection.Reconnected += _ => OnReconnected?.Invoke() ?? Task.CompletedTask;
+        _hubConnection.Closed += _ => OnClosed?.Invoke() ?? Task.CompletedTask;
     }
 
     public async Task StartAsync()

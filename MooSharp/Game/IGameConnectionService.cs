@@ -5,9 +5,9 @@ namespace MooSharp.Game;
 public interface IGameConnectionService : IAsyncDisposable
 {
     event Action<string>? OnMessageReceived;
-    event Action? OnReconnecting;
-    event Action? OnReconnected;
-    event Action? OnClosed;
+    event Func<Task>? OnReconnecting;
+    event Func<Task>? OnReconnected;
+    event Func<Task>? OnClosed;
 
     Task InitializeAsync(Uri hubUrl, Func<Task<string?>> accessTokenProvider);
     Task StartAsync();
