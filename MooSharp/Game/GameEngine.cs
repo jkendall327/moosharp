@@ -9,6 +9,7 @@ namespace MooSharp.Game;
 public class GameEngine(
     World.World world,
     PlayerHydrator hydrator,
+    AutocompleteService autocompleter,
     IPlayerRepository playerRepository,
     ChannelWriter<GameCommand> writer) : IGameEngine
 {
@@ -71,23 +72,7 @@ public class GameEngine(
 
     public Task<AutocompleteOptions> GetAutocompleteOptions(Guid actorId, CancellationToken ct = default)
     {
-        var player = world.TryGetPlayer(actorId);
-
-        if (player is null)
-        {
-            return Task.FromResult(new AutocompleteOptions([], []));
-        }
-
-        var room = world.GetPlayerLocation(player);
-
-        var exits = room?.Exits
-                        .Where(e => !e.IsHidden)
-                        .Select(e => e.Name)
-                        ?? Enumerable.Empty<string>();
-        var inventory = player.Inventory.Select(item => item.Name);
-
-        var options = new AutocompleteOptions(exits.ToList(), inventory.ToList());
-
-        return Task.FromResult(options);
+        // TODO: call this in hub directly maybe? or maybe not?
+        return autocompleter.GetAutocompleteOptions(actorId, ct);
     }
 }
