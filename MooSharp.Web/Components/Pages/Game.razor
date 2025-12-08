@@ -2,6 +2,7 @@
 @inject GameClientViewModel Model
 @inject NavigationManager NavigationManager
 @inject ITerminalScrollController TerminalScrollController
+@inject IExitLinkController ExitLinkController
 @using MooSharp.Web.Services
 @using MooSharp.Web.Services.SignalR
 @implements IAsyncDisposable
@@ -50,7 +51,7 @@ else
             <fieldset disabled="@(!Model.IsLoggedIn)">
                 <div class="terminal-card" data-label="/world-feed">
                     <h2 class="panel-heading">World output</h2>
-                    <pre class="terminal-output" id="@TerminalScrollSelectors.TerminalElementId">@Model.GameOutput</pre>
+                    <div class="terminal-output" id="@TerminalScrollSelectors.TerminalElementId">@Model.GameOutputHtml</div>
 
                     <div class="command-input">
                         <input @bind="Model.CommandInput"
@@ -105,10 +106,11 @@ else
             _initialized = true;
             Model.OnStateChanged += ModelOnOnStateChanged;
             Model.OnFocusInputRequested += FocusInput;
-            
+
             var hubUri = NavigationManager.ToAbsoluteUri(MooHub.HubName);
 
             await Model.InitializeAsync(hubUri);
+            await ExitLinkController.InitializeAsync(Model.HandleExitClickAsync);
         }
     }
 

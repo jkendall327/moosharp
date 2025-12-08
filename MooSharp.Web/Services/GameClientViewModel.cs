@@ -1,4 +1,7 @@
 using System.Text;
+using System.Text.RegularExpressions;
+using System.Web;
+using Microsoft.AspNetCore.Components;
 using MooSharp.Features.Autocomplete;
 using MooSharp.Features.Chats;
 using MooSharp.Game;
@@ -7,8 +10,11 @@ using MooSharp.Web.Services.ClientStorage;
 
 namespace MooSharp.Web.Services;
 
-public sealed class GameClientViewModel : IDisposable
+public sealed partial class GameClientViewModel : IDisposable
 {
+    [GeneratedRegex(@"\[\[([^\]]+)\]\]")]
+    private static partial Regex ExitLinkPattern();
+
     // Dependencies
     private readonly IHttpClientFactory _factory;
     private readonly IClientStorageService _clientStorage;
@@ -27,6 +33,9 @@ public sealed class GameClientViewModel : IDisposable
 
     // The giant string of text for the terminal output
     public string GameOutput => _outputBuffer.ToString();
+
+    // HTML-rendered output with clickable exit links
+    public MarkupString GameOutputHtml => new(ParseOutputToHtml());
 
     // The text currently in the input box
     public string CommandInput { get; set; } = string.Empty;
@@ -499,6 +508,29 @@ public sealed class GameClientViewModel : IDisposable
         }
 
         return prefix;
+    }
+
+    private string ParseOutputToHtml()
+    {
+        var raw = _outputBuffer.ToString();
+        var encoded = HttpUtility.HtmlEncode(raw);
+
+        return ExitLinkPattern().Replace(encoded, match =>
+        {
+            var exitName = match.Groups[1].Value;
+            return $"<span class=\"exit-link\" data-exit=\"{HttpUtility.HtmlAttributeEncode(exitName)}\">{exitName}</span>";
+        });
+    }
+
+    public async Task HandleExitClickAsync(string exitName)
+    {
+        if (string.IsNullOrWhiteSpace(exitName) || !IsLoggedIn)
+        {
+            return;
+        }
+
+        CommandInput = $"go {exitName}";
+        await SubmitCommandAsync();
     }
 
     public void Dispose()

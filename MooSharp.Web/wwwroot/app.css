@@ -274,6 +274,19 @@ input:focus-visible {
     overflow-wrap: break-word;   /* Standard syntax for word-wrap */
 }
 
+.exit-link {
+    color: var(--accent);
+    cursor: pointer;
+    text-decoration: underline;
+    text-decoration-style: dotted;
+}
+
+.exit-link:hover {
+    color: var(--ink);
+    background-color: var(--accent);
+    text-decoration: none;
+}
+
 .status-message {
     margin: 0.4rem 0 0;
     color: var(--muted);
