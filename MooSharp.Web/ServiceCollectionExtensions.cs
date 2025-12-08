@@ -103,7 +103,7 @@ public static class ServiceCollectionExtensions
             // Editor Mode
             services.AddSingleton<IEditorModeService, EditorModeService>();
             services.AddSingleton<IEditorModeHandler, EditorModeHandler>();
-            
+
             // Autocomplete
             services.AddSingleton<AutocompleteService>();
         }

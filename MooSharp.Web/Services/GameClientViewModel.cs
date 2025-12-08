@@ -85,7 +85,7 @@ public sealed partial class GameClientViewModel : IDisposable
     public async Task InitializeAsync(Uri hub)
     {
         await _historyService.InitializeAsync();
-        
+
         _jwt = await _clientStorage.GetItemAsync(JwtStorageKey);
         await _connection.InitializeAsync(hub, () => Task.FromResult(_jwt));
 

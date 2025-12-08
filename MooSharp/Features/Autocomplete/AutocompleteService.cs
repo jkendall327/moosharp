@@ -16,11 +16,11 @@ public class AutocompleteService(World.World world)
         var exits = room.Exits
             .Where(e => !e.IsHidden)
             .Select(e => e.Name);
-        
+
         var inventory = player.Inventory.Select(item => item.Name);
 
         var items = room.Contents.Select(s => s.Name);
-        
+
         var options = new AutocompleteOptions(exits.ToList(), inventory.ToList(), items.ToList());
 
         return Task.FromResult(options);
@@ -60,7 +60,7 @@ public class AutocompleteService(World.World world)
 
         return $"{prefix}{completion}";
     }
-    
+
     private static (string Prefix, string Fragment) SplitCommandInput(string input)
     {
         var lastSpaceIndex = input.LastIndexOf(' ');
