@@ -23,7 +23,7 @@ public class LuaScriptExecutor(IOptions<LuaScriptOptions> options, ILogger<LuaSc
         var script = CreateSandboxedScript();
         var gameApi = new LuaGameApi(context);
         var selfApi = new LuaSelfApi(context.TargetObject);
-        var actorApi = new LuaActorApi(context.Actor);
+        var actorApi = new LuaActorApi(context.Actor, context.Location);
         var roomApi = new LuaRoomApi(context.Location);
 
         RegisterApis(script, gameApi, selfApi, actorApi, roomApi, context);
