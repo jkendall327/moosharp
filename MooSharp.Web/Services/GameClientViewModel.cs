@@ -114,6 +114,17 @@ public sealed partial class GameClientViewModel : IDisposable
         {
             _outputBuffer.AppendLine($"Starting hub failed: {ex.Message}");
             _logger.LogError(ex, "Failed to start hub connection");
+
+            // If connection fails and we had a JWT, it might be invalid - clear it
+            if (!string.IsNullOrWhiteSpace(_jwt))
+            {
+                _logger.LogWarning("Clearing potentially invalid JWT after connection failure");
+                _jwt = null;
+                await _clientStorage.RemoveItemAsync(JwtStorageKey);
+                IsLoggedIn = false;
+                LoginStatus = "Session expired. Please log in again.";
+                NotifyStateChanged();
+            }
         }
     }
 
@@ -414,24 +425,36 @@ public sealed partial class GameClientViewModel : IDisposable
         NotifyStateChanged();
     }
 
-    private void HandleReconnecting()
+    private Task HandleReconnecting()
     {
         _logger.LogWarning("Reconnecting...");
         IsLoggedIn = false;
         NotifyStateChanged();
+        return Task.CompletedTask;
     }
 
-    private void HandleReconnected()
+    private Task HandleReconnected()
     {
         _logger.LogInformation("Reconnected");
         IsLoggedIn = false;
         NotifyStateChanged();
+        return Task.CompletedTask;
     }
 
-    private void HandleClosed()
+    private async Task HandleClosed()
     {
         _logger.LogWarning("Connection closed");
         IsLoggedIn = false;
+
+        // Clear JWT since connection was closed (might be invalid)
+        if (!string.IsNullOrWhiteSpace(_jwt))
+        {
+            _logger.LogInformation("Clearing JWT after connection closed");
+            _jwt = null;
+            await _clientStorage.RemoveItemAsync(JwtStorageKey);
+            LoginStatus = "Connection closed. Please log in again.";
+        }
+
         NotifyStateChanged();
     }
 

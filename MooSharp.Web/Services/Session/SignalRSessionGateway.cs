@@ -1,10 +1,16 @@
 using System.Collections.Concurrent;
 using MooSharp.Game;
+using MooSharp.Infrastructure.Messaging;
 using MooSharp.Infrastructure.Sessions;
 
 namespace MooSharp.Web.Services.Session;
 
-public class SignalRSessionGateway(IGameEngine engine, ILogger<SignalRSessionGateway> logger) : ISessionGateway
+public class SignalRSessionGateway(
+    IGameEngine engine,
+    World.World world,
+    PlayerMessageProvider messageProvider,
+    IGameMessageEmitter emitter,
+    ILogger<SignalRSessionGateway> logger) : ISessionGateway
 {
     private const int MaxQueuedMessages = 50;
 
@@ -28,6 +34,7 @@ public class SignalRSessionGateway(IGameEngine engine, ILogger<SignalRSessionGat
         if (playerInWorld)
         {
             await ReplayQueuedMessagesAsync(actorId, channel);
+            await SendReconnectionMessagesAsync(actorId);
         }
         else
         {
@@ -130,6 +137,27 @@ public class SignalRSessionGateway(IGameEngine engine, ILogger<SignalRSessionGat
         while (queue.TryDequeue(out var message))
         {
             await channel.WriteOutputAsync(message);
+        }
+    }
+
+    private async Task SendReconnectionMessagesAsync(Guid actorId)
+    {
+        var player = world.TryGetPlayer(actorId);
+
+        if (player is null)
+        {
+            logger.LogWarning("Player {ActorId} not found when sending reconnection messages", actorId);
+            return;
+        }
+
+        try
+        {
+            var messages = await messageProvider.GetMessagesForLogin(player);
+            await emitter.SendGameMessagesAsync(messages);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Failed to send reconnection messages to {Username}", player.Username);
         }
     }
 
