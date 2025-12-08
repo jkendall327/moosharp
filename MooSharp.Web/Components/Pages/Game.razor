@@ -1,6 +1,7 @@
 @page "/game"
 @inject GameClientViewModel Model
 @inject NavigationManager NavigationManager
+@inject ITerminalScrollController TerminalScrollController
 @using MooSharp.Web.Services
 @using MooSharp.Web.Services.SignalR
 @implements IAsyncDisposable
@@ -49,7 +50,7 @@ else
             <fieldset disabled="@(!Model.IsLoggedIn)">
                 <div class="terminal-card" data-label="/world-feed">
                     <h2 class="panel-heading">World output</h2>
-                    <pre class="terminal-output">@Model.GameOutput</pre>
+                    <pre class="terminal-output" id="@TerminalScrollSelectors.TerminalElementId">@Model.GameOutput</pre>
 
                     <div class="command-input">
                         <input @bind="Model.CommandInput"
@@ -58,6 +59,8 @@ else
                                @ref="_commandInputRef"
                                placeholder="Type a command..."/>
                         <div class="command-actions">
+                            <button class="btn btn-ghost" @onclick="ScrollToTop">Top</button>
+                            <button class="btn btn-ghost" @onclick="ScrollToBottom">Bottom</button>
                             <button class="btn btn-accent" @onclick="Model.SubmitCommandAsync">Send</button>
                         </div>
                     </div>
@@ -151,6 +154,16 @@ else
         Model.OnFocusInputRequested -= FocusInput;
 
         return ValueTask.CompletedTask;
+    }
+
+    private Task ScrollToBottom()
+    {
+        return TerminalScrollController.ScrollTerminalToBottomAsync();
+    }
+
+    private Task ScrollToTop()
+    {
+        return TerminalScrollController.ScrollTerminalToTopAsync();
     }
 
 }
