@@ -58,6 +58,7 @@ public sealed partial class GameClientViewModel : IDisposable
     // Events
     public event Action? OnStateChanged;
     public event Func<Task>? OnFocusInputRequested;
+    public event Func<Task>? OnScrollToBottomRequested;
 
     public GameClientViewModel(IHttpClientFactory factory,
         IClientStorageService clientStorage,
@@ -531,6 +532,11 @@ public sealed partial class GameClientViewModel : IDisposable
 
         CommandInput = $"go {exitName}";
         await SubmitCommandAsync();
+
+        if (OnScrollToBottomRequested is not null)
+        {
+            await OnScrollToBottomRequested.Invoke();
+        }
     }
 
     public void Dispose()
