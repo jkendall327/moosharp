@@ -236,6 +236,15 @@ public class World(IWorldRepository worldRepository, ILogger<World> logger)
         logger.LogInformation("Spawned {TreasureName} in room {RoomName}", treasure.Name, room.Name);
     }
 
+    public IReadOnlyCollection<RoomSnapshotDto> CreateSnapshot()
+    {
+        var rooms = Rooms
+            .Values
+            .ToList();
+
+        return WorldSnapshotFactory.CreateSnapshots(rooms);
+    }
+
     /// <summary>
     /// Marks a room as modified so it will be saved to the database.
     /// Use this when objects in the room have been created, modified, or deleted.
