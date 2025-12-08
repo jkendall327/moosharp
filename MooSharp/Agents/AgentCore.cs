@@ -1,6 +1,7 @@
 using System.Runtime.CompilerServices;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.ChatCompletion;
 using MooSharp.Game;
 
@@ -14,6 +15,11 @@ public class AgentCore(
     IOptions<AgentOptions> options,
     ILogger logger)
 {
+    private static readonly string[] ThinkingEmotes = [
+        "/me is thinking...", "/me frowns in thought.", "/me pauses for a moment.",
+        "/me seems to be processing that."
+    ];
+
     private readonly AgentOptions _options = options.Value;
 
     private readonly ChatHistory _history = [];
@@ -50,15 +56,36 @@ public class AgentCore(
             yield break;
         }
 
-        // Yield "Thinking" immediately so the UI can update.
         logger.LogDebug("Agent has begun thinking");
 
-        yield return new(actorId, "/me is thinking...");
+        var llmTask = responseProvider.GetResponse(bundle.Name, bundle.Source, _history, ct);
 
-        // Perform the slow LLM call.
-        // The shell is currently processing the Thinking command, 
-        // but the lock prevents other messages from entering.
-        var content = await responseProvider.GetResponse(bundle.Name, bundle.Source, _history, ct);
+        // Create a "Patience Task". If this wins, we emit the thinking emote.
+        // 2 seconds is usually the "awkward silence" threshold in text chat.
+        var patienceTask = Task.Delay(TimeSpan.FromSeconds(2), ct);
+
+        var completedTask = await Task.WhenAny(llmTask, patienceTask);
+
+        // 4. Did we run out of patience?
+        if (completedTask == patienceTask)
+        {
+            logger.LogDebug("Agent is taking a while; emitting thinking emote");
+
+            yield return new(actorId, GetThinkingEmote());
+        }
+
+        ChatMessageContent content;
+
+        try
+        {
+            content = await llmTask;
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "LLM generation failed");
+
+            yield break;
+        }
 
         var responseText = content.Content?.Trim();
 
@@ -67,7 +94,7 @@ public class AgentCore(
             yield break;
         }
 
-        // AIs are loathe to not return responses, so they have an explicit option for skipping.
+        // AIs are loathe to not return responses, so we give them an explicit option for skipping.
         if (string.Equals(responseText, "<skip>"))
         {
             yield break;
@@ -82,6 +109,11 @@ public class AgentCore(
         yield return new(actorId, responseText);
 
         _lastActionTime = clock.GetUtcNow();
+    }
+
+    private string GetThinkingEmote()
+    {
+        return ThinkingEmotes[Random.Shared.Next(ThinkingEmotes.Length)];
     }
 
     public TimeSpan GetVolitionCooldown()
