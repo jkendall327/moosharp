@@ -18,9 +18,7 @@ public class WorldSnapshotService(
         var interval = TimeSpan.FromMinutes(appOptions.Value.WorldSnapshotIntervalMinutes);
 
         using var timer = new PeriodicTimer(interval, timeProvider);
-
-        await SaveSnapshotAsync(stoppingToken);
-
+        
         while (await timer.WaitForNextTickAsync(stoppingToken))
         {
             await SaveSnapshotAsync(stoppingToken);
