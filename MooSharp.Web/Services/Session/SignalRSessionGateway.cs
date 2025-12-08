@@ -4,25 +4,21 @@ using MooSharp.Infrastructure.Sessions;
 
 namespace MooSharp.Web.Services.Session;
 
-public record Linkdead(Guid ActorId, Timer Timer);
-
 public class SignalRSessionGateway(IGameEngine engine, ILogger<SignalRSessionGateway> logger) : ISessionGateway
 {
     private const int MaxQueuedMessages = 50;
 
     private readonly ConcurrentDictionary<Guid, IOutputChannel> _channels = new();
     private readonly ConcurrentDictionary<Guid, ConcurrentQueue<string>> _linkdeadMessages = new();
-    private readonly List<Linkdead> _linkDeads = [];
+    private readonly ConcurrentDictionary<Guid, CancellationTokenSource> _linkdeadCts = new();
 
     public async Task OnSessionStartedAsync(Guid actorId, IOutputChannel channel)
     {
-        var dead = _linkDeads.Find(s => s.ActorId == actorId);
-
-        if (dead is not null)
+        // cancel linkdead if any
+        if (_linkdeadCts.TryRemove(actorId, out var cts))
         {
-            _linkDeads.Remove(dead);
-
-            await dead.Timer.DisposeAsync();
+            cts.Cancel();
+            cts.Dispose();
         }
 
         _channels.AddOrUpdate(actorId, channel, (_, _) => channel);
@@ -43,30 +39,37 @@ public class SignalRSessionGateway(IGameEngine engine, ILogger<SignalRSessionGat
     {
         _linkdeadMessages.TryAdd(actorId, new());
 
-        var linkdead = new Linkdead(actorId, null!);
+        var cts = new CancellationTokenSource();
 
-        var timer = new Timer(OnLinkdeadTimer, linkdead, TimeSpan.Zero, TimeSpan.FromMinutes(1));
+        if (!_linkdeadCts.TryAdd(actorId, cts))
+        {
+            cts.Dispose();
 
-        linkdead = new(actorId, timer);
+            return Task.CompletedTask;
+        }
 
-        _linkDeads.Add(linkdead);
+        _ = HandleLinkdeadAsync(actorId, cts.Token);
 
         return Task.CompletedTask;
     }
 
-    // TODO: see if can avoid async avoid here.
-    private async void OnLinkdeadTimer(object? state)
+    private async Task HandleLinkdeadAsync(Guid actorId, CancellationToken ct)
     {
         try
         {
-            var linkdead = state as Linkdead ?? throw new InvalidOperationException("Timer state was of wrong type.");
+            await Task.Delay(TimeSpan.FromMinutes(1), ct);
 
-            await linkdead.Timer.DisposeAsync();
+            if (ct.IsCancellationRequested)
+            {
+                return;
+            }
 
-            _linkDeads.Remove(linkdead);
-            _linkdeadMessages.TryRemove(linkdead.ActorId, out _);
-
-            await engine.DespawnActorAsync(linkdead.ActorId);
+            _linkdeadMessages.TryRemove(actorId, out _);
+            await engine.DespawnActorAsync(actorId);
+        }
+        catch (TaskCanceledException)
+        {
+            // swallow
         }
         catch (Exception e)
         {
@@ -89,6 +92,7 @@ public class SignalRSessionGateway(IGameEngine engine, ILogger<SignalRSessionGat
         if (!_channels.TryGetValue(actorId, out var channel))
         {
             QueueMessageForLinkdead(actorId, message);
+
             return;
         }
 
