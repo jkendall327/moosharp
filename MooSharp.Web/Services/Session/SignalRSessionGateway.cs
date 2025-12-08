@@ -81,6 +81,12 @@ public class SignalRSessionGateway(IGameEngine engine, ILogger<SignalRSessionGat
     {
         _channels.TryRemove(actorId, out var _);
 
+        if (_linkdeadCts.TryRemove(actorId, out var cts))
+        {
+            cts.Cancel();
+            cts.Dispose();
+        }
+
         if (engine.IsActorSpawned(actorId))
         {
             await engine.DespawnActorAsync(actorId);
