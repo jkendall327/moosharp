@@ -96,7 +96,7 @@ public class Room : IContainer
             state = "Locked";
         }
 
-        return $"{exit.Name} ({state})";
+        return $"[[{exit.Name}]] ({state})";
     }
 
     IReadOnlyCollection<Object> IContainer.Contents => _contents;
