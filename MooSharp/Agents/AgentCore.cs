@@ -70,6 +70,12 @@ public class AgentCore(
             yield break;
         }
 
+        // AIs are loathe to not return responses, so they have an explicit option for skipping.
+        if (string.Equals(responseText, "<skip>"))
+        {
+            yield break;
+        }
+
         logger.LogInformation("Got agent response: {AgentResponse}", responseText);
 
         _history.AddAssistantMessage(responseText);
