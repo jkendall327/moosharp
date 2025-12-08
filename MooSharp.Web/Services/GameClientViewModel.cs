@@ -19,6 +19,7 @@ public sealed partial class GameClientViewModel : IDisposable
     private readonly IHttpClientFactory _factory;
     private readonly IClientStorageService _clientStorage;
     private readonly IGameConnectionService _connection;
+    private readonly AutocompleteService _autoCompleter;
     private readonly IGameHistoryService _historyService;
     private readonly ILogger<GameClientViewModel> _logger;
 
@@ -26,7 +27,6 @@ public sealed partial class GameClientViewModel : IDisposable
     private readonly StringBuilder _outputBuffer = new();
     private int _historyIndex = -1;
     private string _commandDraft = string.Empty;
-    private Uri? _hubUri;
     private string? _jwt;
 
     private const string JwtStorageKey = "mooSharpJwt";
@@ -64,6 +64,7 @@ public sealed partial class GameClientViewModel : IDisposable
         IClientStorageService clientStorage,
         IGameConnectionService connection,
         IGameHistoryService historyService,
+        AutocompleteService autoCompleter,
         ILogger<GameClientViewModel> logger)
     {
         _factory = factory;
@@ -71,6 +72,7 @@ public sealed partial class GameClientViewModel : IDisposable
         _connection = connection;
         _historyService = historyService;
         _logger = logger;
+        _autoCompleter = autoCompleter;
 
         _connection.OnMessageReceived += HandleMessageReceived;
         _connection.OnReconnecting += HandleReconnecting;
@@ -83,9 +85,7 @@ public sealed partial class GameClientViewModel : IDisposable
     public async Task InitializeAsync(Uri hub)
     {
         await _historyService.InitializeAsync();
-
-        _hubUri = hub;
-
+        
         _jwt = await _clientStorage.GetItemAsync(JwtStorageKey);
         await _connection.InitializeAsync(hub, () => Task.FromResult(_jwt));
 
@@ -342,38 +342,12 @@ public sealed partial class GameClientViewModel : IDisposable
             return;
         }
 
-        var candidates = options
-            .Exits
-            .Concat(options.InventoryItems)
-            .Concat(options.ObjectsInRoom)
-            .Distinct(StringComparer.OrdinalIgnoreCase)
-            .ToList();
+        var match = _autoCompleter.GetMatch(options, CommandInput);
 
-        if (candidates.Count == 0)
+        if (match is not null)
         {
-            return;
+            CommandInput = match;
         }
-
-        (var prefix, var fragment) = SplitCommandInput(CommandInput);
-
-        if (string.IsNullOrWhiteSpace(fragment))
-        {
-            return;
-        }
-
-        var matches = candidates
-            .Where(c => c.StartsWith(fragment, StringComparison.OrdinalIgnoreCase))
-            .ToList();
-
-        if (matches.Count == 0)
-        {
-            return;
-        }
-
-        var completion = matches.Count == 1 ? matches[0] : FindCommonPrefix(matches, fragment);
-
-        // Append the completion to the prefix
-        CommandInput = $"{prefix}{completion}";
 
         NotifyStateChanged();
 
@@ -470,47 +444,6 @@ public sealed partial class GameClientViewModel : IDisposable
     }
 
     private void NotifyStateChanged() => OnStateChanged?.Invoke();
-
-    private static (string Prefix, string Fragment) SplitCommandInput(string input)
-    {
-        var lastSpaceIndex = input.LastIndexOf(' ');
-
-        if (lastSpaceIndex == -1)
-        {
-            return (string.Empty, input);
-        }
-
-        var prefix = input[..(lastSpaceIndex + 1)];
-        var fragment = input[(lastSpaceIndex + 1)..];
-
-        return (prefix, fragment);
-    }
-
-    private static string FindCommonPrefix(List<string> options, string seed)
-    {
-        if (options.Count == 0)
-        {
-            return seed;
-        }
-
-        var comparison = StringComparison.OrdinalIgnoreCase;
-        var prefix = seed;
-        var reference = options[0];
-
-        for (var i = seed.Length; i < reference.Length; i++)
-        {
-            var candidate = reference[..(i + 1)];
-
-            if (options.Any(option => !option.StartsWith(candidate, comparison)))
-            {
-                break;
-            }
-
-            prefix = candidate;
-        }
-
-        return prefix;
-    }
 
     private string ParseOutputToHtml()
     {

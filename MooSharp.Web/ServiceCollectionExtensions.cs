@@ -9,6 +9,7 @@ using MooSharp.Commands.Machinery;
 using MooSharp.Commands.Parsing;
 using MooSharp.Commands.Presentation;
 using MooSharp.Commands.Searching;
+using MooSharp.Features.Autocomplete;
 using MooSharp.Features.Editor;
 using MooSharp.Features.Treasure;
 using MooSharp.Features.WorldClock;
@@ -102,6 +103,9 @@ public static class ServiceCollectionExtensions
             // Editor Mode
             services.AddSingleton<IEditorModeService, EditorModeService>();
             services.AddSingleton<IEditorModeHandler, EditorModeHandler>();
+            
+            // Autocomplete
+            services.AddSingleton<AutocompleteService>();
         }
 
         public void AddMooSharpMessaging()
