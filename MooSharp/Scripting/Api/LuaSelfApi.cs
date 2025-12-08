@@ -1,3 +1,4 @@
+using JetBrains.Annotations;
 using MoonSharp.Interpreter;
 using Object = MooSharp.Actors.Objects.Object;
 
@@ -6,16 +7,25 @@ namespace MooSharp.Scripting.Api;
 [MoonSharpUserData]
 public class LuaSelfApi(Object obj)
 {
-    // Read-only standard properties
+    [UsedImplicitly]
     public string Name => obj.Name;
+
+    [UsedImplicitly]
     public string Description => obj.Description;
+
+    [UsedImplicitly]
     public string Id => obj.Id.Value.ToString();
+
+    [UsedImplicitly]
     public bool IsOpen => obj.IsOpen;
+
+    [UsedImplicitly]
     public bool IsLocked => obj.IsLocked;
+
+    [UsedImplicitly]
     public bool IsContainer => obj.IsContainer;
 
-    // Dynamic property access - will be implemented in Phase 2
-    // For now, returns nil for any property
+    [UsedImplicitly]
     [MoonSharpUserDataMetamethod("__index")]
     public DynValue Index(DynValue key)
     {
@@ -39,6 +49,7 @@ public class LuaSelfApi(Object obj)
         };
     }
 
+    [UsedImplicitly]
     [MoonSharpUserDataMetamethod("__newindex")]
     public void NewIndex(DynValue key, DynValue value)
     {

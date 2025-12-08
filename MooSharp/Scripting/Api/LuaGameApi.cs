@@ -1,3 +1,4 @@
+using JetBrains.Annotations;
 using MoonSharp.Interpreter;
 using MooSharp.Actors.Players;
 
@@ -8,6 +9,7 @@ public class LuaGameApi(ScriptExecutionContext context)
 {
     private readonly List<ScriptMessage> _messages = [];
 
+    [UsedImplicitly]
     public void Tell(string playerName, string message)
     {
         var player = FindPlayer(playerName);
@@ -17,6 +19,7 @@ public class LuaGameApi(ScriptExecutionContext context)
         }
     }
 
+    [UsedImplicitly]
     public void TellRoom(string message)
     {
         foreach (var player in context.Location.PlayersInRoom)
@@ -25,6 +28,7 @@ public class LuaGameApi(ScriptExecutionContext context)
         }
     }
 
+    [UsedImplicitly]
     public void TellRoomExcept(string message, string excludePlayerName)
     {
         foreach (var player in context.Location.PlayersInRoom)

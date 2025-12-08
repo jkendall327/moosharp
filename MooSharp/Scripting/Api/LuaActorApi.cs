@@ -1,34 +1,56 @@
+using JetBrains.Annotations;
 using MoonSharp.Interpreter;
 using MooSharp.Actors.Players;
+using MooSharp.Actors.Rooms;
 
 namespace MooSharp.Scripting.Api;
 
 [MoonSharpUserData]
-public class LuaActorApi(Player player)
+public class LuaActorApi(Player player, Room room)
 {
+    [UsedImplicitly]
     public string Name => player.Username;
 
+    [UsedImplicitly]
     public bool HasItem(string itemName)
     {
         return player.Inventory.Any(obj =>
             string.Equals(obj.Name, itemName, StringComparison.OrdinalIgnoreCase));
     }
 
+    [UsedImplicitly]
     public string[] GetInventory()
     {
         return player.Inventory.Select(obj => obj.Name).ToArray();
     }
 
-    // Full manipulation methods - will be fully implemented in Phase 4
+    [UsedImplicitly]
     public bool GiveItem(string itemName)
     {
-        // TODO: Implement in Phase 4 - requires access to object creation/world
-        return false;
+        var obj = room.Contents.FirstOrDefault(o =>
+            string.Equals(o.Name, itemName, StringComparison.OrdinalIgnoreCase));
+
+        if (obj is null)
+        {
+            return false;
+        }
+
+        obj.MoveTo(player);
+        return true;
     }
 
+    [UsedImplicitly]
     public bool TakeItem(string itemName)
     {
-        // TODO: Implement in Phase 4 - requires proper item removal
-        return false;
+        var obj = player.Inventory.FirstOrDefault(o =>
+            string.Equals(o.Name, itemName, StringComparison.OrdinalIgnoreCase));
+
+        if (obj is null)
+        {
+            return false;
+        }
+
+        obj.MoveTo(room);
+        return true;
     }
 }
