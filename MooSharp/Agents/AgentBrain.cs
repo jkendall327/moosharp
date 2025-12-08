@@ -1,4 +1,5 @@
 using System.Threading.Channels;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using MooSharp.Actors.Players;
 using MooSharp.Game;
@@ -9,7 +10,8 @@ public sealed class AgentBrain(
     AgentCore core,
     ChannelWriter<GameCommand> gameWriter,
     TimeProvider clock,
-    IOptions<AgentOptions> options)
+    IOptions<AgentOptions> options,
+    ILogger logger)
 {
     private readonly Channel<string> _inbox = Channel.CreateUnbounded<string>();
 
@@ -43,39 +45,33 @@ public sealed class AgentBrain(
 
                 // Create a task that completes when we get bored
                 var boredomTask = Task.Delay(timeUntilBored, ct);
-
+                
                 // WAIT for either: A message arrives OR We get bored
                 var completedTask = await Task.WhenAny(readTask, boredomTask);
 
                 if (completedTask == readTask)
                 {
-                    // === REACTION PATH ===
                     // We have messages! Process all available.
-                    while (_inbox.Reader.TryRead(out var msg))
-                    {
-                        // Use the existing core logic
-                        await foreach (var cmd in core.ProcessMessageAsync(Id.Value, msg, ct))
-                        {
-                            await gameWriter.WriteAsync(cmd, ct);
-                        }
-                    }
-
-                    lastActionTime = clock.GetUtcNow();
+                    await ReactToEvents(ct);
                 }
                 else
                 {
                     // We timed out. The agent is bored.
-                    if (core.RequiresVolition())
+                    if (!core.RequiresVolition())
                     {
-                        // Generate a thought/action based on the volition prompt
-                        await foreach (var cmd in core.ProcessMessageAsync(Id.Value, options.Value.VolitionPrompt, ct))
-                        {
-                            await gameWriter.WriteAsync(cmd, ct);
-                        }
+                        continue;
+                    }
 
-                        lastActionTime = clock.GetUtcNow();
+                    // Generate a thought/action based on the volition prompt
+                    var prompt = options.Value.VolitionPrompt;
+
+                    await foreach (var cmd in core.ProcessMessageAsync(Id.Value, [prompt], ct))
+                    {
+                        await gameWriter.WriteAsync(cmd, ct);
                     }
                 }
+
+                lastActionTime = clock.GetUtcNow();
             }
             catch (OperationCanceledException)
             {
@@ -83,9 +79,23 @@ public sealed class AgentBrain(
             }
             catch (Exception ex)
             {
-                // Log and continue, don't crash the loop
-                // _logger.LogError(ex, "Agent crashed");
+                logger.LogError(ex, "Agent {Id} crashed", Id.Value);
             }
+        }
+    }
+
+    private async Task ReactToEvents(CancellationToken ct)
+    {
+        var messages = new List<string>();
+
+        while (_inbox.Reader.TryRead(out var msg))
+        {
+            messages.Add(msg);
+        }
+
+        await foreach (var cmd in core.ProcessMessageAsync(Id.Value, messages, ct))
+        {
+            await gameWriter.WriteAsync(cmd, ct);
         }
     }
 
