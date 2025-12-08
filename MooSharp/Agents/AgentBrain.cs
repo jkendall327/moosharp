@@ -45,7 +45,7 @@ public sealed class AgentBrain(
 
                 // Create a task that completes when we get bored
                 var boredomTask = Task.Delay(timeUntilBored, ct);
-                
+
                 // WAIT for either: A message arrives OR We get bored
                 var completedTask = await Task.WhenAny(readTask, boredomTask);
 
@@ -65,7 +65,7 @@ public sealed class AgentBrain(
                     // Generate a thought/action based on the volition prompt
                     var prompt = options.Value.VolitionPrompt;
 
-                    await foreach (var cmd in core.ProcessMessageAsync(Id.Value, [prompt], ct))
+                    await foreach (var cmd in core.ProcessMessageAsync(Id.Value, prompt, ct))
                     {
                         await gameWriter.WriteAsync(cmd, ct);
                     }
@@ -86,16 +86,12 @@ public sealed class AgentBrain(
 
     private async Task ReactToEvents(CancellationToken ct)
     {
-        var messages = new List<string>();
-
         while (_inbox.Reader.TryRead(out var msg))
         {
-            messages.Add(msg);
-        }
-
-        await foreach (var cmd in core.ProcessMessageAsync(Id.Value, messages, ct))
-        {
-            await gameWriter.WriteAsync(cmd, ct);
+            await foreach (var cmd in core.ProcessMessageAsync(Id.Value, msg, ct))
+            {
+                await gameWriter.WriteAsync(cmd, ct);
+            }
         }
     }
 

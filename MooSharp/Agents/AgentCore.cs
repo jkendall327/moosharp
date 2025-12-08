@@ -33,13 +33,10 @@ public class AgentCore(
     }
 
     public async IAsyncEnumerable<InputCommand> ProcessMessageAsync(Guid actorId,
-        List<string> newMessages,
+        string message,
         [EnumeratorCancellation] CancellationToken ct)
     {
-        foreach (var newMessage in newMessages)
-        {
-            _history.AddUserMessage(newMessage);
-        }
+        _history.AddUserMessage(message);
 
         TrimHistory();
 
