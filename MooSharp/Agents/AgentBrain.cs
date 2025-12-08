@@ -15,7 +15,7 @@ public sealed class AgentBrain(
 {
     private readonly Channel<string> _inbox = Channel.CreateUnbounded<string>();
 
-    public PlayerId Id { get; private set; }
+    private PlayerId Id { get; set; }
 
     public async Task RunAsync(Guid id, CancellationToken ct)
     {

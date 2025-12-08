@@ -54,10 +54,11 @@ public class AgentSpawner(
         {
             // Wait for cancellation (shutdown)
             await Task.WhenAll(agentTasks);
+            logger.LogInformation("All agent tasks done, exiting");
         }
         catch (OperationCanceledException)
         {
-            // Graceful shutdown
+            logger.LogInformation("Agent background service cancelled, shutting down");
         }
     }
 
