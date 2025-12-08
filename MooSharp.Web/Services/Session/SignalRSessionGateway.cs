@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using MooSharp.Commands.Presentation;
 using MooSharp.Game;
 using MooSharp.Infrastructure.Messaging;
 using MooSharp.Infrastructure.Sessions;
@@ -9,7 +10,7 @@ public class SignalRSessionGateway(
     IGameEngine engine,
     World.World world,
     PlayerMessageProvider messageProvider,
-    IGameMessageEmitter emitter,
+    IGameMessagePresenter presenter,
     ILogger<SignalRSessionGateway> logger) : ISessionGateway
 {
     private const int MaxQueuedMessages = 50;
@@ -153,7 +154,15 @@ public class SignalRSessionGateway(
         try
         {
             var messages = await messageProvider.GetMessagesForLogin(player);
-            await emitter.SendGameMessagesAsync(messages);
+
+            // Present and dispatch messages directly (avoiding circular dependency with IGameMessageEmitter)
+            // TODO: find better way to architect this
+            var tasks = messages
+                .Select(msg => (msg.Player, Content: presenter.Present(msg)))
+                .Where(msg => !string.IsNullOrWhiteSpace(msg.Content))
+                .Select(msg => DispatchToActorAsync(msg.Player.Id.Value, msg.Content!));
+
+            await Task.WhenAll(tasks);
         }
         catch (Exception ex)
         {
