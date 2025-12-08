@@ -38,6 +38,7 @@ public static class ServiceCollectionExtensions
             services.AddScoped<IClientStorageService, ClientStorageService>();
             services.AddScoped<IGameHistoryService, ClientStorageGameHistoryService>();
             services.AddScoped<IGameConnectionService, SignalRGameConnectionService>();
+            services.AddScoped<ITerminalScrollController, TerminalScrollController>();
             services.AddScoped<GameClientViewModel>();
             services.AddSingleton<JwtTokenService>();
             services.AddSingleton<ActorIdentityResolver>();
