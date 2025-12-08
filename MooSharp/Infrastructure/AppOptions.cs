@@ -11,4 +11,7 @@ public class AppOptions
     public required string DatabaseFilepath { get; set; }
 
     public string? Motd { get; set; }
+
+    [Range(1, int.MaxValue)]
+    public int WorldSnapshotIntervalMinutes { get; set; } = 5;
 }
