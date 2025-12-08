@@ -1,6 +1,8 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using MooSharp.Actors.Players;
 using MooSharp.Data;
 using MooSharp.Data.Players;
 using MooSharp.Infrastructure;
@@ -13,17 +15,50 @@ public class AgentSpawner(
     ISessionGateway gateway,
     World.World world,
     IPlayerRepository playerRepository,
-    IOptions<AgentOptions> options)
+    IOptions<AgentOptions> options,
+    ILogger<AgentSpawner> logger)
 {
     public async Task ExecuteAsync(CancellationToken stoppingToken)
     {
+        if (!options.Value.Enabled)
+        {
+            return;
+        }
+
         var identities = await LoadIdentitiesAsync(stoppingToken);
+
+        var agentTasks = new List<Task>();
 
         foreach (var identity in identities)
         {
-            stoppingToken.ThrowIfCancellationRequested();
+            var brain = factory.Build(identity);
 
-            await SpawnAgentAsync(identity, stoppingToken);
+            var playerId = await EnsureAgentExists(identity, stoppingToken);
+
+            // Hook up the output channel
+            var channel = new AgentOutputChannel(msg => brain
+                .EnqueueMessageAsync(msg, stoppingToken)
+                .AsTask());
+
+            await gateway.OnSessionStartedAsync(playerId, channel);
+
+            // Start the brain's main loop and track the task
+            // We do NOT await here, or we'd block the loop.
+            var agentLoopTask = brain.RunAsync(playerId, stoppingToken);
+            agentTasks.Add(agentLoopTask);
+
+            logger.LogInformation("Agent {Name} started", identity.Name);
+        }
+
+        try
+        {
+            // Wait for cancellation (shutdown)
+            await Task.WhenAll(agentTasks);
+            logger.LogInformation("All agent tasks done, exiting");
+        }
+        catch (OperationCanceledException)
+        {
+            logger.LogInformation("Agent background service cancelled, shutting down");
         }
     }
 
@@ -50,10 +85,8 @@ public class AgentSpawner(
         return identities;
     }
 
-    private async Task SpawnAgentAsync(AgentIdentity identity, CancellationToken cancellationToken)
+    private async Task<Guid> EnsureAgentExists(AgentIdentity identity, CancellationToken cancellationToken)
     {
-        var brain = factory.Build(identity);
-
         var player = await playerRepository.GetPlayerByUsername(identity.Name, cancellationToken);
 
         var id = player?.Id ?? Guid.NewGuid();
@@ -63,20 +96,17 @@ public class AgentSpawner(
             await PersistAgentToDatabase(id, identity, cancellationToken);
         }
 
-        await brain.StartAsync(id, cancellationToken);
-
-        var channel = new AgentOutputChannel(brain.WriteToInternalQueue);
-        await gateway.OnSessionStartedAsync(brain.Id.Value, channel);
+        return id;
     }
 
     private async Task PersistAgentToDatabase(Guid id, AgentIdentity identity, CancellationToken cancellationToken)
     {
-        // Stick the agent in the database so they are spawned into the world properly.
-        // TODO: unsure if this feels like a hack or not?
-        var startingRoom = identity.StartingRoomSlug ?? world.GetDefaultRoom()
-            .Id.Value;
+        var defaultRoom = world.GetDefaultRoom().Id.Value;
 
-        var req = new NewPlayerRequest(id, identity.Name, Random.Shared.GetHexString(12), startingRoom);
+        var startingRoom = identity.StartingRoomSlug ?? defaultRoom;
+
+        var password = Random.Shared.GetHexString(12);
+        var req = new NewPlayerRequest(id, identity.Name, password, startingRoom);
 
         await playerRepository.SaveNewPlayerAsync(req, WriteType.Immediate, cancellationToken);
     }

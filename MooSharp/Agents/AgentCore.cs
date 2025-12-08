@@ -1,6 +1,7 @@
 using System.Runtime.CompilerServices;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.ChatCompletion;
 using MooSharp.Game;
 
@@ -14,12 +15,16 @@ public class AgentCore(
     IOptions<AgentOptions> options,
     ILogger logger)
 {
+    private static readonly string[] ThinkingEmotes = [
+        "/me is thinking...", "/me frowns in thought.", "/me pauses for a moment.",
+        "/me seems to be processing that."
+    ];
+
     private readonly AgentOptions _options = options.Value;
 
     private readonly ChatHistory _history = [];
     private DateTimeOffset _nextAllowedActionTime = DateTimeOffset.MinValue;
     private DateTimeOffset _lastActionTime = DateTimeOffset.MinValue;
-    private readonly SemaphoreSlim _stateLock = new(1, 1);
 
     public async Task InitializeAsync(CancellationToken ct)
     {
@@ -33,59 +38,82 @@ public class AgentCore(
         _history.AddSystemMessage(systemPrompt);
     }
 
-    public async IAsyncEnumerable<InputCommand> ProcessMessageAsync(Guid actorId, string message,
+    public async IAsyncEnumerable<InputCommand> ProcessMessageAsync(Guid actorId,
+        string message,
         [EnumeratorCancellation] CancellationToken ct)
     {
-        // We acquire the lock. Because this is an iterator, the lock remains 
-        // held while the caller (AgentBrain) iterates through the loop.
-        // It is released only when the enumeration finishes or is disposed.
-        await _stateLock.WaitAsync(ct);
+        _history.AddUserMessage(message);
+
+        TrimHistory();
+
+        // Check cooldown.
+        if (!ShouldAct())
+        {
+            // Yield nothing and exit. 
+            // The lock is released in the finally block.
+            logger.LogDebug("Skipping agent turn due to action cooldown");
+
+            yield break;
+        }
+
+        logger.LogDebug("Agent has begun thinking");
+
+        var llmTask = responseProvider.GetResponse(bundle.Name, bundle.Source, _history, ct);
+
+        // Create a "Patience Task". If this wins, we emit the thinking emote.
+        // 2 seconds is usually the "awkward silence" threshold in text chat.
+        var patienceTask = Task.Delay(TimeSpan.FromSeconds(2), ct);
+
+        var completedTask = await Task.WhenAny(llmTask, patienceTask);
+
+        // 4. Did we run out of patience?
+        if (completedTask == patienceTask)
+        {
+            logger.LogDebug("Agent is taking a while; emitting thinking emote");
+
+            yield return new(actorId, GetThinkingEmote());
+        }
+
+        ChatMessageContent content;
 
         try
         {
-            _history.AddUserMessage(message);
-            TrimHistory();
-
-            // Check cooldown.
-            if (!ShouldAct())
-            {
-                // Yield nothing and exit. 
-                // The lock is released in the finally block.
-                logger.LogDebug("Skipping agent turn due to action cooldown");
-                yield break;
-            }
-
-            // Yield "Thinking" immediately so the UI can update.
-            logger.LogDebug("Agent has begun thinking");
-
-            yield return new(actorId, "/me is thinking...");
-
-            // Perform the slow LLM call.
-            // The shell is currently processing the Thinking command, 
-            // but the lock prevents other messages from entering.
-            var content = await responseProvider.GetResponse(bundle.Name, bundle.Source, _history, ct);
-
-            var responseText = content.Content?.Trim();
-
-            if (string.IsNullOrEmpty(responseText))
-            {
-                yield break;
-            }
-
-            logger.LogInformation("Got agent response: {AgentResponse}", responseText);
-
-            _history.AddAssistantMessage(responseText);
-            TrimHistory();
-
-            // Yield the actual response.
-            yield return new(actorId, responseText);
-
-            _lastActionTime = clock.GetUtcNow();
+            content = await llmTask;
         }
-        finally
+        catch (Exception ex)
         {
-            _stateLock.Release();
+            logger.LogError(ex, "LLM generation failed");
+
+            yield break;
         }
+
+        var responseText = content.Content?.Trim();
+
+        if (string.IsNullOrEmpty(responseText))
+        {
+            yield break;
+        }
+
+        // AIs are loathe to not return responses, so we give them an explicit option for skipping.
+        if (string.Equals(responseText, "<skip>"))
+        {
+            yield break;
+        }
+
+        logger.LogInformation("Got agent response: {AgentResponse}", responseText);
+
+        _history.AddAssistantMessage(responseText);
+        TrimHistory();
+
+        // Yield the actual response.
+        yield return new(actorId, responseText);
+
+        _lastActionTime = clock.GetUtcNow();
+    }
+
+    private string GetThinkingEmote()
+    {
+        return ThinkingEmotes[Random.Shared.Next(ThinkingEmotes.Length)];
     }
 
     public TimeSpan GetVolitionCooldown()
