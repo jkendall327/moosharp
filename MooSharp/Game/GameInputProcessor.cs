@@ -4,6 +4,7 @@ using MooSharp.Commands.Commands.Scripting;
 using MooSharp.Commands.Machinery;
 using MooSharp.Commands.Parsing;
 using MooSharp.Commands.Presentation;
+using MooSharp.Features.Editor;
 using MooSharp.Infrastructure.Messaging;
 using MooSharp.Scripting;
 
@@ -15,6 +16,8 @@ public class GameInputProcessor(
     CommandExecutor executor,
     IGameMessageEmitter emitter,
     IVerbScriptResolver verbScriptResolver,
+    IEditorModeService editorModeService,
+    IEditorModeHandler editorModeHandler,
     ILogger<GameInputProcessor> logger)
 {
     public async Task ProcessInputAsync(InputCommand inputCommand, CancellationToken ct = default)
@@ -23,6 +26,13 @@ public class GameInputProcessor(
 
         if (player is not null)
         {
+            // Check if player is in editor mode first - input should be handled differently
+            if (editorModeService.IsInEditorMode(inputCommand.ActorId))
+            {
+                await editorModeHandler.HandleEditorInputAsync(player, inputCommand.Command, ct);
+                return;
+            }
+
             await ProcessWorldCommand(player, inputCommand.Command, ct);
         }
         else
