@@ -1,9 +1,7 @@
 using MooSharp.Actors.Players;
-using MooSharp.Commands.Commands.Informational;
 using MooSharp.Commands.Machinery;
 using MooSharp.Commands.Parsing;
 using MooSharp.Commands.Presentation;
-using MooSharp.Commands.Searching;
 using Object = MooSharp.Actors.Objects.Object;
 
 namespace MooSharp.Commands.Commands.Creative;
@@ -11,7 +9,7 @@ namespace MooSharp.Commands.Commands.Creative;
 public class RecycleObjectCommand : CommandBase<RecycleObjectCommand>
 {
     public required Player Player { get; init; }
-    public required string Target { get; init; }
+    public required Object Target { get; init; }
 }
 
 public class RecycleObjectCommandDefinition : ICommandDefinition
@@ -23,12 +21,18 @@ public class RecycleObjectCommandDefinition : ICommandDefinition
 
     public string? TryCreateCommand(ParsingContext ctx, ArgumentBinder binder, out ICommand? command)
     {
-        var target = ctx.GetRemainingText().Trim();
+        command = null;
+
+        var bindResult = binder.BindNearbyObject(ctx);
+        if (!bindResult.IsSuccess)
+        {
+            return bindResult.ErrorMessage;
+        }
 
         command = new RecycleObjectCommand
         {
             Player = ctx.Player,
-            Target = target
+            Target = bindResult.Value!
         };
 
         return null;
@@ -46,61 +50,35 @@ public class ObjectRecycledEventFormatter : IGameEventFormatter<ObjectRecycledEv
         $"{gameEvent.Player.Username} recycles '{gameEvent.Item.Name}'. It vanishes in a puff of smoke.";
 }
 
-public class RecycleObjectHandler(World.World world, TargetResolver resolver) : IHandler<RecycleObjectCommand>
+public class RecycleObjectHandler(World.World world) : IHandler<RecycleObjectCommand>
 {
     public Task<CommandResult> Handle(RecycleObjectCommand cmd, CancellationToken cancellationToken = default)
     {
         var result = new CommandResult();
         var player = cmd.Player;
-        var target = cmd.Target;
+        var item = cmd.Target;
 
-        if (string.IsNullOrWhiteSpace(target))
+        if (!item.IsOwnedBy(player))
         {
-            result.Add(player, new SystemMessageEvent("Usage: @recycle <object>."));
+            result.Add(player, new SystemMessageEvent("You can only recycle objects you created."));
             return Task.FromResult(result);
         }
 
         var room = world.GetLocationOrThrow(player);
-        var search = resolver.FindNearbyObject(player, room, target);
+        var wasInRoom = item.Location is not null;
 
-        switch (search.Status)
+        // Remove the object from its container (room or player inventory)
+        item.Container?.RemoveFromContents(item);
+
+        // Mark the room as modified so the deletion persists
+        world.MarkRoomModified(room);
+
+        result.Add(player, new ObjectRecycledEvent(player, item));
+
+        // Broadcast to observers only if the item was in the room
+        if (wasInRoom)
         {
-            case SearchStatus.NotFound:
-                result.Add(player, new ItemNotFoundEvent(target));
-                break;
-
-            case SearchStatus.IndexOutOfRange:
-                result.Add(player, new SystemMessageEvent($"You can't see a '{target}' here."));
-                break;
-
-            case SearchStatus.Ambiguous:
-                result.Add(player, new AmbiguousInputEvent(target, search.Candidates));
-                break;
-
-            case SearchStatus.Found:
-                var item = search.Match!;
-
-                if (!item.IsOwnedBy(player))
-                {
-                    result.Add(player, new SystemMessageEvent("You can only recycle objects you created."));
-                    break;
-                }
-
-                // Remove the object from its container (room or player inventory)
-                item.Container?.RemoveFromContents(item);
-
-                // Mark the room as modified so the deletion persists
-                world.MarkRoomModified(room);
-
-                result.Add(player, new ObjectRecycledEvent(player, item));
-
-                // Broadcast to observers only if the item was in the room
-                if (item.Location is not null)
-                {
-                    result.BroadcastToAllButPlayer(room, player, new ObjectRecycledEvent(player, item));
-                }
-
-                break;
+            result.BroadcastToAllButPlayer(room, player, new ObjectRecycledEvent(player, item));
         }
 
         return Task.FromResult(result);
