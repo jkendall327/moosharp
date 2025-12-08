@@ -9,6 +9,7 @@ using MooSharp.Commands.Machinery;
 using MooSharp.Commands.Parsing;
 using MooSharp.Commands.Presentation;
 using MooSharp.Commands.Searching;
+using MooSharp.Features.Editor;
 using MooSharp.Features.Treasure;
 using MooSharp.Features.WorldClock;
 using MooSharp.Game;
@@ -33,6 +34,7 @@ public static class ServiceCollectionExtensions
         public void AddMooSharpWebServices()
         {
             services.AddSingleton<ISessionGateway, SignalRSessionGateway>();
+            services.AddSingleton<IEditorModeNotifier, SignalREditorModeNotifier>();
             services.AddScoped<IClientStorageService, ClientStorageService>();
             services.AddScoped<IGameHistoryService, ClientStorageGameHistoryService>();
             services.AddScoped<IGameConnectionService, SignalRGameConnectionService>();
@@ -94,6 +96,10 @@ public static class ServiceCollectionExtensions
             // Scripting
             services.AddSingleton<IScriptExecutor, LuaScriptExecutor>();
             services.AddSingleton<IVerbScriptResolver, VerbScriptResolver>();
+
+            // Editor Mode
+            services.AddSingleton<IEditorModeService, EditorModeService>();
+            services.AddSingleton<IEditorModeHandler, EditorModeHandler>();
         }
 
         public void AddMooSharpMessaging()

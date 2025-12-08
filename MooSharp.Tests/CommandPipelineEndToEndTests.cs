@@ -7,6 +7,7 @@ using MooSharp.Commands.Machinery;
 using MooSharp.Commands.Parsing;
 using MooSharp.Commands.Presentation;
 using MooSharp.Commands.Searching;
+using MooSharp.Features.Editor;
 using MooSharp.Game;
 using MooSharp.Infrastructure.Messaging;
 using MooSharp.Scripting;
@@ -61,7 +62,10 @@ public class CommandPipelineEndToEndTests
         var executor = new CommandExecutor(provider, NullLogger<CommandExecutor>.Instance);
 
         var verbResolver = new VerbScriptResolver();
+        var editorModeService = Substitute.For<IEditorModeService>();
+        var editorModeHandler = Substitute.For<IEditorModeHandler>();
         _inputProcessor = new(_world, parser, executor, _emitter, verbResolver,
+            editorModeService, editorModeHandler,
             NullLogger<GameInputProcessor>.Instance);
     }
 

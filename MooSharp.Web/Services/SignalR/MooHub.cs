@@ -24,6 +24,9 @@ public class MooHub(
 
         var actorId = GetActorIdOrThrow();
 
+        // Add to player-specific group for targeted notifications (e.g., editor mode changes)
+        await Groups.AddToGroupAsync(Context.ConnectionId, actorId.ToString());
+
         var channel = new SignalROutputChannel(Clients.Caller);
 
         await gateway.OnSessionStartedAsync(actorId, channel);
@@ -57,6 +60,9 @@ public class MooHub(
         }
 
         var actorId = GetActorIdOrThrow();
+
+        // Remove from player-specific group
+        await Groups.RemoveFromGroupAsync(Context.ConnectionId, actorId.ToString());
 
         await gateway.OnSessionEndedAsync(actorId);
 

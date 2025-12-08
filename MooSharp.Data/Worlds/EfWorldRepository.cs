@@ -135,7 +135,7 @@ internal sealed class EfWorldRepository(IDbContextFactory<MooSharpDbContext> con
             if (existing is null)
             {
                 existing = new()
-                    { Id = room.Id };
+                { Id = room.Id };
                 context.Rooms.Add(existing);
             }
 
