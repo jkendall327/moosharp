@@ -8,7 +8,10 @@ public record Linkdead(Guid ActorId, Timer Timer);
 
 public class SignalRSessionGateway(IGameEngine engine, ILogger<SignalRSessionGateway> logger) : ISessionGateway
 {
+    private const int MaxQueuedMessages = 50;
+
     private readonly ConcurrentDictionary<Guid, IOutputChannel> _channels = new();
+    private readonly ConcurrentDictionary<Guid, ConcurrentQueue<string>> _linkdeadMessages = new();
     private readonly List<Linkdead> _linkDeads = [];
 
     public async Task OnSessionStartedAsync(Guid actorId, IOutputChannel channel)
@@ -28,8 +31,7 @@ public class SignalRSessionGateway(IGameEngine engine, ILogger<SignalRSessionGat
 
         if (playerInWorld)
         {
-            // is anything necessary here?
-            // replay queued messages?
+            await ReplayQueuedMessagesAsync(actorId, channel);
         }
         else
         {
@@ -39,6 +41,8 @@ public class SignalRSessionGateway(IGameEngine engine, ILogger<SignalRSessionGat
 
     public Task OnSessionEndedAsync(Guid actorId)
     {
+        _linkdeadMessages.TryAdd(actorId, new());
+
         var linkdead = new Linkdead(actorId, null!);
 
         var timer = new Timer(OnLinkdeadTimer, linkdead, TimeSpan.Zero, TimeSpan.FromMinutes(1));
@@ -60,6 +64,7 @@ public class SignalRSessionGateway(IGameEngine engine, ILogger<SignalRSessionGat
             await linkdead.Timer.DisposeAsync();
 
             _linkDeads.Remove(linkdead);
+            _linkdeadMessages.TryRemove(linkdead.ActorId, out _);
 
             await engine.DespawnActorAsync(linkdead.ActorId);
         }
@@ -83,10 +88,39 @@ public class SignalRSessionGateway(IGameEngine engine, ILogger<SignalRSessionGat
     {
         if (!_channels.TryGetValue(actorId, out var channel))
         {
+            QueueMessageForLinkdead(actorId, message);
             return;
         }
 
         await channel.WriteOutputAsync(message, ct);
+    }
+
+    private void QueueMessageForLinkdead(Guid actorId, string message)
+    {
+        if (!_linkdeadMessages.TryGetValue(actorId, out var queue))
+        {
+            return;
+        }
+
+        if (queue.Count >= MaxQueuedMessages)
+        {
+            queue.TryDequeue(out _);
+        }
+
+        queue.Enqueue(message);
+    }
+
+    private async Task ReplayQueuedMessagesAsync(Guid actorId, IOutputChannel channel)
+    {
+        if (!_linkdeadMessages.TryRemove(actorId, out var queue))
+        {
+            return;
+        }
+
+        while (queue.TryDequeue(out var message))
+        {
+            await channel.WriteOutputAsync(message);
+        }
     }
 
     public async Task BroadcastAsync(string message, CancellationToken ct = default)
