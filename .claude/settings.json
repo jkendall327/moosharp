@@ -1,12 +1,35 @@
 {
   "permissions": {
     "allow": [
+      "Bash(ls:*)",
+      "Bash(cat:*)",
+      "Bash(head:*)",
+      "Bash(tail:*)",
+      "Bash(tree:*)",
+      "Bash(find:*)",
+      "Bash(du:*)",
+      "Bash(df:*)",
+
+      "Bash(dotnet --info)",
+      "Bash(dotnet --list-sdks)",
+      "Bash(dotnet --list-runtimes)",
+      "Bash(dotnet restore)",
+      "Bash(dotnet restore:*)",
       "Bash(dotnet build)",
+      "Bash(dotnet build:*)",
       "Bash(dotnet test)",
       "Bash(dotnet test:*)",
-      "Bash(find:*)",
-      "Bash(tree:*)",
-      "Bash(dotnet build:*)"
+
+      "Bash(git status)",
+      "Bash(git status:*)",
+      "Bash(git diff)",
+      "Bash(git diff:*)",
+      "Bash(git log)",
+      "Bash(git log:*)",
+      "Bash(git show:*)",
+      "Bash(git branch)",
+
+      "Bash(which:*)"
     ],
     "deny": [],
     "ask": []
