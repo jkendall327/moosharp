@@ -59,9 +59,9 @@ else
                                @ref="_commandInputRef"
                                placeholder="Type a command..."/>
                         <div class="command-actions">
-                            <button class="btn btn-ghost" @onclick="ScrollToTop">Top</button>
-                            <button class="btn btn-ghost" @onclick="ScrollToBottom">Bottom</button>
                             <button class="btn btn-accent" @onclick="Model.SubmitCommandAsync">Send</button>
+                            <button class="btn btn-ghost" @onclick="ScrollToTop">⬆</button>
+                            <button class="btn btn-ghost" @onclick="ScrollToBottom">⬇</button>
                         </div>
                     </div>
 
