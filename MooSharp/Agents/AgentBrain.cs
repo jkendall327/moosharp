@@ -9,94 +9,88 @@ public sealed class AgentBrain(
     AgentCore core,
     ChannelWriter<GameCommand> gameWriter,
     TimeProvider clock,
-    IOptions<AgentOptions> options) : IAsyncDisposable
+    IOptions<AgentOptions> options)
 {
-    private readonly Channel<string> _incomingMessages = Channel.CreateUnbounded<string>();
-    private CancellationTokenSource? _cts;
-
-    // Fire-and-forget tasks
-    private Task? _processingTask;
-    private Task? _volitionTask;
+    private readonly Channel<string> _inbox = Channel.CreateUnbounded<string>();
 
     public PlayerId Id { get; private set; }
 
-    public async Task StartAsync(Guid id, CancellationToken cancellationToken = default)
+    public async Task RunAsync(Guid id, CancellationToken ct)
     {
         Id = new(id);
+        await core.InitializeAsync(ct);
 
-        _cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        // Volition logic
+        var volitionInterval = core.GetVolitionCooldown();
+        var lastActionTime = clock.GetUtcNow();
 
-        await core.InitializeAsync(_cts.Token);
-
-        _processingTask = ProcessLoopAsync();
-        _volitionTask = VolitionLoopAsync();
-    }
-
-    public async Task WriteToInternalQueue(string msg)
-    {
-        ArgumentNullException.ThrowIfNull(_cts);
-        await _incomingMessages.Writer.WriteAsync(msg, _cts.Token);
-    }
-
-    private async Task ProcessLoopAsync()
-    {
-        ArgumentNullException.ThrowIfNull(_cts);
-
-        try
+        while (!ct.IsCancellationRequested)
         {
-            await foreach (var msg in _incomingMessages.Reader.ReadAllAsync(_cts.Token))
+            try
             {
-                await foreach (var cmd in core.ProcessMessageAsync(Id.Value, msg, _cts.Token))
+                // Calculate how long until we get bored
+                var timeSinceLastAction = clock.GetUtcNow() - lastActionTime;
+                var timeUntilBored = volitionInterval - timeSinceLastAction;
+
+                // If we are already bored, set delay to 0
+                if (timeUntilBored < TimeSpan.Zero) timeUntilBored = TimeSpan.Zero;
+
+                // Create a task that completes when a message arrives
+                var readTask = _inbox
+                    .Reader
+                    .WaitToReadAsync(ct)
+                    .AsTask();
+
+                // Create a task that completes when we get bored
+                var boredomTask = Task.Delay(timeUntilBored, ct);
+
+                // WAIT for either: A message arrives OR We get bored
+                var completedTask = await Task.WhenAny(readTask, boredomTask);
+
+                if (completedTask == readTask)
                 {
-                    await gameWriter.WriteAsync(cmd, _cts.Token);
+                    // === REACTION PATH ===
+                    // We have messages! Process all available.
+                    while (_inbox.Reader.TryRead(out var msg))
+                    {
+                        // Use the existing core logic
+                        await foreach (var cmd in core.ProcessMessageAsync(Id.Value, msg, ct))
+                        {
+                            await gameWriter.WriteAsync(cmd, ct);
+                        }
+                    }
+
+                    lastActionTime = clock.GetUtcNow();
+                }
+                else
+                {
+                    // We timed out. The agent is bored.
+                    if (core.RequiresVolition())
+                    {
+                        // Generate a thought/action based on the volition prompt
+                        await foreach (var cmd in core.ProcessMessageAsync(Id.Value, options.Value.VolitionPrompt, ct))
+                        {
+                            await gameWriter.WriteAsync(cmd, ct);
+                        }
+
+                        lastActionTime = clock.GetUtcNow();
+                    }
                 }
             }
-        }
-        catch (OperationCanceledException)
-        {
-        }
-    }
-
-    private async Task VolitionLoopAsync()
-    {
-        ArgumentNullException.ThrowIfNull(_cts);
-
-        var cooldown = core.GetVolitionCooldown();
-
-        using var timer = new PeriodicTimer(cooldown, clock);
-
-        try
-        {
-            while (await timer.WaitForNextTickAsync(_cts.Token))
+            catch (OperationCanceledException)
             {
-                if (core.RequiresVolition())
-                {
-                    await WriteToInternalQueue(options.Value.VolitionPrompt);
-                }
+                break;
+            }
+            catch (Exception ex)
+            {
+                // Log and continue, don't crash the loop
+                // _logger.LogError(ex, "Agent crashed");
             }
         }
-        catch (OperationCanceledException)
-        {
-        }
     }
 
-    public async ValueTask DisposeAsync()
+    public ValueTask EnqueueMessageAsync(string message, CancellationToken ct)
     {
-        ArgumentNullException.ThrowIfNull(_cts);
-
-        await _cts.CancelAsync();
-        _cts.Dispose();
-
-        _incomingMessages.Writer.Complete();
-
-        if (_processingTask is not null)
-        {
-            await _processingTask;
-        }
-
-        if (_volitionTask is not null)
-        {
-            await _volitionTask;
-        }
+        return _inbox.Writer.WriteAsync(message, ct);
     }
 }
