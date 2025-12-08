@@ -75,18 +75,20 @@ public class GameEngine(
 
         if (player is null)
         {
-            return Task.FromResult(new AutocompleteOptions([], []));
+            return Task.FromResult(new AutocompleteOptions([], [], []));
         }
 
-        var room = world.GetPlayerLocation(player);
+        var room = world.GetLocationOrThrow(player);
 
-        var exits = room?.Exits
+        var exits = room.Exits
                         .Where(e => !e.IsHidden)
-                        .Select(e => e.Name)
-                        ?? Enumerable.Empty<string>();
+                        .Select(e => e.Name);
+        
         var inventory = player.Inventory.Select(item => item.Name);
 
-        var options = new AutocompleteOptions(exits.ToList(), inventory.ToList());
+        var items = room.Contents.Select(s => s.Name);
+        
+        var options = new AutocompleteOptions(exits.ToList(), inventory.ToList(), items.ToList());
 
         return Task.FromResult(options);
     }

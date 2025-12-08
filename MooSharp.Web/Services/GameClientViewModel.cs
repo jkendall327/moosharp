@@ -345,6 +345,7 @@ public sealed partial class GameClientViewModel : IDisposable
         var candidates = options
             .Exits
             .Concat(options.InventoryItems)
+            .Concat(options.ObjectsInRoom)
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .ToList();
 
