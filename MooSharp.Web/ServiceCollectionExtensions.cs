@@ -25,6 +25,9 @@ using MooSharp.Web.Services.ClientStorage;
 using MooSharp.Web.Services.Session;
 using MooSharp.Web.Services.SignalR;
 using MooSharp.World;
+using OpenTelemetry.Logs;
+using OpenTelemetry.Metrics;
+using OpenTelemetry.Resources;
 
 namespace MooSharp.Web;
 
@@ -157,6 +160,32 @@ public static class ServiceCollectionExtensions
             {
                 s.ValidateOnBuild = true;
                 s.ValidateScopes = true;
+            });
+        }
+
+        public void AddMooSharpOpenTelemetry()
+        {
+            services.AddSingleton<MooSharpMetrics>();
+
+            services.AddOpenTelemetry()
+                .ConfigureResource(resource => resource.AddService("MooSharp"))
+                .WithMetrics(metrics =>
+                {
+                    metrics
+                        .AddAspNetCoreInstrumentation()
+                        .AddHttpClientInstrumentation()
+                        .AddMeter(MooSharpMetrics.MeterName)
+                        .AddOtlpExporter();
+                });
+
+            services.AddLogging(logging =>
+            {
+                logging.AddOpenTelemetry(otel =>
+                {
+                    otel.IncludeFormattedMessage = true;
+                    otel.IncludeScopes = true;
+                    otel.AddOtlpExporter();
+                });
             });
         }
 

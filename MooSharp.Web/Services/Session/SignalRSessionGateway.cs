@@ -1,6 +1,7 @@
 using System.Collections.Concurrent;
 using MooSharp.Commands.Presentation;
 using MooSharp.Game;
+using MooSharp.Infrastructure;
 using MooSharp.Infrastructure.Messaging;
 using MooSharp.Infrastructure.Sessions;
 
@@ -11,6 +12,7 @@ public class SignalRSessionGateway(
     World.World world,
     PlayerMessageProvider messageProvider,
     IGameMessagePresenter presenter,
+    MooSharpMetrics metrics,
     ILogger<SignalRSessionGateway> logger) : ISessionGateway
 {
     private const int MaxQueuedMessages = 50;
@@ -24,6 +26,7 @@ public class SignalRSessionGateway(
         // cancel linkdead if any
         if (_linkdeadCts.TryRemove(actorId, out var cts))
         {
+            metrics.RecordPlayerLinkdeadRecovered();
             cts.Cancel();
             cts.Dispose();
         }
@@ -56,6 +59,8 @@ public class SignalRSessionGateway(
             return Task.CompletedTask;
         }
 
+        metrics.RecordPlayerLinkdead();
+
         _ = HandleLinkdeadAsync(actorId, cts.Token);
 
         return Task.CompletedTask;
@@ -73,11 +78,15 @@ public class SignalRSessionGateway(
             }
 
             _linkdeadMessages.TryRemove(actorId, out _);
+
+            // Linkdead period expired - player is being despawned
+            metrics.RecordPlayerLinkdeadRecovered();
+
             await engine.DespawnActorAsync(actorId);
         }
         catch (TaskCanceledException)
         {
-            // swallow
+            // swallow - player reconnected
         }
         catch (Exception e)
         {
@@ -91,6 +100,7 @@ public class SignalRSessionGateway(
 
         if (_linkdeadCts.TryRemove(actorId, out var cts))
         {
+            metrics.RecordPlayerLinkdeadRecovered();
             cts.Cancel();
             cts.Dispose();
         }

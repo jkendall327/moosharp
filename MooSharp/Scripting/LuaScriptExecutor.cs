@@ -1,11 +1,16 @@
+using System.Diagnostics;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using MoonSharp.Interpreter;
+using MooSharp.Infrastructure;
 using MooSharp.Scripting.Api;
 
 namespace MooSharp.Scripting;
 
-public class LuaScriptExecutor(IOptions<LuaScriptOptions> options, ILogger<LuaScriptExecutor> logger) : IScriptExecutor
+public class LuaScriptExecutor(
+    IOptions<LuaScriptOptions> options,
+    MooSharpMetrics metrics,
+    ILogger<LuaScriptExecutor> logger) : IScriptExecutor
 {
     private readonly LuaScriptOptions _options = options.Value;
 
@@ -30,6 +35,8 @@ public class LuaScriptExecutor(IOptions<LuaScriptOptions> options, ILogger<LuaSc
 
         script.Options.DebugPrint = s => logger.LogDebug("Lua print: {Message}", s);
 
+        var stopwatch = Stopwatch.StartNew();
+
         try
         {
             using var cts = CancellationTokenSource.CreateLinkedTokenSource(ct);
@@ -40,15 +47,22 @@ public class LuaScriptExecutor(IOptions<LuaScriptOptions> options, ILogger<LuaSc
 
             await executeTask.WaitAsync(cts.Token);
 
+            stopwatch.Stop();
+
             logger.LogDebug(
                 "Script '{Verb}' on '{Object}' completed successfully",
                 context.VerbName,
                 context.TargetObject.Name);
 
+            metrics.RecordVerbExecution(context.VerbName, stopwatch.Elapsed.TotalMilliseconds, success: true);
+
             return ScriptResult.Ok(gameApi.GetMessages());
         }
         catch (OperationCanceledException)
         {
+            stopwatch.Stop();
+            metrics.RecordVerbExecution(context.VerbName, stopwatch.Elapsed.TotalMilliseconds, success: false);
+
             logger.LogWarning(
                 "Script '{Verb}' on '{Object}' timed out after {Timeout}ms",
                 context.VerbName,
@@ -59,6 +73,9 @@ public class LuaScriptExecutor(IOptions<LuaScriptOptions> options, ILogger<LuaSc
         }
         catch (ScriptRuntimeException ex)
         {
+            stopwatch.Stop();
+            metrics.RecordVerbExecution(context.VerbName, stopwatch.Elapsed.TotalMilliseconds, success: false);
+
             logger.LogWarning(
                 ex,
                 "Script '{Verb}' on '{Object}' failed with runtime error",
@@ -69,6 +86,9 @@ public class LuaScriptExecutor(IOptions<LuaScriptOptions> options, ILogger<LuaSc
         }
         catch (SyntaxErrorException ex)
         {
+            stopwatch.Stop();
+            metrics.RecordVerbExecution(context.VerbName, stopwatch.Elapsed.TotalMilliseconds, success: false);
+
             logger.LogWarning(
                 ex,
                 "Script '{Verb}' on '{Object}' has syntax error",
@@ -79,6 +99,9 @@ public class LuaScriptExecutor(IOptions<LuaScriptOptions> options, ILogger<LuaSc
         }
         catch (Exception ex)
         {
+            stopwatch.Stop();
+            metrics.RecordVerbExecution(context.VerbName, stopwatch.Elapsed.TotalMilliseconds, success: false);
+
             logger.LogError(
                 ex,
                 "Script '{Verb}' on '{Object}' failed with unexpected error",
