@@ -3,6 +3,7 @@ using MooSharp.Actors.Players;
 using MooSharp.Data;
 using MooSharp.Data.Players;
 using MooSharp.Features.Autocomplete;
+using MooSharp.Infrastructure;
 
 namespace MooSharp.Game;
 
@@ -11,7 +12,8 @@ public class GameEngine(
     PlayerHydrator hydrator,
     AutocompleteService autocompleter,
     IPlayerRepository playerRepository,
-    ChannelWriter<GameCommand> writer) : IGameEngine
+    ChannelWriter<GameCommand> writer,
+    MooSharpMetrics metrics) : IGameEngine
 {
     public event Action<Player>? OnPlayerSpawned;
     public event Action<Player>? OnPlayerDespawned;
@@ -33,6 +35,9 @@ public class GameEngine(
         var player = await hydrator.RehydrateAsync(dto);
 
         world.RegisterPlayer(player);
+
+        metrics.RecordPlayerOnline();
+        metrics.RecordLogin();
 
         OnPlayerSpawned?.Invoke(player);
     }
@@ -61,6 +66,9 @@ public class GameEngine(
         await playerRepository.SavePlayerAsync(snapshot, WriteType.Deferred, ct);
 
         world.RemovePlayer(player);
+
+        metrics.RecordPlayerOffline();
+        metrics.RecordLogout();
 
         OnPlayerDespawned?.Invoke(player);
     }

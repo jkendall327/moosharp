@@ -8,6 +8,7 @@ using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.ChatCompletion;
 using Microsoft.SemanticKernel.Connectors.Google;
 using Microsoft.SemanticKernel.Connectors.OpenAI;
+using MooSharp.Infrastructure;
 
 namespace MooSharp.Agents;
 
@@ -19,6 +20,7 @@ public interface IAgentResponseProvider
 public class AgentResponseProvider(
     IAgentPromptProvider promptProvider,
     IOptions<AgentOptions> options,
+    MooSharpMetrics metrics,
     ILogger<AgentResponseProvider> logger) : IAgentResponseProvider
 {
     public async Task<ChatMessageContent> GetResponse(string name, AgentSource source, ChatHistory history, CancellationToken ct = default)
@@ -50,6 +52,8 @@ public class AgentResponseProvider(
         };
 
         stopwatch.Stop();
+
+        metrics.RecordLlmCall(name, source.ToString(), stopwatch.Elapsed.TotalMilliseconds);
 
         logger.LogInformation("Agent {AgentName} completed LLM call in {ElapsedMilliseconds} ms",
             name,

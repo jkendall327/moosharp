@@ -26,6 +26,7 @@ builder.Services.AddSignalR(hubOptions =>
 builder.Services.AddHttpClient();
 
 builder.Services.AddMooSharpOptions();
+builder.Services.AddMooSharpOpenTelemetry();
 builder.Services.AddMooSharpWebServices();
 
 var databasePath = builder.Configuration.GetValue<string>("AppOptions:DatabaseFilepath") ??
