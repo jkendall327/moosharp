@@ -7,6 +7,10 @@
         <UserSecretsId>0e7a343a-2087-4f6e-84c2-ecbad42474ad</UserSecretsId>
     </PropertyGroup>
 
+    <ItemGroup>
+        <InternalsVisibleTo Include="MooSharp.Tests" />
+    </ItemGroup>
+
   <ItemGroup>
     <ProjectReference Include="..\MooSharp\MooSharp.csproj" />
     <ProjectReference Include="..\MooSharp.Data\MooSharp.Data.csproj" />
