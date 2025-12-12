@@ -53,6 +53,8 @@ public class GameInputProcessor(
             case ParseStatus.Success:
                 try
                 {
+                    player.LastActionAt = DateTime.UtcNow;
+
                     // We are guaranteed a Command here because of the Status check
                     var result = await executor.Handle(parseResult.Command!, ct);
                     _ = emitter.SendGameMessagesAsync(result.Messages, ct);
@@ -82,6 +84,8 @@ public class GameInputProcessor(
                 {
                     try
                     {
+                        player.LastActionAt = DateTime.UtcNow;
+
                         var scriptResult = await executor.Handle(scriptCommand, ct);
                         _ = emitter.SendGameMessagesAsync(scriptResult.Messages, ct);
                     }

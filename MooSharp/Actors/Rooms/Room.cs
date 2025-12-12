@@ -51,18 +51,30 @@ public class Room : IContainer
             sb.AppendLine($"A {obj.Name} is here.");
         }
 
+        var now = DateTime.UtcNow;
+
         var otherPlayers = PlayersInRoom
-            .Select(s => s.Username)
-            .Except([player.Username])
+            .Where(s => s != player)
+            .Select(p => new
+            {
+                Player = p,
+                Activity = PlayerActivityHelper.GetActivityState(p, now)
+            })
             .ToList();
 
         if (otherPlayers.Count is 1)
         {
-            sb.AppendLine($"{otherPlayers.Single()} is here.");
+            var occupant = otherPlayers.Single();
+            var status = PlayerActivityHelper.FormatInlineStatus(occupant.Activity);
+
+            sb.AppendLine($"{occupant.Player.Username} ({status}) is here.");
         }
         if (otherPlayers.Count > 1)
         {
-            sb.AppendLine($"{string.Join(", ", otherPlayers)} are here.");
+            var summaries = otherPlayers
+                .Select(p => $"{p.Player.Username} ({PlayerActivityHelper.FormatInlineStatus(p.Activity)})");
+
+            sb.AppendLine($"{string.Join(", ", summaries)} are here.");
         }
 
         var visibleExits = Exits

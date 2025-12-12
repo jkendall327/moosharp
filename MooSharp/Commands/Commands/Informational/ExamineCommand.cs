@@ -54,6 +54,18 @@ public class ExamineHandler(World.World world, TargetResolver resolver) : IHandl
 
         var current = world.GetLocationOrThrow(player);
 
+        var targetPlayer = current.PlayersInRoom
+            .FirstOrDefault(p => p != player && p.Username.Equals(cmd.Target, StringComparison.OrdinalIgnoreCase));
+
+        if (targetPlayer is not null)
+        {
+            var activityState = PlayerActivityHelper.GetActivityState(targetPlayer, DateTime.UtcNow);
+
+            result.Add(player, new PlayerExaminedEvent(player, targetPlayer, activityState));
+
+            return Task.FromResult(result);
+        }
+
         var search = resolver.FindObjects(current.Contents, cmd.Target);
 
         if (search.IsSelf)
@@ -137,6 +149,24 @@ public class SelfExaminedEventFormatter : IGameEventFormatter<SelfExaminedEvent>
     }
 
     public string FormatForObserver(SelfExaminedEvent gameEvent) => "Someone seems to be checking themselves out.";
+}
+
+public record PlayerExaminedEvent(Player Viewer, Player Target, PlayerActivityState Activity) : IGameEvent;
+
+public class PlayerExaminedEventFormatter : IGameEventFormatter<PlayerExaminedEvent>
+{
+    public string FormatForActor(PlayerExaminedEvent gameEvent)
+    {
+        var sb = new StringBuilder();
+
+        sb.AppendLine($"{gameEvent.Target.Username} is here.");
+        sb.Append($"They seem to be {PlayerActivityHelper.FormatStatusLabel(gameEvent.Activity)}.");
+
+        return sb.ToString().TrimEnd();
+    }
+
+    public string? FormatForObserver(PlayerExaminedEvent gameEvent)
+        => $"{gameEvent.Viewer.Username} looks closely at {gameEvent.Target.Username}.";
 }
 
 public record ObjectExaminedEvent(Object Item) : IGameEvent;
