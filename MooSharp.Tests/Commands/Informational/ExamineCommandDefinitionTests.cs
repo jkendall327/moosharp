@@ -93,6 +93,43 @@ public class ExamineCommandDefinitionTests
         Assert.Same(exit, examine.Target);
     }
 
+    [Fact]
+    public async Task TryCreateCommand_ReturnsErrorForAmbiguousObject()
+    {
+        var itemOne = new Object
+        {
+            Name = "Rock",
+            Description = "A heavy rock"
+        };
+
+        var itemTwo = new Object
+        {
+            Name = "Rock",
+            Description = "A lighter rock"
+        };
+
+        var (definition, binder, context, _) = await CreateContextAsync("rock");
+
+        itemOne.MoveTo(context.Room);
+        itemTwo.MoveTo(context.Room);
+
+        var error = definition.TryCreateCommand(context, binder, out var command);
+
+        Assert.NotNull(error);
+        Assert.Null(command);
+    }
+
+    [Fact]
+    public async Task TryCreateCommand_ReturnsErrorForMissingItem()
+    {
+        var (definition, binder, context, _) = await CreateContextAsync("missing");
+
+        var error = definition.TryCreateCommand(context, binder, out var command);
+
+        Assert.NotNull(error);
+        Assert.Null(command);
+    }
+
     private static async Task<(ExamineCommandDefinition definition, ArgumentBinder binder, ParsingContext context, World.World world)> CreateContextAsync(params string[] tokens)
     {
         var resolver = new TargetResolver();

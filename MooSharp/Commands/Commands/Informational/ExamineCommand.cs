@@ -40,32 +40,6 @@ public class ExamineExitCommand : CommandBase<ExamineExitCommand>
     public required Exit Target { get; init; }
 }
 
-public class ExamineAmbiguousObjectCommand : CommandBase<ExamineAmbiguousObjectCommand>
-{
-    public required Player Player { get; init; }
-    public required string Input { get; init; }
-    public required IReadOnlyCollection<Object> Candidates { get; init; }
-}
-
-public class ExamineAmbiguousExitCommand : CommandBase<ExamineAmbiguousExitCommand>
-{
-    public required Player Player { get; init; }
-    public required string Input { get; init; }
-    public required IReadOnlyCollection<Exit> Candidates { get; init; }
-}
-
-public class ExamineItemNotFoundCommand : CommandBase<ExamineItemNotFoundCommand>
-{
-    public required Player Player { get; init; }
-    public required string TargetName { get; init; }
-}
-
-public class ExamineSystemMessageCommand : CommandBase<ExamineSystemMessageCommand>
-{
-    public required Player Player { get; init; }
-    public required string Message { get; init; }
-}
-
 public class ExamineCommandDefinition : ICommandDefinition
 {
     public IReadOnlyCollection<string> Verbs { get; } = ["examine", "ex", "x", "view", "look"];
@@ -77,81 +51,89 @@ public class ExamineCommandDefinition : ICommandDefinition
     {
         var resolutionResult = binder.BindExamineTarget(ctx);
 
+        command = null;
+
         if (!resolutionResult.IsSuccess)
         {
-            command = null;
             return resolutionResult.ErrorMessage;
         }
 
         var resolution = resolutionResult.Value;
 
-        command = resolution.Kind switch
+        switch (resolution.Kind)
         {
-            ExamineResolutionKind.Room => new ExamineRoomCommand
-            {
-                Player = ctx.Player,
-                Room = ctx.Room
-            },
+            case ExamineResolutionKind.Room:
+                command = new ExamineRoomCommand
+                {
+                    Player = ctx.Player,
+                    Room = ctx.Room
+                };
 
-            ExamineResolutionKind.Self => new ExamineSelfCommand
-            {
-                Player = ctx.Player
-            },
+                return null;
 
-            ExamineResolutionKind.Player => new ExaminePlayerCommand
-            {
-                Player = ctx.Player,
-                Target = resolution.PlayerTarget!
-            },
+            case ExamineResolutionKind.Self:
+                command = new ExamineSelfCommand
+                {
+                    Player = ctx.Player
+                };
 
-            ExamineResolutionKind.Object => new ExamineObjectCommand
-            {
-                Player = ctx.Player,
-                Target = resolution.ObjectTarget!
-            },
+                return null;
 
-            ExamineResolutionKind.Exit => new ExamineExitCommand
-            {
-                Player = ctx.Player,
-                Target = resolution.ExitTarget!
-            },
+            case ExamineResolutionKind.Player:
+                command = new ExaminePlayerCommand
+                {
+                    Player = ctx.Player,
+                    Target = resolution.PlayerTarget!
+                };
 
-            ExamineResolutionKind.AmbiguousObject => new ExamineAmbiguousObjectCommand
-            {
-                Player = ctx.Player,
-                Input = resolution.TargetText,
-                Candidates = resolution.ObjectCandidates
-            },
+                return null;
 
-            ExamineResolutionKind.AmbiguousExit => new ExamineAmbiguousExitCommand
-            {
-                Player = ctx.Player,
-                Input = resolution.TargetText,
-                Candidates = resolution.ExitCandidates
-            },
+            case ExamineResolutionKind.Object:
+                command = new ExamineObjectCommand
+                {
+                    Player = ctx.Player,
+                    Target = resolution.ObjectTarget!
+                };
 
-            ExamineResolutionKind.ObjectIndexOutOfRange => new ExamineSystemMessageCommand
-            {
-                Player = ctx.Player,
-                Message = $"You can't see a '{resolution.TargetText}' here."
-            },
+                return null;
 
-            ExamineResolutionKind.ExitIndexOutOfRange => new ExamineSystemMessageCommand
-            {
-                Player = ctx.Player,
-                Message = $"You don't see that many '{resolution.TargetText}' exits."
-            },
+            case ExamineResolutionKind.Exit:
+                command = new ExamineExitCommand
+                {
+                    Player = ctx.Player,
+                    Target = resolution.ExitTarget!
+                };
 
-            ExamineResolutionKind.ItemNotFound => new ExamineItemNotFoundCommand
-            {
-                Player = ctx.Player,
-                TargetName = resolution.TargetText
-            },
+                return null;
 
-            _ => null
-        };
+            case ExamineResolutionKind.AmbiguousObject:
+                var ambiguousObjectEvent = new AmbiguousInputEvent(
+                    resolution.TargetText,
+                    resolution.ObjectCandidates);
 
-        return command is null ? "Unable to parse examine target." : null;
+                return new AmbiguousInputEventFormatter().FormatForActor(ambiguousObjectEvent);
+
+            case ExamineResolutionKind.AmbiguousExit:
+                var ambiguousExitEvent = new AmbiguousExitEvent(
+                    resolution.TargetText,
+                    resolution.ExitCandidates);
+
+                return new AmbiguousExitEventFormatter().FormatForActor(ambiguousExitEvent);
+
+            case ExamineResolutionKind.ObjectIndexOutOfRange:
+                return $"You can't see a '{resolution.TargetText}' here.";
+
+            case ExamineResolutionKind.ExitIndexOutOfRange:
+                return $"You don't see that many '{resolution.TargetText}' exits.";
+
+            case ExamineResolutionKind.ItemNotFound:
+                var notFoundEvent = new ItemNotFoundEvent(resolution.TargetText);
+
+                return new ItemNotFoundEventFormatter().FormatForActor(notFoundEvent);
+
+            default:
+                return "Unable to parse examine target.";
+        }
     }
 }
 
@@ -213,54 +195,6 @@ public class ExamineExitHandler : IHandler<ExamineExitCommand>
         var result = new CommandResult();
 
         result.Add(cmd.Player, new ExitExaminedEvent(cmd.Target));
-
-        return Task.FromResult(result);
-    }
-}
-
-public class ExamineAmbiguousObjectHandler : IHandler<ExamineAmbiguousObjectCommand>
-{
-    public Task<CommandResult> Handle(ExamineAmbiguousObjectCommand cmd, CancellationToken cancellationToken = default)
-    {
-        var result = new CommandResult();
-
-        result.Add(cmd.Player, new AmbiguousInputEvent(cmd.Input, cmd.Candidates));
-
-        return Task.FromResult(result);
-    }
-}
-
-public class ExamineAmbiguousExitHandler : IHandler<ExamineAmbiguousExitCommand>
-{
-    public Task<CommandResult> Handle(ExamineAmbiguousExitCommand cmd, CancellationToken cancellationToken = default)
-    {
-        var result = new CommandResult();
-
-        result.Add(cmd.Player, new AmbiguousExitEvent(cmd.Input, cmd.Candidates));
-
-        return Task.FromResult(result);
-    }
-}
-
-public class ExamineItemNotFoundHandler : IHandler<ExamineItemNotFoundCommand>
-{
-    public Task<CommandResult> Handle(ExamineItemNotFoundCommand cmd, CancellationToken cancellationToken = default)
-    {
-        var result = new CommandResult();
-
-        result.Add(cmd.Player, new ItemNotFoundEvent(cmd.TargetName));
-
-        return Task.FromResult(result);
-    }
-}
-
-public class ExamineSystemMessageHandler : IHandler<ExamineSystemMessageCommand>
-{
-    public Task<CommandResult> Handle(ExamineSystemMessageCommand cmd, CancellationToken cancellationToken = default)
-    {
-        var result = new CommandResult();
-
-        result.Add(cmd.Player, new SystemMessageEvent(cmd.Message));
 
         return Task.FromResult(result);
     }
