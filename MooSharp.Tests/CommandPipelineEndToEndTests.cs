@@ -61,7 +61,7 @@ public class CommandPipelineEndToEndTests
         var provider = services.BuildServiceProvider();
         var executor = new CommandExecutor(provider, NullLogger<CommandExecutor>.Instance);
 
-        var verbResolver = new VerbScriptResolver();
+        var verbResolver = new VerbScriptResolver(NullLogger<VerbScriptResolver>.Instance);
         var editorModeService = Substitute.For<IEditorModeService>();
         var editorModeHandler = Substitute.For<IEditorModeHandler>();
         _inputProcessor = new(_world, parser, executor, _emitter, verbResolver,

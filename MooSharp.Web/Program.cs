@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Logging.Console;
 using MooSharp.Data;
 using MooSharp.Web;
 using MooSharp.Web.Components;
@@ -6,6 +7,12 @@ using MooSharp.Web.Services.SignalR;
 using MooSharp.World;
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Logging.ClearProviders();
+builder.Logging.AddSimpleConsole(options =>
+{
+    options.IncludeScopes = true;
+});
 
 builder
     .Services

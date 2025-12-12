@@ -23,6 +23,14 @@ public class GameInputProcessor(
 {
     public async Task ProcessInputAsync(InputCommand inputCommand, CancellationToken ct = default)
     {
+        using var scope = logger.BeginScope(new Dictionary<string, object?>
+        {
+            { "ActorId", inputCommand.ActorId },
+            { "Command", inputCommand.Command }
+        });
+
+        logger.LogDebug("Processing input command");
+
         var player = world.TryGetPlayer(inputCommand.ActorId);
 
         if (player is not null)
@@ -30,6 +38,7 @@ public class GameInputProcessor(
             // Check if player is in editor mode first - input should be handled differently
             if (editorModeService.IsInEditorMode(inputCommand.ActorId))
             {
+                logger.LogDebug("Actor is in editor mode, routing to editor handler");
                 await editorModeHandler.HandleEditorInputAsync(player, inputCommand.Command, ct);
                 return;
             }
@@ -38,6 +47,7 @@ public class GameInputProcessor(
         }
         else
         {
+            logger.LogWarning("Actor {ActorId} not found in world", inputCommand.ActorId);
             throw new InvalidOperationException(
                 $"Got game input for actor {inputCommand.ActorId}, but they were not found in the world.");
         }
@@ -47,6 +57,8 @@ public class GameInputProcessor(
     {
         // 1. Parse returns a Result object now, not just ICommand?
         var parseResult = await parser.ParseAsync(player, command, ct);
+
+        logger.LogDebug("Parse completed with status {ParseStatus}", parseResult.Status);
 
         // 2. Handle the specific outcome
         switch (parseResult.Status)
@@ -62,7 +74,7 @@ public class GameInputProcessor(
                 }
                 catch (Exception ex)
                 {
-                    logger.LogError(ex, "Error processing world command {Command}", command);
+                    logger.LogError(ex, "Error processing world command");
                     var unexpected = new GameMessage(player, new SystemMessageEvent("An unexpected error occurred."));
                     _ = emitter.SendGameMessagesAsync([unexpected], ct);
                 }
@@ -72,6 +84,7 @@ public class GameInputProcessor(
             case ParseStatus.Error:
                 // The user typed a valid verb (e.g., "give") but failed binding ("give ghost")
                 // The parser has generated a specific, helpful error message.
+                logger.LogDebug("Parse error: {ErrorMessage}", parseResult.ErrorMessage);
                 var errorMsg = new GameMessage(player, new SystemMessageEvent(parseResult.ErrorMessage!));
                 _ = emitter.SendGameMessagesAsync([errorMsg], ct);
 
@@ -83,6 +96,7 @@ public class GameInputProcessor(
                 var scriptCommand = verbScriptResolver.TryResolveCommand(player, room, command);
                 if (scriptCommand is not null)
                 {
+                    logger.LogDebug("Verb not found in built-in commands, resolved to script command");
                     try
                     {
                         player.LastActionAt = DateTime.UtcNow;
@@ -92,13 +106,14 @@ public class GameInputProcessor(
                     }
                     catch (Exception ex)
                     {
-                        logger.LogError(ex, "Error executing script command for {Command}", command);
+                        logger.LogError(ex, "Error executing script command");
                         var scriptError = new GameMessage(player, new SystemMessageEvent("An error occurred while running the script."));
                         _ = emitter.SendGameMessagesAsync([scriptError], ct);
                     }
                 }
                 else
                 {
+                    logger.LogDebug("Command not recognised");
                     // The user typed gibberish or a command that doesn't exist
                     var notFoundMsg = new GameMessage(player, new SystemMessageEvent("I don't understand that command."));
                     _ = emitter.SendGameMessagesAsync([notFoundMsg], ct);
@@ -112,11 +127,18 @@ public class GameInputProcessor(
     {
         var commandQueue = new Queue<ICommand>(result.CommandsToQueue);
 
+        if (commandQueue.Count > 0)
+        {
+            logger.LogDebug("Command queued {QueuedCommandCount} follow-up commands", commandQueue.Count);
+        }
+
         await emitter.SendGameMessagesAsync(result.Messages, ct);
 
         while (commandQueue.Count > 0)
         {
             var queuedCommand = commandQueue.Dequeue();
+
+            logger.LogDebug("Processing queued command {QueuedCommandType}", queuedCommand.GetType().Name);
 
             try
             {
@@ -131,7 +153,7 @@ public class GameInputProcessor(
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, "Error processing queued command {CommandType}", queuedCommand.GetType().Name);
+                logger.LogError(ex, "Error processing queued command {QueuedCommandType}", queuedCommand.GetType().Name);
             }
         }
     }

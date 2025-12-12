@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Logging;
 using MooSharp.Actors.Players;
 using MooSharp.Actors.Rooms;
 using MooSharp.Commands.Commands.Scripting;
@@ -5,7 +6,7 @@ using Object = MooSharp.Actors.Objects.Object;
 
 namespace MooSharp.Scripting;
 
-public class VerbScriptResolver : IVerbScriptResolver
+public class VerbScriptResolver(ILogger<VerbScriptResolver> logger) : IVerbScriptResolver
 {
     public ScriptCommand? TryResolveCommand(Player player, Room room, string input)
     {
@@ -23,8 +24,12 @@ public class VerbScriptResolver : IVerbScriptResolver
 
         if (!resolution.Found || resolution.TargetObject is null || resolution.Script is null)
         {
+            logger.LogDebug("Script verb '{Verb}' not resolved for target '{Target}'", verb, targetText);
             return null;
         }
+
+        logger.LogDebug("Resolved script verb '{Verb}' on object '{ObjectName}'",
+            verb, resolution.TargetObject.Name);
 
         // Parse remaining arguments after the target
         var arguments = Array.Empty<string>();

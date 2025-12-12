@@ -20,9 +20,15 @@ public class MooHub(
 
     public override async Task OnConnectedAsync()
     {
-        logger.LogInformation("Connection made with ID {Id}", Context.ConnectionId);
-
         var actorId = GetActorIdOrThrow();
+
+        using var scope = logger.BeginScope(new Dictionary<string, object?>
+        {
+            { "ConnectionId", Context.ConnectionId },
+            { "ActorId", actorId }
+        });
+
+        logger.LogInformation("Connection established");
 
         // Add to player-specific group for targeted notifications (e.g., editor mode changes)
         await Groups.AddToGroupAsync(Context.ConnectionId, actorId.ToString());
@@ -36,9 +42,15 @@ public class MooHub(
 
     public async Task SendCommand(string command)
     {
-        logger.LogInformation("Got command {Command}", command);
-
         var actor = GetActorIdOrThrow();
+
+        using var scope = logger.BeginScope(new Dictionary<string, object?>
+        {
+            { "ConnectionId", Context.ConnectionId },
+            { "ActorId", actor }
+        });
+
+        logger.LogDebug("Received command from client");
 
         await engine.ProcessInputAsync(actor, command);
     }
@@ -52,14 +64,20 @@ public class MooHub(
 
     public override async Task OnDisconnectedAsync(Exception? exception)
     {
-        logger.LogInformation("Connection lost for {Id}", Context.ConnectionId);
+        var actorId = GetActorIdOrThrow();
+
+        using var scope = logger.BeginScope(new Dictionary<string, object?>
+        {
+            { "ConnectionId", Context.ConnectionId },
+            { "ActorId", actorId }
+        });
+
+        logger.LogInformation("Connection closed");
 
         if (exception is not null)
         {
             logger.LogError(exception, "Exception was present on connection loss");
         }
-
-        var actorId = GetActorIdOrThrow();
 
         // Remove from player-specific group
         await Groups.RemoveFromGroupAsync(Context.ConnectionId, actorId.ToString());

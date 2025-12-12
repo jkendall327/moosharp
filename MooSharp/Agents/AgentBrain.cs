@@ -20,7 +20,15 @@ public sealed class AgentBrain(
     public async Task RunAsync(Guid id, CancellationToken ct)
     {
         Id = new(id);
+
+        using var scope = logger.BeginScope(new Dictionary<string, object?>
+        {
+            { "AgentId", id }
+        });
+
+        logger.LogDebug("Agent brain initializing");
         await core.InitializeAsync(ct);
+        logger.LogDebug("Agent brain initialized, entering main loop");
 
         // Volition logic
         var volitionInterval = core.GetVolitionCooldown();
@@ -52,6 +60,7 @@ public sealed class AgentBrain(
                 if (completedTask == readTask)
                 {
                     // We have messages! Process all available.
+                    logger.LogDebug("Agent received message, processing events");
                     await ReactToEvents(ct);
                 }
                 else
@@ -61,6 +70,8 @@ public sealed class AgentBrain(
                     {
                         continue;
                     }
+
+                    logger.LogDebug("Agent triggered volition (idle timeout)");
 
                     // Generate a thought/action based on the volition prompt
                     var prompt = options.Value.VolitionPrompt;
@@ -75,13 +86,16 @@ public sealed class AgentBrain(
             }
             catch (OperationCanceledException)
             {
+                logger.LogDebug("Agent loop cancelled");
                 break;
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, "Agent {Id} crashed", Id.Value);
+                logger.LogError(ex, "Agent brain error during main loop");
             }
         }
+
+        logger.LogDebug("Agent brain exited main loop");
     }
 
     private async Task ReactToEvents(CancellationToken ct)

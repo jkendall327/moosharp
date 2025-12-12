@@ -99,9 +99,9 @@ public sealed partial class GameClientViewModel : IDisposable
             await StartConnection();
 
             LoginStatus = "Logged in.";
-            
+
             NotifyStateChanged();
-            
+
             return;
         }
 

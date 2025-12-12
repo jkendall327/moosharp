@@ -36,6 +36,7 @@ public class CommandParser
 
         if (tokens.Count == 0)
         {
+            _logger.LogDebug("Empty input, returning NotFound");
             return Task.FromResult(ParseResult.NotFound());
         }
 
@@ -43,8 +44,11 @@ public class CommandParser
 
         if (!_verbs.TryGetValue(verb, out var def))
         {
+            _logger.LogDebug("Verb '{Verb}' not found in registered commands", verb);
             return Task.FromResult(ParseResult.NotFound());
         }
+
+        _logger.LogDebug("Matched verb '{Verb}' to command definition {CommandDefinition}", verb, def.GetType().Name);
 
         var room = _world.GetLocationOrThrow(player);
         var context = new ParsingContext(player, room, tokens);
@@ -53,9 +57,11 @@ public class CommandParser
 
         if (error != null)
         {
+            _logger.LogDebug("Argument binding failed: {Error}", error);
             return Task.FromResult(ParseResult.Error(error));
         }
 
+        _logger.LogDebug("Successfully created {CommandType}", command!.GetType().Name);
         return Task.FromResult(ParseResult.Success(command!));
     }
 }

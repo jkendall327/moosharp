@@ -17,10 +17,7 @@ public class CommandExecutor(IServiceProvider services, ILogger<CommandExecutor>
     public async Task<CommandResult> Handle<TCommand>(TCommand cmd, CancellationToken token)
         where TCommand : ICommand
     {
-        using var scope = logger.BeginScope(new Dictionary<string, object?>
-        {
-            { "CommandType", cmd.GetType().Name }
-        });
+        using var scope = logger.BeginScope("CommandType:{CommandType}", cmd.GetType().Name);
 
         logger.LogInformation("Beginning command execution");
 

@@ -14,8 +14,15 @@ public class GameCommandBackgroundService(
 {
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
+        logger.LogInformation("Game command background service started");
+
         await foreach (var input in reader.ReadAllAsync(stoppingToken))
         {
+            using var scope = logger.BeginScope(new Dictionary<string, object?>
+            {
+                { "GameCommandType", input.GetType().Name }
+            });
+
             try
             {
                 switch (input)
@@ -26,11 +33,13 @@ public class GameCommandBackgroundService(
                         break;
 
                     case SpawnTreasureCommand stc:
+                        logger.LogDebug("Spawning treasure {TreasureType}", stc.Treasure.GetType().Name);
                         world.SpawnTreasureInEmptyRoom([stc.Treasure]);
 
                         break;
 
                     case IncrementWorldClockCommand:
+                        logger.LogDebug("Triggering world clock tick");
                         await worldClock.TriggerTickAsync(stoppingToken);
 
                         break;
@@ -42,8 +51,10 @@ public class GameCommandBackgroundService(
             catch (Exception ex)
             {
                 input.CompletionSource?.TrySetException(ex);
-                logger.LogError(ex, "Error processing input");
+                logger.LogError(ex, "Error processing game command");
             }
         }
+
+        logger.LogInformation("Game command background service stopped");
     }
 }
