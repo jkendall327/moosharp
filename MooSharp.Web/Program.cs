@@ -70,6 +70,7 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapPlayerCountEndpoint();
+app.MapCommandReferenceEndpoint();
 app.MapAuthEndpoints();
 
 app.MapHub<MooHub>(MooHub.HubName);
