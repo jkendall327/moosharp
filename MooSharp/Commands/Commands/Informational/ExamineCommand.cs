@@ -1,18 +1,43 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Text;
-using MooSharp.Actors.Rooms;
 using MooSharp.Actors.Players;
+using MooSharp.Actors.Rooms;
 using MooSharp.Commands.Machinery;
 using MooSharp.Commands.Parsing;
 using MooSharp.Commands.Presentation;
-using MooSharp.Commands.Searching;
 using Object = MooSharp.Actors.Objects.Object;
 
 namespace MooSharp.Commands.Commands.Informational;
 
-public class ExamineCommand : CommandBase<ExamineCommand>
+public class ExamineRoomCommand : CommandBase<ExamineRoomCommand>
 {
     public required Player Player { get; init; }
-    public required string Target { get; init; }
+    public required Room Room { get; init; }
+}
+
+public class ExamineSelfCommand : CommandBase<ExamineSelfCommand>
+{
+    public required Player Player { get; init; }
+}
+
+public class ExaminePlayerCommand : CommandBase<ExaminePlayerCommand>
+{
+    public required Player Player { get; init; }
+    public required Player Target { get; init; }
+}
+
+public class ExamineObjectCommand : CommandBase<ExamineObjectCommand>
+{
+    public required Player Player { get; init; }
+    public required Object Target { get; init; }
+}
+
+public class ExamineExitCommand : CommandBase<ExamineExitCommand>
+{
+    public required Player Player { get; init; }
+    public required Exit Target { get; init; }
 }
 
 public class ExamineCommandDefinition : ICommandDefinition
@@ -24,98 +49,152 @@ public class ExamineCommandDefinition : ICommandDefinition
 
     public string? TryCreateCommand(ParsingContext ctx, ArgumentBinder binder, out ICommand? command)
     {
-        command = new ExamineCommand
+        var resolutionResult = binder.BindExamineTarget(ctx);
+
+        command = null;
+
+        if (!resolutionResult.IsSuccess)
         {
-            Player = ctx.Player,
-            Target = ctx.GetRemainingText()
-        };
+            return resolutionResult.ErrorMessage;
+        }
 
-        return null;
+        var resolution = resolutionResult.Value;
+
+        switch (resolution.Kind)
+        {
+            case ExamineResolutionKind.Room:
+                command = new ExamineRoomCommand
+                {
+                    Player = ctx.Player,
+                    Room = ctx.Room
+                };
+
+                return null;
+
+            case ExamineResolutionKind.Self:
+                command = new ExamineSelfCommand
+                {
+                    Player = ctx.Player
+                };
+
+                return null;
+
+            case ExamineResolutionKind.Player:
+                command = new ExaminePlayerCommand
+                {
+                    Player = ctx.Player,
+                    Target = resolution.PlayerTarget!
+                };
+
+                return null;
+
+            case ExamineResolutionKind.Object:
+                command = new ExamineObjectCommand
+                {
+                    Player = ctx.Player,
+                    Target = resolution.ObjectTarget!
+                };
+
+                return null;
+
+            case ExamineResolutionKind.Exit:
+                command = new ExamineExitCommand
+                {
+                    Player = ctx.Player,
+                    Target = resolution.ExitTarget!
+                };
+
+                return null;
+
+            case ExamineResolutionKind.AmbiguousObject:
+                var ambiguousObjectEvent = new AmbiguousInputEvent(
+                    resolution.TargetText,
+                    resolution.ObjectCandidates);
+
+                return new AmbiguousInputEventFormatter().FormatForActor(ambiguousObjectEvent);
+
+            case ExamineResolutionKind.AmbiguousExit:
+                var ambiguousExitEvent = new AmbiguousExitEvent(
+                    resolution.TargetText,
+                    resolution.ExitCandidates);
+
+                return new AmbiguousExitEventFormatter().FormatForActor(ambiguousExitEvent);
+
+            case ExamineResolutionKind.ObjectIndexOutOfRange:
+                return $"You can't see a '{resolution.TargetText}' here.";
+
+            case ExamineResolutionKind.ExitIndexOutOfRange:
+                return $"You don't see that many '{resolution.TargetText}' exits.";
+
+            case ExamineResolutionKind.ItemNotFound:
+                var notFoundEvent = new ItemNotFoundEvent(resolution.TargetText);
+
+                return new ItemNotFoundEventFormatter().FormatForActor(notFoundEvent);
+
+            default:
+                return "Unable to parse examine target.";
+        }
     }
-
 }
 
-public class ExamineHandler(World.World world, TargetResolver resolver) : IHandler<ExamineCommand>
+public class ExamineRoomHandler : IHandler<ExamineRoomCommand>
 {
-    public Task<CommandResult> Handle(ExamineCommand cmd, CancellationToken cancellationToken = default)
+    public Task<CommandResult> Handle(ExamineRoomCommand cmd, CancellationToken cancellationToken = default)
+    {
+        var result = new CommandResult();
+        var description = cmd.Room.DescribeFor(cmd.Player, useLongDescription: true);
+
+        result.Add(cmd.Player, new RoomDescriptionEvent(description));
+
+        return Task.FromResult(result);
+    }
+}
+
+public class ExamineSelfHandler : IHandler<ExamineSelfCommand>
+{
+    public Task<CommandResult> Handle(ExamineSelfCommand cmd, CancellationToken cancellationToken = default)
+    {
+        var result = new CommandResult();
+        var inventory = cmd.Player.Inventory.ToList();
+
+        result.Add(cmd.Player, new SelfExaminedEvent(cmd.Player, inventory));
+
+        return Task.FromResult(result);
+    }
+}
+
+public class ExaminePlayerHandler : IHandler<ExaminePlayerCommand>
+{
+    public Task<CommandResult> Handle(ExaminePlayerCommand cmd, CancellationToken cancellationToken = default)
+    {
+        var result = new CommandResult();
+        var activityState = PlayerActivityHelper.GetActivityState(cmd.Target, DateTime.UtcNow);
+
+        result.Add(cmd.Player, new PlayerExaminedEvent(cmd.Player, cmd.Target, activityState));
+
+        return Task.FromResult(result);
+    }
+}
+
+public class ExamineObjectHandler : IHandler<ExamineObjectCommand>
+{
+    public Task<CommandResult> Handle(ExamineObjectCommand cmd, CancellationToken cancellationToken = default)
     {
         var result = new CommandResult();
 
-        var player = cmd.Player;
+        result.Add(cmd.Player, new ObjectExaminedEvent(cmd.Target));
 
-        if (string.IsNullOrWhiteSpace(cmd.Target))
-        {
-            var currentLocation = world.GetLocationOrThrow(player);
+        return Task.FromResult(result);
+    }
+}
 
-            result.Add(player, new RoomDescriptionEvent(currentLocation.DescribeFor(player, useLongDescription: true)));
+public class ExamineExitHandler : IHandler<ExamineExitCommand>
+{
+    public Task<CommandResult> Handle(ExamineExitCommand cmd, CancellationToken cancellationToken = default)
+    {
+        var result = new CommandResult();
 
-            return Task.FromResult(result);
-        }
-
-        var current = world.GetLocationOrThrow(player);
-
-        var targetPlayer = current.PlayersInRoom
-            .FirstOrDefault(p => p != player && p.Username.Equals(cmd.Target, StringComparison.OrdinalIgnoreCase));
-
-        if (targetPlayer is not null)
-        {
-            var activityState = PlayerActivityHelper.GetActivityState(targetPlayer, DateTime.UtcNow);
-
-            result.Add(player, new PlayerExaminedEvent(player, targetPlayer, activityState));
-
-            return Task.FromResult(result);
-        }
-
-        var search = resolver.FindObjects(current.Contents, cmd.Target);
-
-        if (search.IsSelf)
-        {
-            var inventory = player.Inventory
-                .ToList();
-
-            result.Add(player, new SelfExaminedEvent(player, inventory));
-
-            return Task.FromResult(result);
-        }
-
-        switch (search.Status)
-        {
-            case SearchStatus.NotFound:
-                var exitSearch = resolver.FindExit(current, cmd.Target);
-
-                switch (exitSearch.Status)
-                {
-                    case SearchStatus.Found:
-                        result.Add(player, new ExitExaminedEvent(exitSearch.Match!));
-                        break;
-
-                    case SearchStatus.Ambiguous:
-                        result.Add(player, new AmbiguousExitEvent(cmd.Target, exitSearch.Candidates));
-                        break;
-
-                    case SearchStatus.IndexOutOfRange:
-                        result.Add(player, new SystemMessageEvent($"You don't see that many '{cmd.Target}' exits."));
-                        break;
-
-                    case SearchStatus.NotFound:
-                        result.Add(player, new ItemNotFoundEvent(cmd.Target));
-                        break;
-                }
-
-                break;
-
-            case SearchStatus.IndexOutOfRange:
-                result.Add(player, new SystemMessageEvent($"You can't see a '{cmd.Target}' here."));
-                break;
-
-            case SearchStatus.Ambiguous:
-                result.Add(player, new AmbiguousInputEvent(cmd.Target, search.Candidates));
-                break;
-
-            case SearchStatus.Found:
-                result.Add(player, new ObjectExaminedEvent(search.Match!));
-                break;
-        }
+        result.Add(cmd.Player, new ExitExaminedEvent(cmd.Target));
 
         return Task.FromResult(result);
     }

@@ -1,3 +1,4 @@
+using System;
 using MooSharp.Actors.Players;
 using MooSharp.Actors.Rooms;
 using MooSharp.Actors;
@@ -8,6 +9,91 @@ namespace MooSharp.Commands.Parsing;
 
 public class ArgumentBinder(TargetResolver resolver, World.World world)
 {
+    public BindingResult<ExamineResolution> BindExamineTarget(ParsingContext ctx)
+    {
+        if (ctx.IsFinished)
+        {
+            return BindingResult<ExamineResolution>.Success(
+                new ExamineResolution(ExamineResolutionKind.Room, string.Empty));
+        }
+
+        var targetText = ctx.GetRemainingText();
+
+        var playerMatch = ctx.Room.PlayersInRoom
+            .FirstOrDefault(p => p != ctx.Player &&
+                                  p.Username.Equals(targetText, StringComparison.OrdinalIgnoreCase));
+
+        if (playerMatch is not null)
+        {
+            return BindingResult<ExamineResolution>.Success(
+                new ExamineResolution(ExamineResolutionKind.Player, targetText)
+                {
+                    PlayerTarget = playerMatch
+                });
+        }
+
+        var objectSearch = resolver.FindNearbyObject(ctx.Player, ctx.Room, targetText);
+
+        if (objectSearch.IsSelf)
+        {
+            return BindingResult<ExamineResolution>.Success(
+                new ExamineResolution(ExamineResolutionKind.Self, targetText));
+        }
+
+        switch (objectSearch.Status)
+        {
+            case SearchStatus.Found:
+                return BindingResult<ExamineResolution>.Success(
+                    new ExamineResolution(ExamineResolutionKind.Object, targetText)
+                    {
+                        ObjectTarget = objectSearch.Match!
+                    });
+
+            case SearchStatus.Ambiguous:
+                return BindingResult<ExamineResolution>.Success(
+                    new ExamineResolution(ExamineResolutionKind.AmbiguousObject, targetText)
+                    {
+                        ObjectCandidates = objectSearch.Candidates
+                    });
+
+            case SearchStatus.IndexOutOfRange:
+                return BindingResult<ExamineResolution>.Success(
+                    new ExamineResolution(ExamineResolutionKind.ObjectIndexOutOfRange, targetText));
+
+            case SearchStatus.NotFound:
+                var exitSearch = resolver.FindExit(ctx.Room, targetText);
+
+                switch (exitSearch.Status)
+                {
+                    case SearchStatus.Found:
+                        return BindingResult<ExamineResolution>.Success(
+                            new ExamineResolution(ExamineResolutionKind.Exit, targetText)
+                            {
+                                ExitTarget = exitSearch.Match!
+                            });
+
+                    case SearchStatus.Ambiguous:
+                        return BindingResult<ExamineResolution>.Success(
+                            new ExamineResolution(ExamineResolutionKind.AmbiguousExit, targetText)
+                            {
+                                ExitCandidates = exitSearch.Candidates
+                            });
+
+                    case SearchStatus.IndexOutOfRange:
+                        return BindingResult<ExamineResolution>.Success(
+                            new ExamineResolution(ExamineResolutionKind.ExitIndexOutOfRange, targetText));
+
+                    case SearchStatus.NotFound:
+                        return BindingResult<ExamineResolution>.Success(
+                            new ExamineResolution(ExamineResolutionKind.ItemNotFound, targetText));
+                }
+
+                break;
+        }
+
+        return BindingResult<ExamineResolution>.Failure("Unable to parse examine target.");
+    }
+
     // Binds a token to an object in the player's inventory
     public BindingResult<Object> BindInventoryItem(ParsingContext ctx)
     {
@@ -210,4 +296,29 @@ public class ArgumentBinder(TargetResolver resolver, World.World world)
 
         return false;
     }
+}
+
+public enum ExamineResolutionKind
+{
+    Room,
+    Self,
+    Player,
+    Object,
+    Exit,
+    AmbiguousObject,
+    AmbiguousExit,
+    ObjectIndexOutOfRange,
+    ExitIndexOutOfRange,
+    ItemNotFound
+}
+
+public record ExamineResolution(
+    ExamineResolutionKind Kind,
+    string TargetText)
+{
+    public Player? PlayerTarget { get; init; }
+    public Exit? ExitTarget { get; init; }
+    public Object? ObjectTarget { get; init; }
+    public IReadOnlyCollection<Object> ObjectCandidates { get; init; } = Array.Empty<Object>();
+    public IReadOnlyCollection<Exit> ExitCandidates { get; init; } = Array.Empty<Exit>();
 }

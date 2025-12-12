@@ -7,7 +7,7 @@ namespace MooSharp.Tests.Handlers;
 public class ExamineHandlerTests
 {
     [Fact]
-    public async Task ExamineHandler_ReturnsRoomDescriptionWhenNoTarget()
+    public async Task ExamineRoomHandler_ReturnsRoomDescription()
     {
         var room = HandlerTestHelpers.CreateRoom("room");
         var world = await HandlerTestHelpers.CreateWorld(room);
@@ -15,12 +15,12 @@ public class ExamineHandlerTests
         var player = HandlerTestHelpers.CreatePlayer();
         world.MovePlayer(player, room);
 
-        var handler = new ExamineHandler(world, new());
+        var handler = new ExamineRoomHandler();
 
         var result = await handler.Handle(new()
         {
             Player = player,
-            Target = string.Empty
+            Room = room
         });
 
         var message = Assert.Single(result.Messages);
@@ -29,7 +29,7 @@ public class ExamineHandlerTests
     }
 
     [Fact]
-    public async Task ExamineHandler_ReturnsSelfInventoryWhenTargetIsMe()
+    public async Task ExamineSelfHandler_ReturnsSelfInventory()
     {
         var room = HandlerTestHelpers.CreateRoom("room");
         var world = await HandlerTestHelpers.CreateWorld(room);
@@ -45,12 +45,11 @@ public class ExamineHandlerTests
 
         item.MoveTo(player);
 
-        var handler = new ExamineHandler(world, new());
+        var handler = new ExamineSelfHandler();
 
         var result = await handler.Handle(new()
         {
-            Player = player,
-            Target = "me"
+            Player = player
         });
 
         var message = Assert.Single(result.Messages);
@@ -59,7 +58,7 @@ public class ExamineHandlerTests
     }
 
     [Fact]
-    public async Task ExamineHandler_ReturnsObjectDetailsWhenFound()
+    public async Task ExamineObjectHandler_ReturnsObjectDetails()
     {
         var room = HandlerTestHelpers.CreateRoom("room");
         var world = await HandlerTestHelpers.CreateWorld(room);
@@ -75,12 +74,12 @@ public class ExamineHandlerTests
 
         item.MoveTo(room);
 
-        var handler = new ExamineHandler(world, new());
+        var handler = new ExamineObjectHandler();
 
         var result = await handler.Handle(new()
         {
             Player = player,
-            Target = "Scroll"
+            Target = item
         });
 
         var message = Assert.Single(result.Messages);
