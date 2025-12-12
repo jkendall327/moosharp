@@ -1,0 +1,98 @@
+@page "/help"
+@rendermode InteractiveServer
+@inject IHttpClientFactory HttpClientFactory
+@inject NavigationManager Navigation
+
+<PageTitle>Help</PageTitle>
+
+<div class="page-shell">
+    <div class="terminal-card" data-label="/help">
+        <p class="tag">commands</p>
+        <h1 class="hero-title">Help and actions</h1>
+        <p class="lede">
+            Browse the verbs you can use in MooSharp. Primary commands are listed with any synonyms you can type
+            to trigger the same action.
+        </p>
+        <div class="actions">
+            <a class="btn btn-accent" href="/game">Launch client</a>
+            <a class="btn btn-ghost" href="/">Return home</a>
+        </div>
+    </div>
+
+    @if (_errorMessage is not null)
+    {
+        <div class="info-card">
+            <p class="tag">status</p>
+            <h2>Unable to load commands</h2>
+            <p>@_errorMessage</p>
+        </div>
+    }
+    else if (_categories is null)
+    {
+        <div class="info-card">
+            <p class="tag">loading</p>
+            <h2>Fetching actions...</h2>
+            <p>Please wait while we gather the available verbs.</p>
+        </div>
+    }
+    else
+    {
+        <div class="info-grid">
+            @foreach (var category in _categories)
+            {
+                <div class="info-card">
+                    <p class="tag">@FormatCategory(category.Category)</p>
+                    <h2>@category.Category commands</h2>
+                    <ul class="list-reset">
+                        @foreach (var command in category.Commands)
+                        {
+                            <li>
+                                <strong>@command.PrimaryVerb</strong>
+                                <span>@command.Description</span>
+
+                                @if (command.Synonyms.Any())
+                                {
+                                    <span>Synonyms: @string.Join(", ", command.Synonyms)</span>
+                                }
+                            </li>
+                        }
+                    </ul>
+                </div>
+            }
+        </div>
+    }
+</div>
+
+@code {
+    private IReadOnlyCollection<CommandHelpCategory>? _categories;
+    private string? _errorMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var client = HttpClientFactory.CreateClient();
+            client.BaseAddress ??= new Uri(Navigation.BaseUri);
+
+            _categories = await client.GetFromJsonAsync<IReadOnlyCollection<CommandHelpCategory>>("api/commands")
+                          ?? Array.Empty<CommandHelpCategory>();
+        }
+        catch (Exception)
+        {
+            _errorMessage = "Unable to load help information right now.";
+        }
+    }
+
+    private static string FormatCategory(string category) => category switch
+    {
+        "Admin" => "Admin",
+        "Meta" => "Meta",
+        "General" => "General",
+        "Social" => "Social",
+        _ => category
+    };
+
+    private sealed record CommandHelpCategory(string Category, IReadOnlyCollection<CommandHelpEntry> Commands);
+
+    private sealed record CommandHelpEntry(string PrimaryVerb, IReadOnlyCollection<string> Synonyms, string Description);
+}
