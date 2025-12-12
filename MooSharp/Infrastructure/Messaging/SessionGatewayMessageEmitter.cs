@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Logging;
 using MooSharp.Commands.Presentation;
+using MooSharp.Features.Editor;
 using MooSharp.Infrastructure.Sessions;
 
 namespace MooSharp.Infrastructure.Messaging;
@@ -7,11 +8,13 @@ namespace MooSharp.Infrastructure.Messaging;
 public class SessionGatewayMessageEmitter(
     ISessionGateway gateway,
     IGameMessagePresenter presenter,
+    IEditorModeService editorModeService,
     ILogger<SessionGatewayMessageEmitter> logger) : IGameMessageEmitter
 {
     public async Task SendGameMessagesAsync(IEnumerable<GameMessage> messages, CancellationToken ct = default)
     {
         var tasks = messages
+            .Where(msg => !editorModeService.IsInEditorMode(msg.Player.Id.Value))
             .Select(msg => (msg.Player, Content: presenter.Present(msg)))
             .Where(msg => !string.IsNullOrWhiteSpace(msg.Content))
             .Select(msg => gateway.DispatchToActorAsync(msg.Player.Id.Value, msg.Content!, ct));
