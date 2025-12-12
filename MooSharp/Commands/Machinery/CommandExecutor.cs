@@ -30,7 +30,7 @@ public class CommandExecutor(IServiceProvider services, ILogger<CommandExecutor>
         {
             var result = await handler.Handle(cmd, token);
 
-            logger.LogDebug("Command execution completed");
+            logger.LogInformation("Command execution completed");
 
             return result;
         }
