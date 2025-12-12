@@ -54,6 +54,27 @@ public class ExamineHandler(World.World world, TargetResolver resolver) : IHandl
 
         var current = world.GetLocationOrThrow(player);
 
+        var targetPlayer = current
+            .PlayersInRoom
+            .FirstOrDefault(p => p.Username.Equals(cmd.Target, StringComparison.OrdinalIgnoreCase));
+
+        if (targetPlayer is not null)
+        {
+            var inventory = player.Inventory
+                .ToList();
+
+            if (targetPlayer == player)
+            {
+                result.Add(player, new SelfExaminedEvent(player, inventory));
+
+                return Task.FromResult(result);
+            }
+
+            result.Add(player, new PlayerExaminedEvent(targetPlayer));
+
+            return Task.FromResult(result);
+        }
+
         var search = resolver.FindObjects(current.Contents, cmd.Target);
 
         if (search.IsSelf)
@@ -119,6 +140,15 @@ public class SelfExaminedEventFormatter : IGameEventFormatter<SelfExaminedEvent>
 
         sb.AppendLine("You took a look at yourself. You're looking pretty good.");
 
+        if (string.IsNullOrWhiteSpace(gameEvent.Player.Description))
+        {
+            sb.AppendLine("You haven't set a description yet.");
+        }
+        else
+        {
+            sb.AppendLine(gameEvent.Player.Description);
+        }
+
         if (gameEvent.Inventory.Count > 0)
         {
             sb.AppendLine("You have:");
@@ -137,6 +167,22 @@ public class SelfExaminedEventFormatter : IGameEventFormatter<SelfExaminedEvent>
     }
 
     public string FormatForObserver(SelfExaminedEvent gameEvent) => "Someone seems to be checking themselves out.";
+}
+
+public record PlayerExaminedEvent(Player Player) : IGameEvent;
+
+public class PlayerExaminedEventFormatter : IGameEventFormatter<PlayerExaminedEvent>
+{
+    public string FormatForActor(PlayerExaminedEvent gameEvent)
+    {
+        var description = string.IsNullOrWhiteSpace(gameEvent.Player.Description)
+            ? "They haven't set a description yet."
+            : gameEvent.Player.Description;
+
+        return $"{gameEvent.Player.Username}: {description}";
+    }
+
+    public string? FormatForObserver(PlayerExaminedEvent gameEvent) => null;
 }
 
 public record ObjectExaminedEvent(Object Item) : IGameEvent;

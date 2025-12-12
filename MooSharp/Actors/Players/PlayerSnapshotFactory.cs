@@ -10,7 +10,7 @@ public static class PlayerSnapshotFactory
         ArgumentNullException.ThrowIfNull(player);
         ArgumentNullException.ThrowIfNull(currentLocation);
 
-        return new(player.Username, currentLocation.Id.Value, CreateInventorySnapshot(player));
+        return new(player.Username, player.Description, currentLocation.Id.Value, CreateInventorySnapshot(player));
     }
 
     private static List<InventoryItemDto> CreateInventorySnapshot(Player player)

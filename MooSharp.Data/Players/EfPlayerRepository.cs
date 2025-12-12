@@ -42,6 +42,21 @@ internal sealed class EfPlayerRepository(
     public Task<PlayerDto?> GetPlayerByUsername(string username, CancellationToken ct = default) =>
         store.GetPlayerByUsernameAsync(username, ct);
 
+    public async Task UpdatePlayerDescriptionAsync(Guid playerId,
+        string description,
+        WriteType type = WriteType.Deferred,
+        CancellationToken ct = default)
+    {
+        if (type is WriteType.Deferred)
+        {
+            await EnqueueAsync(new UpdatePlayerDescriptionRequest(playerId, description), ct);
+        }
+        else
+        {
+            await store.UpdatePlayerDescriptionAsync(playerId, description, ct);
+        }
+    }
+
     private async Task EnqueueAsync(DatabaseRequest request, CancellationToken ct)
     {
         try

@@ -20,3 +20,5 @@ public sealed record UpdateRoomDescriptionRequest(string RoomId, string Descript
 public sealed record RenameRoomRequest(string RoomId, string Name) : DatabaseRequest;
 
 public sealed record RenameObjectRequest(string ObjectId, string Name) : DatabaseRequest;
+
+public sealed record UpdatePlayerDescriptionRequest(Guid PlayerId, string Description) : DatabaseRequest;

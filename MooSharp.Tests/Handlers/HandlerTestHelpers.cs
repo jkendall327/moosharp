@@ -48,7 +48,8 @@ public static class HandlerTestHelpers
         return new()
         {
             Id = PlayerId.New(),
-            Username = username ?? "Player"
+            Username = username ?? "Player",
+            Description = "An indescribable adventurer."
         };
     }
 }

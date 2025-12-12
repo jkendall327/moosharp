@@ -14,7 +14,8 @@ public class PlayerHydrator(World.World world)
         var player = new Player
         {
             Id = new(dto.Id),
-            Username = dto.Username
+            Username = dto.Username,
+            Description = dto.Description
         };
 
         foreach (var item in dto.Inventory)

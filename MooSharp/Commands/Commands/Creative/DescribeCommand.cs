@@ -19,7 +19,7 @@ public class DescribeCommandDefinition : ICommandDefinition
     public IReadOnlyCollection<string> Verbs { get; } = ["@describe", "@desc"];
 
     public string Description =>
-        "Update a room description. Usage: @describe here <description> or @describe <exit> <description>.";
+        "Update a room description or your own. Usage: @describe here <description>, @describe <exit> <description>, or @describe me <description>.";
 
     public string? TryCreateCommand(ParsingContext ctx, ArgumentBinder binder, out ICommand? command)
     {
@@ -39,25 +39,27 @@ public class DescribeCommandDefinition : ICommandDefinition
         }
 
         var firstSpace = trimmed.IndexOf(' ');
+        var target = firstSpace < 0 ? trimmed : trimmed[..firstSpace];
 
-        if (firstSpace < 0)
-        {
-            command = new DescribeCommand
-            {
-                Player = ctx.Player,
-                Target = trimmed,
-                Description = string.Empty
-            };
-        }
-
-        var target = trimmed[..firstSpace];
-
-        var description = trimmed[(firstSpace + 1)..]
-            .Trim();
+        var description = firstSpace < 0
+            ? string.Empty
+            : trimmed[(firstSpace + 1)..]
+                .Trim();
 
         if (description.StartsWith('"') && description.EndsWith('"') && description.Length > 1)
         {
             description = description[1..^1];
+        }
+
+        if (IsSelfTarget(target, ctx.Player))
+        {
+            command = new DescribeSelfCommand
+            {
+                Player = ctx.Player,
+                NewDescription = description
+            };
+
+            return null;
         }
 
         command = new DescribeCommand
@@ -71,6 +73,14 @@ public class DescribeCommandDefinition : ICommandDefinition
     }
 
     public CommandCategory Category => CommandCategory.General;
+
+    private static bool IsSelfTarget(string target, Player player)
+    {
+        return string.Equals(target, "me", StringComparison.OrdinalIgnoreCase) ||
+               string.Equals(target, "self", StringComparison.OrdinalIgnoreCase) ||
+               string.Equals(target, "myself", StringComparison.OrdinalIgnoreCase) ||
+               target.Equals(player.Username, StringComparison.OrdinalIgnoreCase);
+    }
 }
 
 public class DescribeHandler(World.World world, TargetResolver resolver) : IHandler<DescribeCommand>
@@ -84,7 +94,8 @@ public class DescribeHandler(World.World world, TargetResolver resolver) : IHand
         if (string.IsNullOrWhiteSpace(cmd.Target) || string.IsNullOrWhiteSpace(cmd.Description))
         {
             result.Add(player,
-                new SystemMessageEvent("Usage: @describe here <description> or @describe <exit> <description>."));
+                new SystemMessageEvent(
+                    "Usage: @describe here <description>, @describe <exit> <description>, or @describe me <description>."));
 
             return result;
         }

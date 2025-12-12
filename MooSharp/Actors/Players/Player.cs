@@ -16,6 +16,7 @@ public class Player : IContainer
 
     public IReadOnlyCollection<Object> Inventory => _inventory;
     public required string Username { get; init; }
+    public string Description { get; set; } = string.Empty;
     public IReadOnlyCollection<string> MutedChannels => _mutedChannels;
 
     IReadOnlyCollection<Object> IContainer.Contents => _inventory;

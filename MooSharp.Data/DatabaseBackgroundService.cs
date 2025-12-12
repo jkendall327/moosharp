@@ -63,6 +63,12 @@ internal sealed class DatabaseBackgroundService(
             case RenameObjectRequest renameObjectRequest:
                 await worldRepository.RenameObjectAsync(renameObjectRequest.ObjectId, renameObjectRequest.Name, stoppingToken);
                 break;
+            case UpdatePlayerDescriptionRequest updatePlayerDescriptionRequest:
+                await playerRepository.UpdatePlayerDescriptionAsync(
+                    updatePlayerDescriptionRequest.PlayerId,
+                    updatePlayerDescriptionRequest.Description,
+                    stoppingToken);
+                break;
             default:
                 logger.LogWarning("Unhandled database request type {RequestType}", request.GetType().Name);
                 break;

@@ -106,7 +106,7 @@ public class AgentSpawner(
         var startingRoom = identity.StartingRoomSlug ?? defaultRoom;
 
         var password = Random.Shared.GetHexString(12);
-        var req = new NewPlayerRequest(id, identity.Name, password, startingRoom);
+        var req = new NewPlayerRequest(id, identity.Name, password, startingRoom, identity.Persona);
 
         await playerRepository.SaveNewPlayerAsync(req, WriteType.Immediate, cancellationToken);
     }

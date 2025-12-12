@@ -87,4 +87,29 @@ public class ExamineHandlerTests
         var evt = Assert.IsType<ObjectExaminedEvent>(message.Event);
         Assert.Same(item, evt.Item);
     }
+
+    [Fact]
+    public async Task ExamineHandler_ReturnsPlayerDescriptionWhenLookingAtAnotherPlayer()
+    {
+        var room = HandlerTestHelpers.CreateRoom("room");
+        var world = await HandlerTestHelpers.CreateWorld(room);
+
+        var player = HandlerTestHelpers.CreatePlayer();
+        var target = HandlerTestHelpers.CreatePlayer("Target");
+        target.Description = "A shadowy traveler.";
+        world.MovePlayer(player, room);
+        world.MovePlayer(target, room);
+
+        var handler = new ExamineHandler(world, new());
+
+        var result = await handler.Handle(new()
+        {
+            Player = player,
+            Target = "Target"
+        });
+
+        var message = Assert.Single(result.Messages);
+        var evt = Assert.IsType<PlayerExaminedEvent>(message.Event);
+        Assert.Same(target, evt.Player);
+    }
 }

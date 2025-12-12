@@ -26,6 +26,7 @@ internal class EfPlayerStore(IDbContextFactory<MooSharpDbContext> contextFactory
             Id = player.Id,
             Username = player.Username,
             Password = hashed,
+            Description = player.Description,
             CurrentLocation = player.CurrentLocation,
             Inventory = []
         };
@@ -49,6 +50,7 @@ internal class EfPlayerStore(IDbContextFactory<MooSharpDbContext> contextFactory
         }
 
         player.CurrentLocation = snapshot.CurrentLocation;
+        player.Description = snapshot.Description;
 
         context.PlayerInventory.RemoveRange(player.Inventory);
 
@@ -100,7 +102,7 @@ internal class EfPlayerStore(IDbContextFactory<MooSharpDbContext> contextFactory
                 i.VerbScriptsJson))
             .ToList();
 
-        return new(player.Id, player.Username, player.CurrentLocation, inventory);
+        return new(player.Id, player.Username, player.Description, player.CurrentLocation, inventory);
     }
 
     public async Task<PlayerDto?> GetPlayerByUsernameAsync(string username, CancellationToken ct)
@@ -114,7 +116,25 @@ internal class EfPlayerStore(IDbContextFactory<MooSharpDbContext> contextFactory
             return null;
         }
 
-        return new(player.Id, player.Username, player.CurrentLocation, []);
+        return new(player.Id, player.Username, player.Description, player.CurrentLocation, []);
+    }
+
+    public async Task UpdatePlayerDescriptionAsync(Guid playerId, string description, CancellationToken ct)
+    {
+        await using var context = await contextFactory.CreateDbContextAsync(ct);
+
+        var player = await context
+            .Players
+            .SingleOrDefaultAsync(p => p.Id == playerId, ct);
+
+        if (player is null)
+        {
+            throw new InvalidOperationException($"No player record was found for player ID {playerId}");
+        }
+
+        player.Description = description;
+
+        await context.SaveChangesAsync(ct);
     }
 
     public async Task<LoginResult> LoginIsValidAsync(string username, string password, CancellationToken ct = default)

@@ -39,7 +39,7 @@ public static class AuthEndpoints
 
                 var id = Guid.NewGuid();
 
-                var request = new NewPlayerRequest(id, rc.Username, rc.Password, defaultRoom.Id.Value);
+                var request = new NewPlayerRequest(id, rc.Username, rc.Password, defaultRoom.Id.Value, string.Empty);
 
                 await store.SaveNewPlayerAsync(request, WriteType.Immediate);
 
