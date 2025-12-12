@@ -8,92 +8,80 @@
 @implements IAsyncDisposable
 @rendermode InteractiveServer
 
-@if (false)
-{
-    <div class="page-shell">
-        <div class="terminal-card" data-label="/status">
-            <p class="tag">connecting</p>
-            <p><em>Establishing connection...</em></p>
+<div class="page-shell game-shell">
+    <div class="game-header">
+        <div>
+            <p class="tag">/game</p>
+            <h2 class="panel-heading">MooSharp terminal client</h2>
         </div>
+        <span class="status-message">@(Model.IsLoggedIn ? "Session active" : "Awaiting authentication")</span>
     </div>
-}
-else
-{
-    <div class="page-shell game-shell">
-        <div class="game-header">
-            <div>
-                <p class="tag">/game</p>
-                <h2 class="panel-heading">MooSharp terminal client</h2>
+
+    <div class="game-grid">
+        <div class="terminal-card auth-panel" data-label="/auth">
+            <h2 class="panel-heading">Credentials</h2>
+            <input @bind="Model.Username" placeholder="Username"/>
+            <input type="password" @bind="Model.Password" @onkeydown="HandlePasswordKeyDown" placeholder="Password"/>
+            <div class="auth-actions">
+                <button class="btn btn-accent" @onclick="Model.LoginAsync" disabled="@(!Model.CanSubmitCredentials)">Log
+                    In
+                </button>
+                <button class="btn btn-ghost" @onclick="Model.RegisterAsync" disabled="@(!Model.CanSubmitCredentials)">
+                    Register
+                </button>
+                <button class="btn" @onclick="Model.LogoutAsync" disabled="@(!Model.IsLoggedIn)">Log Out</button>
             </div>
-            <span class="status-message">@(Model.IsLoggedIn ? "Session active" : "Awaiting authentication")</span>
+            @if (!string.IsNullOrWhiteSpace(Model.LoginStatus))
+            {
+                <p class="status-message">@Model.LoginStatus</p>
+            }
         </div>
 
-        <div class="game-grid">
-            <div class="terminal-card auth-panel" data-label="/auth">
-                <h2 class="panel-heading">Credentials</h2>
-                <input @bind="Model.Username" placeholder="Username"/>
-                <input type="password" @bind="Model.Password" @onkeydown="HandlePasswordKeyDown" placeholder="Password"/>
-                <div class="auth-actions">
-                    <button class="btn btn-accent" @onclick="Model.LoginAsync" disabled="@(!Model.CanSubmitCredentials)">Log
-                        In
-                    </button>
-                    <button class="btn btn-ghost" @onclick="Model.RegisterAsync" disabled="@(!Model.CanSubmitCredentials)">
-                        Register
-                    </button>
-                    <button class="btn" @onclick="Model.LogoutAsync" disabled="@(!Model.IsLoggedIn)">Log Out</button>
+        <fieldset disabled="@(!Model.IsLoggedIn)">
+            <div class="terminal-card" data-label="/world-feed">
+                <h2 class="panel-heading">World output</h2>
+                <div class="terminal-output" id="@TerminalScrollSelectors.TerminalElementId">@Model.GameOutputHtml</div>
+
+                <div class="command-input">
+                    <input @bind="Model.CommandInput"
+                           @bind:event="oninput"
+                           @onkeydown="HandleCommandKeyDown"
+                           @ref="_commandInputRef"
+                           placeholder="Type a command..."/>
+                    <div class="command-actions">
+                        <button class="btn btn-accent" @onclick="Model.SubmitCommandAsync">Send</button>
+                        <button class="btn btn-ghost" @onclick="ScrollToTop">⬆</button>
+                        <button class="btn btn-ghost" @onclick="ScrollToBottom">⬇</button>
+                    </div>
                 </div>
-                @if (!string.IsNullOrWhiteSpace(Model.LoginStatus))
+
+                @if (!Model.IsLoggedIn)
                 {
-                    <p class="status-message">@Model.LoginStatus</p>
+                    <p class="status-message">Log in or register to start playing.</p>
                 }
             </div>
 
-            <fieldset disabled="@(!Model.IsLoggedIn)">
-                <div class="terminal-card" data-label="/world-feed">
-                    <h2 class="panel-heading">World output</h2>
-                    <div class="terminal-output" id="@TerminalScrollSelectors.TerminalElementId">@Model.GameOutputHtml</div>
-
-                    <div class="command-input">
-                        <input @bind="Model.CommandInput"
-                               @bind:event="oninput"
-                               @onkeydown="HandleCommandKeyDown"
-                               @ref="_commandInputRef"
-                               placeholder="Type a command..."/>
-                        <div class="command-actions">
-                            <button class="btn btn-accent" @onclick="Model.SubmitCommandAsync">Send</button>
-                            <button class="btn btn-ghost" @onclick="ScrollToTop">⬆</button>
-                            <button class="btn btn-ghost" @onclick="ScrollToBottom">⬇</button>
-                        </div>
-                    </div>
-
-                    @if (!Model.IsLoggedIn)
+            <div class="terminal-card channel-panel" data-label="/channels">
+                <h2 class="panel-heading">Channel preferences</h2>
+                <p class="status-message">Toggle channels to mute or unmute global chatter.</p>
+                <div class="channel-list">
+                    @foreach (var channel in Model.AvailableChannels)
                     {
-                        <p class="status-message">Log in or register to start playing.</p>
+                        <label class="channel-toggle">
+                            <input type="checkbox"
+                                   checked="@Model.ChannelMuteState[channel]"
+                                   @onchange="async e => await Model.ToggleChannelAsync(channel, (bool)(e.Value ?? false))"/>
+                            <div class="channel-label">
+                                <strong>@channel</strong>
+                                <span>@(Model.ChannelMuteState[channel] ? "Muted" : "Active")</span>
+                            </div>
+                        </label>
                     }
                 </div>
-
-                <div class="terminal-card channel-panel" data-label="/channels">
-                    <h2 class="panel-heading">Channel preferences</h2>
-                    <p class="status-message">Toggle channels to mute or unmute global chatter.</p>
-                    <div class="channel-list">
-                        @foreach (var channel in Model.AvailableChannels)
-                        {
-                            <label class="channel-toggle">
-                                <input type="checkbox"
-                                       checked="@Model.ChannelMuteState[channel]"
-                                       @onchange="async e => await Model.ToggleChannelAsync(channel, (bool)(e.Value ?? false))"/>
-                                <div class="channel-label">
-                                    <strong>@channel</strong>
-                                    <span>@(Model.ChannelMuteState[channel] ? "Muted" : "Active")</span>
-                                </div>
-                            </label>
-                        }
-                    </div>
-                </div>
-            </fieldset>
-        </div>
+            </div>
+        </fieldset>
     </div>
-}
+</div>
 
 @code {
     private ElementReference _commandInputRef;
