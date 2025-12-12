@@ -1,5 +1,6 @@
 using MooSharp.Actors.Players;
 using MooSharp.Actors.Rooms;
+using MooSharp.Commands.Machinery;
 
 namespace MooSharp.Commands.Presentation;
 
@@ -7,6 +8,9 @@ public class CommandResult
 {
     // Messages to be sent out
     public List<GameMessage> Messages { get; } = [];
+
+    // Commands to enqueue for additional processing
+    public List<ICommand> CommandsToQueue { get; } = [];
 
     // Helper to add a message to a specific player
     public void Add(Player player, IGameEvent @event, MessageAudience audience = MessageAudience.Actor)

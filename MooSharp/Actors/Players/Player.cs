@@ -14,6 +14,7 @@ public class Player : IContainer
 
     public required PlayerId Id { get; init; }
     public DateTime LastActionAt { get; set; } = DateTime.UtcNow;
+    public PlayerId? FollowTarget { get; set; }
 
     public IReadOnlyCollection<Object> Inventory => _inventory;
     public required string Username { get; init; }

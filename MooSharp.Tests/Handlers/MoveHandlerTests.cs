@@ -88,4 +88,49 @@ public class MoveHandlerTests
         Assert.Equal(MessageAudience.Observer, destinationMessage.Audience);
         Assert.IsType<PlayerArrivedEvent>(destinationMessage.Event);
     }
+
+    [Fact]
+    public async Task MoveHandler_QueuesFollowCommandsForFollowersInSameRoom()
+    {
+        var origin = HandlerTestHelpers.CreateRoom("origin");
+        var destination = HandlerTestHelpers.CreateRoom("destination");
+        var elsewhere = HandlerTestHelpers.CreateRoom("elsewhere");
+        var exit = new Exit
+        {
+            Name = "north",
+            Description = string.Empty,
+            Destination = destination.Id
+        };
+
+        origin.Exits.Add(exit);
+
+        var world = await HandlerTestHelpers.CreateWorld(origin, destination, elsewhere);
+
+        var actor = HandlerTestHelpers.CreatePlayer("Actor");
+        var follower = HandlerTestHelpers.CreatePlayer("Follower");
+        var distantFollower = HandlerTestHelpers.CreatePlayer("DistantFollower");
+
+        follower.FollowTarget = actor.Id;
+        distantFollower.FollowTarget = actor.Id;
+
+        world.MovePlayer(actor, origin);
+        world.MovePlayer(follower, origin);
+        world.MovePlayer(distantFollower, elsewhere);
+
+        var handler = new MoveHandler(world, NullLogger<MoveHandler>.Instance);
+
+        var result = await handler.Handle(new()
+        {
+            Player = actor,
+            TargetExit = exit
+        });
+
+        Assert.Same(origin, world.GetPlayerLocation(follower));
+
+        var queuedCommand = Assert.Single(result.CommandsToQueue);
+        var queuedMove = Assert.IsType<MoveCommand>(queuedCommand);
+
+        Assert.Equal(follower, queuedMove.Player);
+        Assert.Equal(exit, queuedMove.TargetExit);
+    }
 }

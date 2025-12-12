@@ -111,6 +111,30 @@ public class CommandPipelineEndToEndTests
             Arg.Any<CancellationToken>());
     }
 
+    [Fact]
+    public async Task ProcessInputAsync_ProcessesQueuedCommands()
+    {
+        var follower = HandlerTestHelpers.CreatePlayer("Follower");
+        follower.FollowTarget = _player.Id;
+
+        _world.RegisterPlayer(follower);
+        _world.MovePlayer(follower, _origin);
+
+        var command = new InputCommand(_player.Id.Value, "move north");
+
+        await _inputProcessor.ProcessInputAsync(command);
+
+        Assert.Same(_destination, _world.GetLocationOrThrow(follower));
+
+        await _emitter.Received(1).SendGameMessagesAsync(
+            Arg.Is<IEnumerable<GameMessage>>(messages => ContainsMoveForPlayer(messages, _player, _destination)),
+            Arg.Any<CancellationToken>());
+
+        await _emitter.Received(1).SendGameMessagesAsync(
+            Arg.Is<IEnumerable<GameMessage>>(messages => ContainsMoveForPlayer(messages, follower, _destination)),
+            Arg.Any<CancellationToken>());
+    }
+
     private static bool ContainsMoveAndDescription(IEnumerable<GameMessage> messages, Room destination)
     {
         var list = messages.ToList();
@@ -122,5 +146,12 @@ public class CommandPipelineEndToEndTests
     private static bool AllSystemMessages(IEnumerable<GameMessage> messages)
     {
         return messages.All(m => m.Event is SystemMessageEvent);
+    }
+
+    private static bool ContainsMoveForPlayer(IEnumerable<GameMessage> messages, Player player, Room destination)
+    {
+        return messages.Any(message => message.Event is PlayerMovedEvent moved &&
+                                       ReferenceEquals(moved.Player, player) &&
+                                       ReferenceEquals(moved.Destination, destination));
     }
 }

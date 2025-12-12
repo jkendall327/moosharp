@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Microsoft.Extensions.Logging;
 using MooSharp.Actors.Players;
 using MooSharp.Commands.Commands.Scripting;
@@ -57,7 +58,7 @@ public class GameInputProcessor(
 
                     // We are guaranteed a Command here because of the Status check
                     var result = await executor.Handle(parseResult.Command!, ct);
-                    _ = emitter.SendGameMessagesAsync(result.Messages, ct);
+                    await ProcessResultAsync(result, ct);
                 }
                 catch (Exception ex)
                 {
@@ -87,7 +88,7 @@ public class GameInputProcessor(
                         player.LastActionAt = DateTime.UtcNow;
 
                         var scriptResult = await executor.Handle(scriptCommand, ct);
-                        _ = emitter.SendGameMessagesAsync(scriptResult.Messages, ct);
+                        await ProcessResultAsync(scriptResult, ct);
                     }
                     catch (Exception ex)
                     {
@@ -104,6 +105,34 @@ public class GameInputProcessor(
                 }
 
                 break;
+        }
+    }
+
+    private async Task ProcessResultAsync(CommandResult result, CancellationToken ct)
+    {
+        var commandQueue = new Queue<ICommand>(result.CommandsToQueue);
+
+        await emitter.SendGameMessagesAsync(result.Messages, ct);
+
+        while (commandQueue.Count > 0)
+        {
+            var queuedCommand = commandQueue.Dequeue();
+
+            try
+            {
+                var queuedResult = await executor.Handle(queuedCommand, ct);
+
+                await emitter.SendGameMessagesAsync(queuedResult.Messages, ct);
+
+                foreach (var followUp in queuedResult.CommandsToQueue)
+                {
+                    commandQueue.Enqueue(followUp);
+                }
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Error processing queued command {CommandType}", queuedCommand.GetType().Name);
+            }
         }
     }
 }
