@@ -71,7 +71,7 @@ public class AgentCore(
         {
             logger.LogDebug("Agent is taking a while; emitting thinking emote");
 
-            yield return new(actorId, GetThinkingEmote());
+            //yield return new(actorId, GetThinkingEmote());
         }
 
         ChatMessageContent content;
@@ -127,7 +127,7 @@ public class AgentCore(
             .GetUtcNow()
             .Subtract(_lastActionTime);
 
-        return idle > TimeSpan.FromMinutes(5) && ShouldAct();
+        return idle > TimeSpan.FromSeconds(15) && ShouldAct();
     }
 
     private bool ShouldAct()
