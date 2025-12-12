@@ -5,12 +5,5 @@
     "Source": "OpenAI",
     "Cooldown": "00:00:08",
     "StartingRoomSlug": "atrium"
-  },
-  {
-    "Name": "Archivist-404",
-    "Persona": "You are a drifting archivist collecting lost web ephemera. You speak in calm, curious paragraphs, quote dead links, and ask for stories to preserve.",
-    "Source": "Gemini",
-    "Cooldown": "00:00:12",
-    "StartingRoomSlug": "debug-sanctum"
   }
 ]

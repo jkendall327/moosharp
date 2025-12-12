@@ -118,7 +118,7 @@ public class World(IWorldRepository worldRepository, ILogger<World> logger)
 
         _rooms[room.Id] = room;
 
-        await worldRepository.SaveRoomAsync(WorldSnapshotFactory.CreateSnapshot(room), cancellationToken);
+        await worldRepository.SaveRoomAsync(WorldSnapshotFactory.CreateSnapshot(room), cancellationToken: cancellationToken);
 
         logger.LogInformation("Room {RoomName} ({RoomId}) created", room.Name, room.Id);
 
@@ -133,7 +133,7 @@ public class World(IWorldRepository worldRepository, ILogger<World> logger)
         var oldName = room.Name;
         room.Name = name;
 
-        await worldRepository.RenameRoomAsync(room.Id.Value, name, cancellationToken);
+        await worldRepository.RenameRoomAsync(room.Id.Value, name, cancellationToken: cancellationToken);
 
         logger.LogInformation("Room {OldName} ({RoomId}) renamed to {NewName}", oldName, room.Id, name);
     }
@@ -146,7 +146,7 @@ public class World(IWorldRepository worldRepository, ILogger<World> logger)
         var oldName = item.Name;
         item.Name = name;
 
-        await worldRepository.RenameObjectAsync(item.Id.Value.ToString(), name, cancellationToken);
+        await worldRepository.RenameObjectAsync(item.Id.Value.ToString(), name, cancellationToken: cancellationToken);
 
         logger.LogInformation("Object {OldName} ({ObjectId}) renamed to {NewName}", oldName, item.Id, name);
     }
@@ -189,7 +189,7 @@ public class World(IWorldRepository worldRepository, ILogger<World> logger)
             exit.Aliases.ToList(),
             exit.Keywords.ToList());
 
-        await worldRepository.SaveExitAsync(origin.Id.Value, snapshot, cancellationToken);
+        await worldRepository.SaveExitAsync(origin.Id.Value, snapshot, cancellationToken: cancellationToken);
     }
 
     public async Task UpdateRoomDescriptionAsync(Room room,
@@ -202,7 +202,7 @@ public class World(IWorldRepository worldRepository, ILogger<World> logger)
         room.Description = description;
         room.LongDescription = description;
 
-        await worldRepository.UpdateRoomDescriptionAsync(room.Id.Value, description, description, cancellationToken);
+        await worldRepository.UpdateRoomDescriptionAsync(room.Id.Value, description, description, cancellationToken: cancellationToken);
 
         logger.LogInformation("Room {RoomName} ({RoomId}) description updated", room.Name, room.Id);
     }

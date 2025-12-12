@@ -1,9 +1,13 @@
+using System.Threading.Channels;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using MooSharp.Data.EntityFramework;
 
 namespace MooSharp.Data.Worlds;
 
-internal sealed class EfWorldRepository(IDbContextFactory<MooSharpDbContext> contextFactory) : IWorldRepository
+internal sealed class EfWorldRepository(ChannelWriter<DatabaseRequest> writer,
+    IDbContextFactory<MooSharpDbContext> contextFactory,
+    ILogger<EfWorldRepository> logger) : IWorldRepository
 {
     public async Task<bool> HasRoomsAsync(CancellationToken cancellationToken = default)
     {
@@ -25,97 +29,88 @@ internal sealed class EfWorldRepository(IDbContextFactory<MooSharpDbContext> con
         return rooms.Select(ToSnapshot).ToList();
     }
 
-    public async Task SaveRoomAsync(RoomSnapshotDto room, CancellationToken cancellationToken = default)
+    public async Task SaveRoomAsync(RoomSnapshotDto room,
+        WriteType type = WriteType.Deferred,
+        CancellationToken cancellationToken = default)
     {
-        await SaveRoomSnapshotsAsync([room], cancellationToken);
-    }
-
-    public async Task SaveExitAsync(string fromRoomId, ExitSnapshotDto exitSnapshot, CancellationToken cancellationToken = default)
-    {
-        await using var context = await contextFactory.CreateDbContextAsync(cancellationToken);
-
-        var exitEntity = new ExitEntity
+        if (type is WriteType.Deferred)
         {
-            Id = exitSnapshot.Id,
-            FromRoomId = fromRoomId,
-            DestinationRoomId = exitSnapshot.DestinationRoomId,
-            Name = exitSnapshot.Name,
-            Description = exitSnapshot.Description,
-            IsHidden = exitSnapshot.IsHidden,
-            IsLocked = exitSnapshot.IsLocked,
-            IsOpen = exitSnapshot.IsOpen,
-            CanBeOpened = exitSnapshot.CanBeOpened,
-            CanBeLocked = exitSnapshot.CanBeLocked,
-            KeyId = exitSnapshot.KeyId,
-            Aliases = Serialize(exitSnapshot.Aliases),
-            Keywords = Serialize(exitSnapshot.Keywords)
-        };
-
-        await context.Exits.AddAsync(exitEntity, cancellationToken);
-
-        try
-        {
-            await context.SaveChangesAsync(cancellationToken);
+            await EnqueueAsync(new SaveRoomRequest(room), cancellationToken);
         }
-        catch (DbUpdateException)
+        else
         {
-            // Ignore duplicate exits
+            await SaveRoomSnapshotsAsync([room], cancellationToken);
         }
     }
 
-    public async Task SaveRoomsAsync(IEnumerable<RoomSnapshotDto> rooms, CancellationToken cancellationToken = default)
+    public async Task SaveExitAsync(string fromRoomId, ExitSnapshotDto exitSnapshot,
+        WriteType type = WriteType.Deferred,
+        CancellationToken cancellationToken = default)
     {
-        await SaveRoomSnapshotsAsync(rooms, cancellationToken);
+        if (type is WriteType.Deferred)
+        {
+            await EnqueueAsync(new SaveExitRequest(fromRoomId, exitSnapshot), cancellationToken);
+        }
+        else
+        {
+            await SaveExitAsyncImmediate(fromRoomId, exitSnapshot, cancellationToken);
+        }
+    }
+
+    public async Task SaveRoomsAsync(IEnumerable<RoomSnapshotDto> rooms,
+        WriteType type = WriteType.Deferred,
+        CancellationToken cancellationToken = default)
+    {
+        if (type is WriteType.Deferred)
+        {
+            await EnqueueAsync(new SaveRoomsRequest(rooms.ToList()), cancellationToken);
+        }
+        else
+        {
+            await SaveRoomSnapshotsAsync(rooms, cancellationToken);
+        }
     }
 
     public async Task UpdateRoomDescriptionAsync(string roomId, string description, string longDescription,
+        WriteType type = WriteType.Deferred,
         CancellationToken cancellationToken = default)
     {
-        await using var context = await contextFactory.CreateDbContextAsync(cancellationToken);
-
-        var room = await context.Rooms.FirstOrDefaultAsync(r => r.Id == roomId, cancellationToken);
-
-        if (room is null)
+        if (type is WriteType.Deferred)
         {
-            return;
+            await EnqueueAsync(new UpdateRoomDescriptionRequest(roomId, description, longDescription), cancellationToken);
         }
-
-        room.Description = description;
-        room.LongDescription = longDescription;
-
-        await context.SaveChangesAsync(cancellationToken);
+        else
+        {
+            await UpdateRoomDescriptionImmediateAsync(roomId, description, longDescription, cancellationToken);
+        }
     }
 
-    public async Task RenameRoomAsync(string roomId, string name, CancellationToken cancellationToken = default)
+    public async Task RenameRoomAsync(string roomId, string name,
+        WriteType type = WriteType.Deferred,
+        CancellationToken cancellationToken = default)
     {
-        await using var context = await contextFactory.CreateDbContextAsync(cancellationToken);
-
-        var room = await context.Rooms.FirstOrDefaultAsync(r => r.Id == roomId, cancellationToken);
-
-        if (room is null)
+        if (type is WriteType.Deferred)
         {
-            return;
+            await EnqueueAsync(new RenameRoomRequest(roomId, name), cancellationToken);
         }
-
-        room.Name = name;
-
-        await context.SaveChangesAsync(cancellationToken);
+        else
+        {
+            await RenameRoomImmediateAsync(roomId, name, cancellationToken);
+        }
     }
 
-    public async Task RenameObjectAsync(string objectId, string name, CancellationToken cancellationToken = default)
+    public async Task RenameObjectAsync(string objectId, string name,
+        WriteType type = WriteType.Deferred,
+        CancellationToken cancellationToken = default)
     {
-        await using var context = await contextFactory.CreateDbContextAsync(cancellationToken);
-
-        var obj = await context.Objects.FirstOrDefaultAsync(o => o.Id == objectId, cancellationToken);
-
-        if (obj is null)
+        if (type is WriteType.Deferred)
         {
-            return;
+            await EnqueueAsync(new RenameObjectRequest(objectId, name), cancellationToken);
         }
-
-        obj.Name = name;
-
-        await context.SaveChangesAsync(cancellationToken);
+        else
+        {
+            await RenameObjectImmediateAsync(objectId, name, cancellationToken);
+        }
     }
 
     private async Task SaveRoomSnapshotsAsync(IEnumerable<RoomSnapshotDto> rooms, CancellationToken cancellationToken)
@@ -241,5 +236,100 @@ internal sealed class EfWorldRepository(IDbContextFactory<MooSharpDbContext> con
         return string.IsNullOrWhiteSpace(data)
             ? []
             : data.Split('|', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+    }
+
+    private async Task SaveExitAsyncImmediate(string fromRoomId, ExitSnapshotDto exitSnapshot, CancellationToken cancellationToken)
+    {
+        await using var context = await contextFactory.CreateDbContextAsync(cancellationToken);
+
+        var exitEntity = new ExitEntity
+        {
+            Id = exitSnapshot.Id,
+            FromRoomId = fromRoomId,
+            DestinationRoomId = exitSnapshot.DestinationRoomId,
+            Name = exitSnapshot.Name,
+            Description = exitSnapshot.Description,
+            IsHidden = exitSnapshot.IsHidden,
+            IsLocked = exitSnapshot.IsLocked,
+            IsOpen = exitSnapshot.IsOpen,
+            CanBeOpened = exitSnapshot.CanBeOpened,
+            CanBeLocked = exitSnapshot.CanBeLocked,
+            KeyId = exitSnapshot.KeyId,
+            Aliases = Serialize(exitSnapshot.Aliases),
+            Keywords = Serialize(exitSnapshot.Keywords)
+        };
+
+        await context.Exits.AddAsync(exitEntity, cancellationToken);
+
+        try
+        {
+            await context.SaveChangesAsync(cancellationToken);
+        }
+        catch (DbUpdateException)
+        {
+            // Ignore duplicate exits
+        }
+    }
+
+    private async Task UpdateRoomDescriptionImmediateAsync(string roomId, string description, string longDescription,
+        CancellationToken cancellationToken)
+    {
+        await using var context = await contextFactory.CreateDbContextAsync(cancellationToken);
+
+        var room = await context.Rooms.FirstOrDefaultAsync(r => r.Id == roomId, cancellationToken);
+
+        if (room is null)
+        {
+            return;
+        }
+
+        room.Description = description;
+        room.LongDescription = longDescription;
+
+        await context.SaveChangesAsync(cancellationToken);
+    }
+
+    private async Task RenameRoomImmediateAsync(string roomId, string name, CancellationToken cancellationToken)
+    {
+        await using var context = await contextFactory.CreateDbContextAsync(cancellationToken);
+
+        var room = await context.Rooms.FirstOrDefaultAsync(r => r.Id == roomId, cancellationToken);
+
+        if (room is null)
+        {
+            return;
+        }
+
+        room.Name = name;
+
+        await context.SaveChangesAsync(cancellationToken);
+    }
+
+    private async Task RenameObjectImmediateAsync(string objectId, string name, CancellationToken cancellationToken)
+    {
+        await using var context = await contextFactory.CreateDbContextAsync(cancellationToken);
+
+        var obj = await context.Objects.FirstOrDefaultAsync(o => o.Id == objectId, cancellationToken);
+
+        if (obj is null)
+        {
+            return;
+        }
+
+        obj.Name = name;
+
+        await context.SaveChangesAsync(cancellationToken);
+    }
+
+    private async Task EnqueueAsync(DatabaseRequest request, CancellationToken ct)
+    {
+        try
+        {
+            await writer.WriteAsync(request, ct);
+        }
+        catch (ChannelClosedException)
+        {
+            logger.LogWarning("Database request channel was closed; request {RequestType} was dropped", request.GetType().Name);
+        }
     }
 }
