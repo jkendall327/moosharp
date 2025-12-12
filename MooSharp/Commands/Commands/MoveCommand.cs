@@ -1,3 +1,4 @@
+using System.Linq;
 using Microsoft.Extensions.Logging;
 using MooSharp.Actors.Players;
 using MooSharp.Actors.Rooms;
@@ -82,6 +83,22 @@ public class MoveHandler(World.World world, ILogger<MoveHandler> logger) : IHand
             new PlayerDepartedEvent(player, originRoom, cmd.TargetExit.Name));
 
         world.MovePlayer(player, exitRoom);
+
+        var followers = world
+            .GetActivePlayers()
+            .Where(p => p.FollowTarget == player.Id)
+            .Where(follower => world.GetPlayerLocation(follower) == originRoom)
+            .Where(follower => follower != player)
+            .ToList();
+
+        foreach (var follower in followers)
+        {
+            result.CommandsToQueue.Add(new MoveCommand
+            {
+                Player = follower,
+                TargetExit = exit
+            });
+        }
 
         var description = exitRoom.DescribeFor(player);
         result.Add(player, new RoomDescriptionEvent(description));
