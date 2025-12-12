@@ -1,3 +1,4 @@
+using MooSharp.Data;
 using MooSharp.Data.Worlds;
 
 namespace MooSharp.Tests.TestDoubles;
@@ -14,13 +15,15 @@ public sealed class InMemoryWorldRepository : IWorldRepository
         return Task.FromResult<IReadOnlyCollection<RoomSnapshotDto>>(_rooms.Select(Clone).ToList());
     }
 
-    public Task SaveRoomAsync(RoomSnapshotDto room, CancellationToken cancellationToken = default)
+    public Task SaveRoomAsync(RoomSnapshotDto room, WriteType type = WriteType.Deferred,
+        CancellationToken cancellationToken = default)
     {
         UpsertRoom(room);
         return Task.CompletedTask;
     }
 
-    public Task SaveExitAsync(string fromRoomId, ExitSnapshotDto exit, CancellationToken cancellationToken = default)
+    public Task SaveExitAsync(string fromRoomId, ExitSnapshotDto exit, WriteType type = WriteType.Deferred,
+        CancellationToken cancellationToken = default)
     {
         var existing = _rooms.FirstOrDefault(r => r.Id == fromRoomId);
 
@@ -39,7 +42,8 @@ public sealed class InMemoryWorldRepository : IWorldRepository
         return Task.CompletedTask;
     }
 
-    public Task SaveRoomsAsync(IEnumerable<RoomSnapshotDto> rooms, CancellationToken cancellationToken = default)
+    public Task SaveRoomsAsync(IEnumerable<RoomSnapshotDto> rooms, WriteType type = WriteType.Deferred,
+        CancellationToken cancellationToken = default)
     {
         _rooms.Clear();
         _rooms.AddRange(rooms.Select(Clone));
@@ -47,7 +51,7 @@ public sealed class InMemoryWorldRepository : IWorldRepository
     }
 
     public Task UpdateRoomDescriptionAsync(string roomId, string description, string longDescription,
-        CancellationToken cancellationToken = default)
+        WriteType type = WriteType.Deferred, CancellationToken cancellationToken = default)
     {
         var existing = _rooms.FirstOrDefault(r => r.Id == roomId);
 
@@ -59,7 +63,8 @@ public sealed class InMemoryWorldRepository : IWorldRepository
         return Task.CompletedTask;
     }
 
-    public Task RenameRoomAsync(string roomId, string name, CancellationToken cancellationToken = default)
+    public Task RenameRoomAsync(string roomId, string name, WriteType type = WriteType.Deferred,
+        CancellationToken cancellationToken = default)
     {
         var existing = _rooms.FirstOrDefault(r => r.Id == roomId);
 
@@ -71,7 +76,8 @@ public sealed class InMemoryWorldRepository : IWorldRepository
         return Task.CompletedTask;
     }
 
-    public Task RenameObjectAsync(string objectId, string name, CancellationToken cancellationToken = default)
+    public Task RenameObjectAsync(string objectId, string name, WriteType type = WriteType.Deferred,
+        CancellationToken cancellationToken = default)
     {
         for (var i = 0; i < _rooms.Count; i++)
         {

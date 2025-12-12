@@ -20,7 +20,7 @@ public class WorldInitializer(World world, IWorldRepository worldRepository, IWo
 
         var seedRooms = worldSeeder.GetSeedRooms().ToList();
 
-        await worldRepository.SaveRoomsAsync(WorldSnapshotFactory.CreateSnapshots(seedRooms), cancellationToken);
+        await worldRepository.SaveRoomsAsync(WorldSnapshotFactory.CreateSnapshots(seedRooms), cancellationToken: cancellationToken);
         world.Initialize(seedRooms);
 
         logger.LogInformation("World seeded with {RoomCount} rooms from configuration", seedRooms.Count);
@@ -32,7 +32,7 @@ public class WorldInitializer(World world, IWorldRepository worldRepository, IWo
 
         var roomList = rooms.ToList();
 
-        await worldRepository.SaveRoomsAsync(WorldSnapshotFactory.CreateSnapshots(roomList), cancellationToken);
+        await worldRepository.SaveRoomsAsync(WorldSnapshotFactory.CreateSnapshots(roomList), cancellationToken: cancellationToken);
         world.Initialize(roomList);
 
         logger.LogInformation("World initialized with {RoomCount} provided rooms", roomList.Count);

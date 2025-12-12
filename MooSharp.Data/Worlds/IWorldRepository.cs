@@ -1,3 +1,5 @@
+using MooSharp.Data;
+
 namespace MooSharp.Data.Worlds;
 
 public interface IWorldRepository
@@ -6,16 +8,27 @@ public interface IWorldRepository
 
     Task<IReadOnlyCollection<RoomSnapshotDto>> LoadRoomsAsync(CancellationToken cancellationToken = default);
 
-    Task SaveRoomAsync(RoomSnapshotDto room, CancellationToken cancellationToken = default);
-
-    Task SaveExitAsync(string fromRoomId, ExitSnapshotDto exit, CancellationToken cancellationToken = default);
-
-    Task SaveRoomsAsync(IEnumerable<RoomSnapshotDto> rooms, CancellationToken cancellationToken = default);
-
-    Task UpdateRoomDescriptionAsync(string roomId, string description, string longDescription,
+    Task SaveRoomAsync(RoomSnapshotDto room,
+        WriteType type = WriteType.Deferred,
         CancellationToken cancellationToken = default);
 
-    Task RenameRoomAsync(string roomId, string name, CancellationToken cancellationToken = default);
+    Task SaveExitAsync(string fromRoomId, ExitSnapshotDto exit,
+        WriteType type = WriteType.Deferred,
+        CancellationToken cancellationToken = default);
 
-    Task RenameObjectAsync(string objectId, string name, CancellationToken cancellationToken = default);
+    Task SaveRoomsAsync(IEnumerable<RoomSnapshotDto> rooms,
+        WriteType type = WriteType.Deferred,
+        CancellationToken cancellationToken = default);
+
+    Task UpdateRoomDescriptionAsync(string roomId, string description, string longDescription,
+        WriteType type = WriteType.Deferred,
+        CancellationToken cancellationToken = default);
+
+    Task RenameRoomAsync(string roomId, string name,
+        WriteType type = WriteType.Deferred,
+        CancellationToken cancellationToken = default);
+
+    Task RenameObjectAsync(string objectId, string name,
+        WriteType type = WriteType.Deferred,
+        CancellationToken cancellationToken = default);
 }

@@ -29,7 +29,7 @@ public class WorldSnapshotService(
     {
         var rooms = world.CreateSnapshot();
 
-        await worldRepository.SaveRoomsAsync(rooms, cancellationToken);
+        await worldRepository.SaveRoomsAsync(rooms, cancellationToken: cancellationToken);
 
         logger.LogInformation("World snapshot saved with {RoomCount} rooms", rooms.Count);
     }
