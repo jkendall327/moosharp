@@ -2,7 +2,7 @@
 
 Commands use a three-piece pattern: Command (data), Definition (parsing), Handler (behavior).
 
-Flow: Raw input → `CommandParser` matches verb → `ICommandDefinition.Create()` builds command → `CommandExecutor` dispatches via visitor pattern → `IHandler<T>` executes → `CommandResult` with events → formatters render to players.
+Flow: Raw input → `CommandParser` matches verb → `ICommandDefinition.TryCreateCommand()` builds command → `CommandExecutor` dispatches via visitor pattern → `IHandler<T>` executes → `CommandResult` with events → formatters render to players.
 
 All implementations are auto-discovered via reflection in `ServiceCollectionExtensions`.
 
@@ -26,20 +26,42 @@ public class DanceCommandDefinition : ICommandDefinition
     public IReadOnlyCollection<string> Verbs { get; } = ["dance"];
     public CommandCategory Category => CommandCategory.Social;
     public string Description => "Perform a dance. Usage: dance <style>.";
-    public ICommand Create(Player player, string args) => new DanceCommand { Player = player, Style = args };
+
+    public string? TryCreateCommand(ParsingContext ctx, ArgumentBinder binder, out ICommand? command)
+    {
+        command = null;
+
+        // "GetRemainingText" consumes the rest of the input as a single string
+        var style = ctx.GetRemainingText();
+
+        if (string.IsNullOrWhiteSpace(style))
+        {
+            return "Dance how?";
+        }
+
+        command = new DanceCommand { Player = ctx.Player, Style = style };
+        return null; // Return null if successful, or an error string if parsing failed
+    }
 }
 ```
 
 3. **Handler** - Business logic:
 ```csharp
-public class DanceHandler(World world) : IHandler<DanceCommand>
+public class DanceHandler(World.World world) : IHandler<DanceCommand>
 {
     public Task<CommandResult> Handle(DanceCommand cmd, CancellationToken ct = default)
     {
         var result = new CommandResult();
-        var room = world.GetPlayerLocation(cmd.Player)!;
-        result.Add(cmd.Player, new PlayerDancedEvent(cmd.Player, cmd.Style));
-        result.BroadcastToAllButPlayer(room, cmd.Player, new PlayerDancedEvent(cmd.Player, cmd.Style));
+        var room = world.GetLocationOrThrow(cmd.Player);
+
+        var evt = new PlayerDancedEvent(cmd.Player, cmd.Style);
+
+        // Show to the actor
+        result.Add(cmd.Player, evt);
+
+        // Show to everyone else in the room
+        result.BroadcastToAllButPlayer(room, cmd.Player, evt);
+
         return Task.FromResult(result);
     }
 }
