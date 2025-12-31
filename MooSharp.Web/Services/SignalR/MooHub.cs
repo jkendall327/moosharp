@@ -13,6 +13,7 @@ public class MooHub(
     ISessionGateway gateway,
     ActorIdentityResolver identityResolver,
     IGameEngine engine,
+    AutocompleteService autocompleter,
     ILogger<MooHub> logger) : Hub
 {
     public const string HubName = "/moohub";
@@ -59,7 +60,7 @@ public class MooHub(
     {
         var actor = GetActorIdOrThrow();
 
-        return await engine.GetAutocompleteOptions(actor);
+        return await autocompleter.GetAutocompleteOptions(actor);
     }
 
     public override async Task OnDisconnectedAsync(Exception? exception)

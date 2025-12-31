@@ -31,6 +31,4 @@ public interface IGameEngine
     /// Used by the Gateway to decide whether to call SpawnActorAsync on reconnect.
     /// </summary>
     bool IsActorSpawned(Guid actorId);
-
-    Task<AutocompleteOptions> GetAutocompleteOptions(Guid actorId, CancellationToken ct = default);
 }
