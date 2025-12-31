@@ -8,6 +8,7 @@ namespace MooSharp.Commands.Commands.Meta;
 public class HelpCommand : CommandBase<HelpCommand>
 {
     public required Player Player { get; init; }
+    public string? Topic { get; init; }
 }
 
 public class HelpCommandDefinition : ICommandDefinition
@@ -18,7 +19,17 @@ public class HelpCommandDefinition : ICommandDefinition
 
     public string? TryCreateCommand(ParsingContext ctx, ArgumentBinder binder, out ICommand? command)
     {
-        command = new HelpCommand { Player = ctx.Player };
+        string? topic = null;
+        if (!ctx.IsFinished)
+        {
+            topic = ctx.GetRemainingText();
+        }
+
+        command = new HelpCommand
+        {
+            Player = ctx.Player,
+            Topic = topic
+        };
         return null;
     }
 }
@@ -28,8 +39,25 @@ public class HelpHandler(CommandReference commandReference) : IHandler<HelpComma
     public Task<CommandResult> Handle(HelpCommand cmd, CancellationToken cancellationToken = default)
     {
         var result = new CommandResult();
-        var helpMessage = commandReference.BuildHelpText();
-        result.Add(cmd.Player, new SystemMessageEvent(helpMessage));
+
+        if (!string.IsNullOrWhiteSpace(cmd.Topic))
+        {
+            var specificHelp = commandReference.GetHelpForCommand(cmd.Topic);
+            if (specificHelp is not null)
+            {
+                result.Add(cmd.Player, new SystemMessageEvent(specificHelp));
+            }
+            else
+            {
+                result.Add(cmd.Player, new SystemMessageEvent("Command not found."));
+            }
+        }
+        else
+        {
+            var helpMessage = commandReference.BuildHelpText();
+            result.Add(cmd.Player, new SystemMessageEvent(helpMessage));
+        }
+
         return Task.FromResult(result);
     }
 }

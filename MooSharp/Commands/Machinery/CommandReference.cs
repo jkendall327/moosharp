@@ -24,7 +24,34 @@ public class CommandReference(IEnumerable<ICommandDefinition> definitions)
             .ToArray();
     }
 
-    public string BuildHelpText()
+    public virtual string? GetHelpForCommand(string topic)
+    {
+        // Flatten all commands from categories to search
+        var allCommands = _definitions;
+
+        // Find a command where the topic matches one of the verbs (case-insensitive)
+        var command = allCommands.FirstOrDefault(c =>
+            c.Verbs.Contains(topic, StringComparer.OrdinalIgnoreCase));
+
+        if (command is null)
+        {
+            return null;
+        }
+
+        var sb = new StringBuilder();
+        sb.AppendLine($"Help for [{command.Verbs.First()}]:");
+        sb.AppendLine(command.Description);
+        sb.AppendLine($"Usage: {string.Join(", ", command.Verbs)}");
+
+        if (command.Verbs.Count > 1)
+        {
+            sb.AppendLine($"Synonyms: {string.Join(", ", command.Verbs.Skip(1))}");
+        }
+
+        return sb.ToString();
+    }
+
+    public virtual string BuildHelpText()
     {
         var sb = new StringBuilder();
 
