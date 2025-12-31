@@ -1,17 +1,12 @@
 using System.Collections.Concurrent;
-using MooSharp.Commands.Presentation;
 using MooSharp.Game;
 using MooSharp.Infrastructure;
-using MooSharp.Infrastructure.Messaging;
 using MooSharp.Infrastructure.Sessions;
 
 namespace MooSharp.Web.Services.Session;
 
 public class SignalRSessionGateway(
     IGameEngine engine,
-    World.World world,
-    PlayerMessageProvider messageProvider,
-    IGameMessagePresenter presenter,
     MooSharpMetrics metrics,
     ILogger<SignalRSessionGateway> logger) : ISessionGateway
 {
@@ -20,6 +15,8 @@ public class SignalRSessionGateway(
     private readonly ConcurrentDictionary<Guid, IOutputChannel> _channels = new();
     private readonly ConcurrentDictionary<Guid, ConcurrentQueue<string>> _linkdeadMessages = new();
     private readonly ConcurrentDictionary<Guid, CancellationTokenSource> _linkdeadCts = new();
+
+    public event Action<Guid>? OnSessionReconnected;
 
     public async Task OnSessionStartedAsync(Guid actorId, IOutputChannel channel)
     {
@@ -38,7 +35,7 @@ public class SignalRSessionGateway(
         if (playerInWorld)
         {
             await ReplayQueuedMessagesAsync(actorId, channel);
-            await SendReconnectionMessagesAsync(actorId);
+            OnSessionReconnected?.Invoke(actorId);
         }
         else
         {
@@ -148,35 +145,6 @@ public class SignalRSessionGateway(
         while (queue.TryDequeue(out var message))
         {
             await channel.WriteOutputAsync(message);
-        }
-    }
-
-    private async Task SendReconnectionMessagesAsync(Guid actorId)
-    {
-        var player = world.TryGetPlayer(actorId);
-
-        if (player is null)
-        {
-            logger.LogWarning("Player {ActorId} not found when sending reconnection messages", actorId);
-            return;
-        }
-
-        try
-        {
-            var messages = await messageProvider.GetMessagesForLogin(player);
-
-            // Present and dispatch messages directly (avoiding circular dependency with IGameMessageEmitter)
-            // TODO: find better way to architect this
-            var tasks = messages
-                .Select(msg => (msg.Player, Content: presenter.Present(msg)))
-                .Where(msg => !string.IsNullOrWhiteSpace(msg.Content))
-                .Select(msg => DispatchToActorAsync(msg.Player.Id.Value, msg.Content!));
-
-            await Task.WhenAll(tasks);
-        }
-        catch (Exception ex)
-        {
-            logger.LogError(ex, "Failed to send reconnection messages to {Username}", player.Username);
         }
     }
 
