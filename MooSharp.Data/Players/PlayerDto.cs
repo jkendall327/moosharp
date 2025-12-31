@@ -4,12 +4,14 @@ public sealed record PlayerDto(
     Guid Id,
     string Username,
     string CurrentLocation,
-    List<InventoryItemDto> Inventory);
+    List<InventoryItemDto> Inventory,
+    List<string> Memories);
 
 public sealed record PlayerSnapshotDto(
     string Username,
     string CurrentLocation,
-    List<InventoryItemDto> Inventory);
+    List<InventoryItemDto> Inventory,
+    List<string> Memories);
 
 public sealed record NewPlayerRequest(
     Guid Id,

@@ -18,6 +18,7 @@ public class Player : IContainer
 
     public IReadOnlyCollection<Object> Inventory => _inventory;
     public required string Username { get; init; }
+    public List<string> Memories { get; set; } = [];
     public IReadOnlyCollection<string> MutedChannels => _mutedChannels;
 
     IReadOnlyCollection<Object> IContainer.Contents => _inventory;
