@@ -22,11 +22,8 @@ public class DigCommandDefinition : ICommandDefinition
 
     public string? TryCreateCommand(ParsingContext ctx, ArgumentBinder binder, out ICommand? command)
     {
-        var args = ctx.GetRemainingText();
-
-        var name = args.StartsWith("to ", StringComparison.OrdinalIgnoreCase)
-            ? args[3..].Trim()
-            : args.Trim();
+        binder.ConsumePreposition(ctx, "to");
+        var name = ctx.GetRemainingText();
 
         if (string.IsNullOrWhiteSpace(name))
         {

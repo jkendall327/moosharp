@@ -23,9 +23,15 @@ public class EditVerbCommandDefinition : ICommandDefinition
 
     public string? TryCreateCommand(ParsingContext ctx, ArgumentBinder binder, out ICommand? command)
     {
-        var args = ctx.GetRemainingText().Trim();
+        var arg = ctx.Pop();
 
-        var parts = args.Split(':');
+        if (arg is null)
+        {
+            command = null;
+            return "Usage: @edit object:verbname";
+        }
+
+        var parts = arg.Split(':');
         if (parts.Length != 2)
         {
             command = null;
