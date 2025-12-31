@@ -21,10 +21,7 @@ public class RenameCommandDefinition : ICommandDefinition
 
     public string? TryCreateCommand(ParsingContext ctx, ArgumentBinder binder, out ICommand? command)
     {
-        var args = ctx.GetRemainingText();
-        var trimmed = args.Trim();
-
-        if (string.IsNullOrWhiteSpace(trimmed))
+        if (ctx.IsFinished)
         {
             command = new RenameCommand
             {
@@ -32,15 +29,17 @@ public class RenameCommandDefinition : ICommandDefinition
                 Target = string.Empty,
                 NewName = string.Empty
             };
+            return null;
         }
 
-        var parts = trimmed.Split(' ', 2, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        var target = ctx.Pop() ?? string.Empty;
+        var newName = ctx.GetRemainingText();
 
         command = new RenameCommand
         {
             Player = ctx.Player,
-            Target = parts.ElementAtOrDefault(0) ?? string.Empty,
-            NewName = parts.ElementAtOrDefault(1) ?? string.Empty
+            Target = target,
+            NewName = newName
         };
 
         return null;

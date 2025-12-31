@@ -22,16 +22,14 @@ public class CreateObjectCommandDefinition : ICommandDefinition
 
     public string? TryCreateCommand(ParsingContext ctx, ArgumentBinder binder, out ICommand? command)
     {
-        var args = ctx.GetRemainingText().Trim();
-
         // Expected format: @create object "Name" or @create object Name
-        if (!args.StartsWith("object", StringComparison.OrdinalIgnoreCase))
+        if (!binder.ConsumePreposition(ctx, "object"))
         {
             command = null;
             return "Usage: @create object \"Name\".";
         }
 
-        var nameArg = args[6..].Trim().Trim('"', '\'');
+        var nameArg = ctx.GetRemainingText();
 
         if (string.IsNullOrWhiteSpace(nameArg))
         {
