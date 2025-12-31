@@ -4,6 +4,7 @@ using Microsoft.Extensions.Logging;
 using MooSharp.Commands.Presentation;
 using MooSharp.Actors.Players;
 using MooSharp.Infrastructure.Messaging;
+using MooSharp.Infrastructure.Sessions;
 using MooSharp.World;
 
 namespace MooSharp.Game;
@@ -14,6 +15,7 @@ namespace MooSharp.Game;
 /// </summary>
 public class PlayerLoginService(
     IGameEngine engine,
+    ISessionGateway sessionGateway,
     IGameMessageEmitter emitter,
     PlayerMessageProvider messageProvider,
     World.World world,
@@ -23,6 +25,7 @@ public class PlayerLoginService(
     {
         engine.OnPlayerSpawned += HandlePlayerSpawned;
         engine.OnPlayerDespawned += HandlePlayerDespawned;
+        sessionGateway.OnSessionReconnected += HandlePlayerReconnected;
         return Task.CompletedTask;
     }
 
@@ -30,11 +33,25 @@ public class PlayerLoginService(
     {
         engine.OnPlayerSpawned -= HandlePlayerSpawned;
         engine.OnPlayerDespawned -= HandlePlayerDespawned;
+        sessionGateway.OnSessionReconnected -= HandlePlayerReconnected;
         return Task.CompletedTask;
     }
 
     private void HandlePlayerSpawned(Player player)
     {
+        _ = SendWelcomeMessagesAsync(player);
+    }
+
+    private void HandlePlayerReconnected(Guid actorId)
+    {
+        var player = world.TryGetPlayer(actorId);
+
+        if (player is null)
+        {
+            logger.LogWarning("Player {ActorId} not found when sending reconnection messages", actorId);
+            return;
+        }
+
         _ = SendWelcomeMessagesAsync(player);
     }
 

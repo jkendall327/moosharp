@@ -8,6 +8,11 @@ namespace MooSharp.Infrastructure.Sessions;
 public interface ISessionGateway
 {
     /// <summary>
+    /// Fired when a player reconnects to an existing session (was linkdead).
+    /// </summary>
+    event Action<Guid> OnSessionReconnected;
+
+    /// <summary>
     /// Called by SignalR Hub (OnConnected) or AgentSpawner.
     /// 1. Cancels any pending "Linkdead" cleanup timers for this user.
     /// 2. Registers the new output channel for this actor.
