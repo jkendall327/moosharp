@@ -134,6 +134,7 @@ public sealed class PlayerEntity
     [MaxLength(100)] public string Username { get; init; } = string.Empty;
     [MaxLength(100)] public string Password { get; set; } = string.Empty;
     [MaxLength(100)] public string CurrentLocation { get; set; } = string.Empty;
+    public string MemoriesJson { get; set; } = "[]";
     public List<InventoryItemEntity> Inventory { get; set; } = [];
 }
 

@@ -27,7 +27,8 @@ internal class EfPlayerStore(IDbContextFactory<MooSharpDbContext> contextFactory
             Username = player.Username,
             Password = hashed,
             CurrentLocation = player.CurrentLocation,
-            Inventory = []
+            Inventory = [],
+            MemoriesJson = "[]"
         };
 
         context.Players.Add(newPlayer);
@@ -49,6 +50,7 @@ internal class EfPlayerStore(IDbContextFactory<MooSharpDbContext> contextFactory
         }
 
         player.CurrentLocation = snapshot.CurrentLocation;
+        player.MemoriesJson = System.Text.Json.JsonSerializer.Serialize(snapshot.Memories);
 
         context.PlayerInventory.RemoveRange(player.Inventory);
 
@@ -100,7 +102,9 @@ internal class EfPlayerStore(IDbContextFactory<MooSharpDbContext> contextFactory
                 i.VerbScriptsJson))
             .ToList();
 
-        return new(player.Id, player.Username, player.CurrentLocation, inventory);
+        var memories = System.Text.Json.JsonSerializer.Deserialize<List<string>>(player.MemoriesJson ?? "[]") ?? [];
+
+        return new(player.Id, player.Username, player.CurrentLocation, inventory, memories);
     }
 
     public async Task<PlayerDto?> GetPlayerByUsernameAsync(string username, CancellationToken ct)
@@ -114,7 +118,9 @@ internal class EfPlayerStore(IDbContextFactory<MooSharpDbContext> contextFactory
             return null;
         }
 
-        return new(player.Id, player.Username, player.CurrentLocation, []);
+        var memories = System.Text.Json.JsonSerializer.Deserialize<List<string>>(player.MemoriesJson ?? "[]") ?? [];
+
+        return new(player.Id, player.Username, player.CurrentLocation, [], memories);
     }
 
     public async Task<LoginResult> LoginIsValidAsync(string username, string password, CancellationToken ct = default)
