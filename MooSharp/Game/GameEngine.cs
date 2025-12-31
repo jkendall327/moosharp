@@ -10,7 +10,6 @@ namespace MooSharp.Game;
 public class GameEngine(
     World.World world,
     PlayerHydrator hydrator,
-    AutocompleteService autocompleter,
     IPlayerRepository playerRepository,
     ChannelWriter<GameCommand> writer,
     MooSharpMetrics metrics) : IGameEngine
@@ -76,11 +75,5 @@ public class GameEngine(
     public bool IsActorSpawned(Guid actorId)
     {
         return world.TryGetPlayer(actorId) is not null;
-    }
-
-    public Task<AutocompleteOptions> GetAutocompleteOptions(Guid actorId, CancellationToken ct = default)
-    {
-        // TODO: call this in hub directly maybe? or maybe not?
-        return autocompleter.GetAutocompleteOptions(actorId, ct);
     }
 }
